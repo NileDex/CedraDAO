@@ -1,5 +1,5 @@
 /**
- * TradePort Keys Service for Cedra Network
+ * Service for Cedra Network
  *
  * Handles TradePort integration and key management
  * Uses Cedra SDK for blockchain interactions

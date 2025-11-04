@@ -17,6 +17,8 @@ interface DAOInfo {
   subname?: string;
   description: string;
   created_at: number;
+  members?: number;
+  proposals?: number;
   logo?: {
     is_url: boolean;
     url: string;

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Building2, FileText, Vote, Users, DollarSign, TrendingUp, Globe } from 'lucide-react';
 import { usePlatformStats } from '../useServices/usePlatformStats';
 import { NETWORK_CONFIG } from '../cedra_service/constants';
-import AdSquare from './AdSquare';
 
 const StatsOverview: React.FC = () => {
   const { stats: platformStats, isLoading, error, lastUpdated } = usePlatformStats();
@@ -82,8 +81,6 @@ const StatsOverview: React.FC = () => {
           <span className="text-red-400 text-xs">Error loading stats</span>
         </div>
       )}
-
-      <AdSquare />
     </div>
   );
 };
