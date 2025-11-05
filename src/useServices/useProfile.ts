@@ -84,7 +84,7 @@ export function useCreateProfile() {
       setIsPending(false)
       return tx
     } catch (err: any) {
-      console.error('❌ Error creating profile:', err)
+      console.error('Error creating profile:', err)
       
       let errorMessage = 'Failed to create profile'
       if (err.message?.includes('PROFILE_ALREADY_EXISTS')) {
@@ -155,7 +155,7 @@ export function useUpdateProfile() {
       setIsPending(false)
       return tx
     } catch (err: any) {
-      console.error('❌ Error updating profile:', err)
+      console.error('Error updating profile:', err)
       
       let errorMessage = 'Failed to update profile'
       if (err.message?.includes('PROFILE_NOT_FOUND')) {
@@ -307,7 +307,7 @@ export function useGetProfile(userAddress: string | null) {
           err.message?.includes('sub_status: Some(2)') ||
           err.status === 400) {
         // Profile doesn't exist - this is expected for new users, so don't log as error
-        console.log('ℹ️ No profile found for user:', userAddress)
+        console.log(' No profile found for user:', userAddress)
         setData(null)
         setError(null)
       } else if (err.code === 'ERR_NETWORK' || 
@@ -316,11 +316,11 @@ export function useGetProfile(userAddress: string | null) {
                 err.message?.includes('Too Many Requests') ||
                 err.status === 429) {
         // Network/CORS/Rate limit issues - don't spam logs
-        console.log('⚠️ Network issue, skipping profile fetch')
+        console.log(' Network issue, skipping profile fetch')
         setData(null)
         setError(null)
       } else {
-        console.error('❌ Failed to fetch profile:', err)
+        console.error(' Failed to fetch profile:', err)
         setError(err.message || 'Failed to fetch profile')
       }
     } finally {
@@ -416,7 +416,7 @@ export function useGetMultipleProfiles() {
       setIsLoading(false)
       return displayNames
     } catch (err: any) {
-      console.error('❌ Failed to fetch display names:', err)
+      console.error(' Failed to fetch display names:', err)
       setError(err.message || 'Failed to fetch display names')
       setIsLoading(false)
       return addresses.map(() => '') // Return empty strings as fallback
@@ -441,7 +441,7 @@ export function useGetMultipleProfiles() {
       setIsLoading(false)
       return avatarUrls
     } catch (err: any) {
-      console.error('❌ Failed to fetch avatar URLs:', err)
+      console.error(' Failed to fetch avatar URLs:', err)
       setError(err.message || 'Failed to fetch avatar URLs')
       setIsLoading(false)
       return addresses.map(() => '') // Return empty strings as fallback
@@ -469,7 +469,7 @@ export function useGetMultipleProfiles() {
       setIsLoading(false)
       return profiles
     } catch (err: any) {
-      console.error('❌ Failed to batch fetch profiles:', err)
+      console.error(' Failed to batch fetch profiles:', err)
       setError(err.message || 'Failed to fetch profiles')
       setIsLoading(false)
       return addresses.map(address => ({
@@ -492,7 +492,7 @@ export function useGetMultipleProfiles() {
 
       return result[0] as boolean[]
     } catch (err: any) {
-      console.error('❌ Failed to check profile existence:', err)
+      console.error(' Failed to check profile existence:', err)
       return addresses.map(() => false)
     }
   }
@@ -529,7 +529,7 @@ export function useProfileExists(userAddress: string | null) {
 
       setExists(Boolean(result[0]))
     } catch (err: any) {
-      console.error('❌ Failed to check profile existence:', err)
+      console.error(' Failed to check profile existence:', err)
       
       // For profile existence checks, any error likely means profile doesn't exist
       if (err.message?.includes('PROFILE_NOT_FOUND') || 
@@ -581,7 +581,7 @@ export function useValidateProfile(userAddress: string | null) {
 
       setIsValid(Boolean(result[0]))
     } catch (err: any) {
-      console.error('❌ Failed to validate profile:', err)
+      console.error(' Failed to validate profile:', err)
       setError(err.message || 'Failed to validate profile')
       setIsValid(false)
     } finally {

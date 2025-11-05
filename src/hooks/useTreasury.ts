@@ -220,7 +220,7 @@ export const useTreasury = (daoId: string) => {
       setTransactions(txs);
       treasurySessionCache.set(`${cacheBaseKey}_transactions`, { data: txs, timestamp: Date.now() });
     } catch (err) {
-      console.warn('❌ Failed to fetch treasury transactions:', err);
+      console.warn(' Failed to fetch treasury transactions:', err);
       setTransactions([]);
     }
   }, [daoId]);

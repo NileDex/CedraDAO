@@ -31,7 +31,7 @@ export class BalanceService {
       // Method 1: Try direct account resource query (most reliable)
       const balance = await this.getBalanceFromAccountResource(address);
       if (balance !== null) {
-        console.log(`✅ Balance from account resource: ${balance} CEDRA`);
+        console.log(` Balance from account resource: ${balance} CEDRA`);
         return balance;
       }
     } catch (error) {
@@ -42,7 +42,7 @@ export class BalanceService {
       // Method 2: Try view function call
       const balance = await this.getBalanceFromViewFunction(address);
       if (balance !== null) {
-        console.log(`✅ Balance from view function: ${balance} CEDRA`);
+        console.log(` Balance from view function: ${balance} CEDRA`);
         return balance;
       }
     } catch (error) {
@@ -53,7 +53,7 @@ export class BalanceService {
       // Method 3: Try account resources list search
       const balance = await this.getBalanceFromAccountResources(address);
       if (balance !== null) {
-        console.log(`✅ Balance from account resources: ${balance} CEDRA`);
+        console.log(` Balance from account resources: ${balance} CEDRA`);
         return balance;
       }
     } catch (error) {
@@ -64,14 +64,14 @@ export class BalanceService {
       // Method 4: Try account info with coins
       const balance = await this.getBalanceFromAccountInfo(address);
       if (balance !== null) {
-        console.log(`✅ Balance from account info: ${balance} CEDRA`);
+        console.log(` Balance from account info: ${balance} CEDRA`);
         return balance;
       }
     } catch (error) {
-      console.log('❌ All balance fetching methods failed', error);
+      console.log(' All balance fetching methods failed', error);
     }
 
-    console.warn(`⚠️ Unable to fetch balance for address ${address}`);
+    console.warn(` Unable to fetch balance for address ${address}`);
     return 0;
   }
 

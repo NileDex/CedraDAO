@@ -44,8 +44,6 @@ export interface DAOStats {
 }
 
 export class PlatformStatsService {
-  private static readonly PLATFORM_ADMIN_ADDRESS = MODULE_ADDRESS; // Use module address as platform admin
-
   /**
    * Initialize the platform statistics system (should be called once)
    * This needs to be called by the platform admin before other functions work
@@ -61,10 +59,10 @@ export class PlatformStatsService {
       };
 
       const result = await adminSigner.signAndSubmitTransaction({ payload });
-      console.log('✅ Platform statistics initialized:', result);
+      console.log(' Platform statistics initialized:', result);
       return true;
     } catch (error) {
-      console.error('❌ Failed to initialize platform:', error);
+      console.error('Failed to initialize platform:', error);
       return false;
     }
   }
@@ -84,7 +82,7 @@ export class PlatformStatsService {
         }
       });
 
-      const [totalDAOs, totalProposals, activeProposals, totalVotes, totalMembers] = result.map(val => Number(val));
+      const [totalDAOs, _totalProposals, activeProposals, totalVotes, totalMembers] = result.map(val => Number(val));
 
       return {
         totalDAOs,
@@ -164,7 +162,7 @@ export class PlatformStatsService {
     } catch (error: any) {
       // Handle platform not initialized gracefully
       if (error.message?.includes('ABORTED') && error.message?.includes('platform_stats')) {
-        console.warn('⚠️ Platform statistics not initialized - returning empty list');
+        console.warn(' Platform statistics not initialized - returning empty list');
         return [];
       }
       console.error('Error fetching registered DAOs:', error);
@@ -249,7 +247,7 @@ export class PlatformStatsService {
           }
         });
       } catch (registryError: any) {
-        console.log('ℹ️ Contract not deployed yet - using fallback stats');
+        console.log(' Contract not deployed yet - using fallback stats');
         // Fallback to event-based discovery when contract is not available
         const daoAddresses = await this.getDAOAddressesFromEvents();
         return {
@@ -262,7 +260,7 @@ export class PlatformStatsService {
       }
       
       if (!registryInitialized[0]) {
-        console.log('⚠️ DAO registry not initialized - using event-based discovery');
+        console.log(' DAO registry not initialized - using event-based discovery');
         const daoAddresses = await this.getDAOAddressesFromEvents();
         const totalDAOs = daoAddresses.length;
         
@@ -285,7 +283,7 @@ export class PlatformStatsService {
           }
         });
       } catch (countError: any) {
-        console.log('ℹ️ Registry functions not available - using event discovery');
+        console.log(' Registry functions not available - using event discovery');
         // Fallback to event-based discovery
         const daoAddresses = await this.getDAOAddressesFromEvents();
         return {
@@ -298,11 +296,11 @@ export class PlatformStatsService {
       }
       
       const registryDAOCount = Number(totalDAOsFromRegistry[0]);
-      console.log('📊 DAOs in registry:', registryDAOCount);
+      console.log(' DAOs in registry:', registryDAOCount);
       
       if (registryDAOCount > 0) {
         // Registry has DAOs, use contract stats functions
-        console.log('✅ Using registry-based platform stats...');
+        console.log(' Using registry-based platform stats...');
         
         try {
           const result = await cedraClient.view({
@@ -331,7 +329,7 @@ export class PlatformStatsService {
             }
           });
 
-          const [totalDAOs, totalProposals, activeProposals, totalVotes, totalMembers] = result.map(val => Number(val));
+          const [totalDAOs, _totalProposals, activeProposals, totalVotes, totalMembers] = result.map(val => Number(val));
 
           return {
             totalDAOs,
@@ -343,7 +341,7 @@ export class PlatformStatsService {
         }
       } else {
         // Registry is empty, use event-based discovery (same as useFetchDAOs pattern)
-        console.log('📝 Registry empty, using event-based DAO discovery...');
+        console.log('Registry empty, using event-based DAO discovery...');
         
         const daoAddresses = await this.getDAOAddressesFromEvents();
         const totalDAOs = daoAddresses.length;
@@ -363,7 +361,7 @@ export class PlatformStatsService {
         let activeProposals = 0;
         let totalVotes = 0;
         
-        console.log(`🔄 Aggregating stats from ${totalDAOs} discovered DAOs...`);
+        console.log(` Aggregating stats from ${totalDAOs} discovered DAOs...`);
         
         for (const daoAddress of daoAddresses) {
           try {
@@ -423,7 +421,7 @@ export class PlatformStatsService {
    */
   static async getDAOAddressesFromEvents(): Promise<string[]> {
     try {
-      console.log('🔍 Discovering DAOs via Cedra GraphQL indexer...');
+      console.log(' Discovering DAOs via Cedra GraphQL indexer...');
 
       // Use Cedra GraphQL indexer to fetch DAO creation events
       const daoAddresses = await fetchDAOCreationEvents(
@@ -432,12 +430,12 @@ export class PlatformStatsService {
       );
 
       if (daoAddresses && daoAddresses.length > 0) {
-        console.log('✅ Found DAOs via indexer:', daoAddresses.length);
+        console.log(' Found DAOs via indexer:', daoAddresses.length);
         return daoAddresses;
       }
 
       // Fallback to empty array if no events found
-      console.log('ℹ️ No DAOs found in indexer');
+      console.log(' No DAOs found in indexer');
       return [];
 
     } catch (error) {

@@ -1100,7 +1100,7 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         if (membershipConfigMissing && stakeRequirements.userCurrentStake >= 5) {
           errorMessage = 'DAO membership configuration is missing. You have sufficient stake but membership validation failed. Contact the DAO creator to initialize membership settings.';
         } else if (stakeRequirements.userCurrentStake === 0 && stakeRequirements.minStakeToJoin === 0) {
-          errorMessage = `⚠️ DAO CONFIGURATION ISSUE: This DAO appears to be incorrectly configured or doesn't exist. Both your stake and minimum requirements show 0.00 MOVE. Please verify you're using the correct DAO address, or contact the DAO creator to properly initialize this DAO.`;
+          errorMessage = ` DAO CONFIGURATION ISSUE: This DAO appears to be incorrectly configured or doesn't exist. Both your stake and minimum requirements show 0.00 MOVE. Please verify you're using the correct DAO address, or contact the DAO creator to properly initialize this DAO.`;
         } else if (!stakeRequirements.isMember) {
           errorMessage += `You need to be a DAO member first. Minimum stake to join: ${stakeRequirements.minStakeToJoin.toFixed(2)} MOVE tokens. Your current stake: ${stakeRequirements.userCurrentStake.toFixed(2)} MOVE tokens.`;
         } else {
@@ -1655,12 +1655,12 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
                   </div>
                   {!balanceLoading && (hookWalletBalance || userState?.totalBalance || 0) < 0.51 && (
                     <div className="mt-2 text-xs text-red-300">
-                      ⚠️ Insufficient funds. You need {(0.51 - (hookWalletBalance || userState?.totalBalance || 0)).toFixed(2)} more MOVE.
+                       Insufficient funds. You need {(0.51 - (hookWalletBalance || userState?.totalBalance || 0)).toFixed(2)} more MOVE.
                     </div>
                   )}
                   {balanceError && (
                     <div className="mt-2 text-xs text-amber-300">
-                      ⚠️ Unable to fetch balance: {balanceError}
+                       Unable to fetch balance: {balanceError}
                     </div>
                   )}
                 </div>

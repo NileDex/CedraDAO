@@ -79,7 +79,7 @@ export const useActivities = (options: UseActivitiesOptions = {}) => {
 
       setPagination(result.pagination);
       setLastRefresh(Date.now());
-      console.log(`✅ Fetched ${result.activities.length} activities (Page ${targetPage})`);
+      console.log(` Fetched ${result.activities.length} activities (Page ${targetPage})`);
     } catch (err) {
       console.error('Error fetching activities:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch activities');
@@ -203,7 +203,7 @@ export const useGlobalActivities = (options: {
       }
 
       setPagination(result.pagination);
-      console.log(`✅ Fetched ${result.activities.length} global activities (Page ${targetPage})`);
+      console.log(` Fetched ${result.activities.length} global activities (Page ${targetPage})`);
     } catch (err) {
       console.error('Error fetching global activities:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch global activities');

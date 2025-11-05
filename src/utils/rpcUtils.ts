@@ -69,7 +69,7 @@ export const batchSafeView = async (payloads: any[], options?: { cachePrefix?: s
 };
 
 // Legacy function kept for compatibility
-export const retryWithBackoff = async (fn: () => Promise<any>, maxRetries = 3): Promise<any> => {
+export const retryWithBackoff = async (fn: () => Promise<any>, _maxRetries = 3): Promise<any> => {
   console.warn('retryWithBackoff is deprecated, use safeView/safeGetAccountResource instead');
   return managedApiCall(fn);
 };

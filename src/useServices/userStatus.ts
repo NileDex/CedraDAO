@@ -32,7 +32,7 @@ export const STATUS_DISPLAYS = {
   'Admin': { color: 'orange', icon: '🛡️' },
   'Council Member': { color: 'blue', icon: '🏛️' },
   'Member': { color: 'green', icon: '👤' },
-  'Not a member': { color: 'gray', icon: '❌' }
+  'Not a member': { color: 'gray', icon: '' }
 } as const;
 
 export function getRoleDisplayName(roleNumber: number): string {

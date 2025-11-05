@@ -85,7 +85,7 @@ export function useUserDAOs(): UseUserDAOsReturn {
         
         if (!userDAOsResponse.ok) {
           const errorText = await userDAOsResponse.text();
-          console.error('❌ get_user_daos failed:', errorText);
+          console.error('get_user_daos failed:', errorText);
           throw new Error(`Failed to fetch user DAOs: ${errorText}`);
         }
         
@@ -106,7 +106,7 @@ export function useUserDAOs(): UseUserDAOsReturn {
         
         if (!allDAOsResponse.ok) {
           const errorText = await allDAOsResponse.text();
-          console.error('❌ get_all_daos failed:', errorText);
+          console.error(' get_all_daos failed:', errorText);
           throw new Error(`Failed to fetch all DAOs: ${errorText}`);
         }
         
@@ -243,7 +243,7 @@ export function useUserDAOs(): UseUserDAOsReturn {
         });
         
       } catch (err: any) {
-        console.error('💥 Error fetching user DAOs:', err);
+        console.error(' Error fetching user DAOs:', err);
         setError(err.message || 'Failed to fetch DAOs');
         setUserDAOs({ created: [], joined: [], all: [] });
       } finally {

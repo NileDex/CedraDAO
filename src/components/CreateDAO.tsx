@@ -443,7 +443,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
       }, 3000);
       
     } catch (error) {
-      console.error('❌ Failed to create DAO:', error);
+      console.error(' Failed to create DAO:', error);
       const errorMsg = `Failed to create DAO: ${error instanceof Error ? error.message : 'Unknown error'}`;
       showAlert(errorMsg, 'error');
       setErrors({
@@ -655,7 +655,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
                     >
                       <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-gray-300 text-xs sm:text-sm mb-1">
-                        {formData.logo ? `✅ ${formData.logo.name}` : 'Upload DAO logo'}
+                        {formData.logo ? ` ${formData.logo.name}` : 'Upload DAO logo'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formData.logo ? `${(formData.logo.size / 1024).toFixed(1)}KB (compressed)` : 'Auto-compressed to ~400KB'}
@@ -684,7 +684,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
                     >
                       <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-gray-300 text-xs sm:text-sm mb-1">
-                        {formData.background ? `✅ ${formData.background.name}` : 'Upload background'}
+                        {formData.background ? ` ${formData.background.name}` : 'Upload background'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formData.background ? `${(formData.background.size / 1024).toFixed(1)}KB (compressed)` : 'Auto-compressed to ~600KB'}
@@ -968,7 +968,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
       {errors.submit && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
           <div className="text-red-300">
-            <div className="text-red-400">❌</div>
+            <div className="text-red-400"></div>
             <p className="text-sm">{errors.submit}</p>
             {errors.submit.includes('Out of gas') && (
               <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">

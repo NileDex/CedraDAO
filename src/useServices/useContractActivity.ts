@@ -8,7 +8,6 @@
  */
 
 import { cedraClient } from '../cedra_service/cedra-client';
-import { MODULE_ADDRESS } from '../cedra_service/constants';
 import { getActivityEventType } from '../services_abi/activitytracker_abi';
 import { Activity, PaginationOptions, PaginatedActivities } from './useActivityTracker';
 
@@ -39,8 +38,6 @@ export interface ContractActivityQuery {
 }
 
 export class ContractActivityService {
-  private static readonly MODULE_NAME = 'activity_tracker';
-
   /**
    * Get activities from contract events
    */
@@ -60,13 +57,13 @@ export class ContractActivityService {
         if (query.dao_address) {
           events = await cedraClient.getAccountEventsByEventType({
             accountAddress: query.dao_address,
-            eventType,
+            eventType: eventType as `${string}::${string}::${string}`,
             options: { limit: query.limit || 100, offset: query.offset || 0 },
           });
         } else {
           // Fallback to module-level event query
           events = await cedraClient.getModuleEventsByEventType({
-            eventType,
+            eventType: eventType as `${string}::${string}::${string}`,
             options: { limit: query.limit || 100, offset: query.offset || 0 },
           });
         }
@@ -75,7 +72,7 @@ export class ContractActivityService {
         throw e;
       }
 
-      console.log(`📊 Found ${events.length} contract events`);
+      console.log(` Found ${events.length} contract events`);
 
       // Filter events based on query parameters
       const filteredEvents = events.filter((event: any) => {
@@ -128,15 +125,15 @@ export class ContractActivityService {
       // Sort by timestamp descending (most recent first)
       activities.sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp));
 
-      console.log(`✅ Processed ${activities.length} contract activities`);
+      console.log(` Processed ${activities.length} contract activities`);
       return activities;
     } catch (error) {
       console.error('Error fetching contract activities:', error);
-      console.log('🔄 Contract-based activities not available, will fallback to transaction parsing');
+      console.log(' Contract-based activities not available, will fallback to transaction parsing');
       
       // Check if it's a deployment issue
       if ((error as Error).message?.includes('not found') || (error as Error).message?.includes('does not exist')) {
-        console.warn('⚠️ Activity tracker contract may not be deployed or initialized');
+        console.warn(' Activity tracker contract may not be deployed or initialized');
       }
       
       throw error;

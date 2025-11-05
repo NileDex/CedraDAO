@@ -22,9 +22,9 @@ export const truncateAddress = (address: string): string => {
 };
 
 /**
- * Validates if a string is a valid Ethereum-style address
- * @param address - The address string to validate
- * @returns True if valid address format
+  Validates if a string is a valid Ethereum-style address
+  @param address - The address string to validate
+  @returns True if valid address format
  */
 export const isValidAddress = (address: string): boolean => {
   if (!address) return false;

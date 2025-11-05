@@ -57,20 +57,20 @@ export const CedraWalletAdapterProvider: React.FC<CedraWalletAdapterProviderProp
     console.log('🎧 Setting up WalletCore event listeners');
 
     const handleConnect = (connectedAccount: AccountInfo | null) => {
-      console.log('✅ WalletCore connect event:', connectedAccount);
+      console.log(' WalletCore connect event:', connectedAccount);
       setAccount(connectedAccount);
       setConnected(true);
     };
 
     const handleDisconnect = () => {
-      console.log('❌ WalletCore disconnect event');
+      console.log(' WalletCore disconnect event');
       setAccount(null);
       setNetworkInfo(null);
       setConnected(false);
     };
 
     const handleAccountChange = (changedAccount: AccountInfo | null) => {
-      console.log('🔄 WalletCore account change event:', changedAccount);
+      console.log(' WalletCore account change event:', changedAccount);
       setAccount(changedAccount);
     };
 
@@ -101,7 +101,7 @@ export const CedraWalletAdapterProvider: React.FC<CedraWalletAdapterProviderProp
       await walletCore.connect(walletName);
       // Account and network will be set via event listeners
     } catch (error) {
-      console.error('❌ Failed to connect wallet:', error);
+      console.error(' Failed to connect wallet:', error);
       throw error;
     }
   }, [walletCore]);
@@ -111,7 +111,7 @@ export const CedraWalletAdapterProvider: React.FC<CedraWalletAdapterProviderProp
     try {
       await walletCore.disconnect();
     } catch (error) {
-      console.error('❌ Failed to disconnect wallet:', error);
+      console.error(' Failed to disconnect wallet:', error);
       throw error;
     }
   }, [walletCore]);
@@ -120,10 +120,10 @@ export const CedraWalletAdapterProvider: React.FC<CedraWalletAdapterProviderProp
     console.log('📝 Signing and submitting transaction via WalletCore');
     try {
       const result = await walletCore.signAndSubmitTransaction(transaction);
-      console.log('✅ Transaction result:', result);
+      console.log(' Transaction result:', result);
       return result;
     } catch (error) {
-      console.error('❌ Failed to sign and submit transaction:', error);
+      console.error(' Failed to sign and submit transaction:', error);
       throw error;
     }
   }, [walletCore]);
@@ -132,10 +132,10 @@ export const CedraWalletAdapterProvider: React.FC<CedraWalletAdapterProviderProp
     console.log('📝 Signing transaction via WalletCore');
     try {
       const result = await walletCore.signTransaction(args);
-      console.log('✅ Transaction signed:', result);
+      console.log(' Transaction signed:', result);
       return result;
     } catch (error) {
-      console.error('❌ Failed to sign transaction:', error);
+      console.error(' Failed to sign transaction:', error);
       throw error;
     }
   }, [walletCore]);
@@ -144,10 +144,10 @@ export const CedraWalletAdapterProvider: React.FC<CedraWalletAdapterProviderProp
     console.log('📝 Signing message via WalletCore');
     try {
       const result = await walletCore.signMessage(message);
-      console.log('✅ Message signed:', result);
+      console.log(' Message signed:', result);
       return result;
     } catch (error) {
-      console.error('❌ Failed to sign message:', error);
+      console.error(' Failed to sign message:', error);
       throw error;
     }
   }, [walletCore]);

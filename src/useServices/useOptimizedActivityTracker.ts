@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { cedraClient } from '../cedra_service/cedra-client';
 import { MODULE_ADDRESS } from '../cedra_service/constants';
 import { getViewFunction, getResourceType, getActivityEventType } from '../services_abi/activitytracker_abi';
-import { ACTIVITY_TYPES, ACTIVITY_CONFIG, getActivityInfo, getActivityStyles } from '../constants/activityConstants';
+import { ACTIVITY_TYPES, getActivityInfo, getActivityStyles } from '../constants/activityConstants';
 
 export interface Activity {
   id: string;
@@ -81,7 +81,7 @@ export class OptimizedActivityTracker {
       // Check if GlobalActivityTracker exists at module address using helper function
       const resource = await cedraClient.getAccountResource({
         accountAddress: MODULE_ADDRESS,
-        resourceType: getResourceType('GlobalActivityTracker')
+        resourceType: getResourceType('GlobalActivityTracker') as `${string}::${string}::${string}`
       });
       const ok = !!resource;
       this.initializedCache = { value: ok, timestamp: now };
@@ -91,7 +91,7 @@ export class OptimizedActivityTracker {
       try {
         await cedraClient.view({
           payload: {
-            function: getViewFunction('get_total_activities'),
+            function: getViewFunction('get_total_activities') as `${string}::${string}::${string}`,
             functionArguments: []
           }
         });
@@ -112,14 +112,14 @@ export class OptimizedActivityTracker {
     const { page = 1, limit = 20 } = options;
     
     try {
-      console.log(`🔍 Fetching DAO activities using contract ABI for: ${daoAddress}`);
+      console.log(`Fetching DAO activities using contract ABI for: ${daoAddress}`);
       
       // Check if activity tracker is initialized first
       const isInitialized = await this.isInitialized();
       console.log('Activity tracker initialized:', isInitialized);
       
       if (!isInitialized) {
-        console.log('⚠️ Activity tracker not initialized');
+        console.log('Activity tracker not initialized');
         return this.getEmptyResult(page, limit);
       }
       
@@ -135,7 +135,7 @@ export class OptimizedActivityTracker {
           // Use view function to get DAO activities
           const activityIdsResult = await cedraClient.view({
             payload: {
-              function: getViewFunction('get_dao_activities'),
+              function: getViewFunction('get_dao_activities') as `${string}::${string}::${string}`,
               functionArguments: [daoAddress]
             }
           });
@@ -143,10 +143,10 @@ export class OptimizedActivityTracker {
           this.daoActivitiesIdsCache.set(daoAddress, { ids: activityIds, timestamp: now });
         }
 
-        console.log(`📊 Found ${activityIds.length} activity IDs for DAO ${daoAddress}`);
+        console.log(`Found ${activityIds.length} activity IDs for DAO ${daoAddress}`);
 
         if (activityIds.length === 0) {
-          console.log('⚠️ No activities found for this DAO');
+          console.log('No activities found for this DAO');
           return this.getEmptyResult(page, limit);
         }
 
@@ -158,7 +158,7 @@ export class OptimizedActivityTracker {
         const endIndex = Math.min(startIndex + limit, sortedIds.length);
         const paginatedIds = sortedIds.slice(startIndex, endIndex);
 
-        console.log(`📄 Fetching activities ${startIndex}-${endIndex} of ${sortedIds.length}`);
+        console.log(`Fetching activities ${startIndex}-${endIndex} of ${sortedIds.length}`);
 
         // Fetch activity records by IDs with cache and larger batch size
         const activities: Activity[] = [];
@@ -191,7 +191,7 @@ export class OptimizedActivityTracker {
         // Sort by timestamp descending (double-check sorting)
         activities.sort((a, b) => b.timestamp - a.timestamp);
 
-        console.log(`✅ Successfully fetched ${activities.length} activities for DAO ${daoAddress}`);
+        console.log(`Successfully fetched ${activities.length} activities for DAO ${daoAddress}`);
 
         return {
           activities,
@@ -211,7 +211,7 @@ export class OptimizedActivityTracker {
         // Fallback: Use events if view function fails
         const eventType = getActivityEventType();
         const events = await cedraClient.getModuleEventsByEventType({
-          eventType,
+          eventType: eventType as `${string}::${string}::${string}`,
           options: { limit: limit * 2 } // Get more to filter by DAO
         });
 
@@ -221,7 +221,7 @@ export class OptimizedActivityTracker {
           .sort((a, b) => b.timestamp - a.timestamp)
           .slice(0, limit); // Apply limit after filtering
 
-        console.log(`✅ Fallback: fetched ${activities.length} activities via events for DAO ${daoAddress}`);
+        console.log(`Fallback: fetched ${activities.length} activities via events for DAO ${daoAddress}`);
 
         return {
           activities,
@@ -237,7 +237,7 @@ export class OptimizedActivityTracker {
       }
 
     } catch (error) {
-      console.error(`❌ Error fetching DAO activities for ${daoAddress}:`, error);
+      console.error(`Error fetching DAO activities for ${daoAddress}:`, error);
       return this.getEmptyResult(page, limit);
     }
   }
@@ -249,7 +249,7 @@ export class OptimizedActivityTracker {
     const { page = 1, limit = 20 } = options;
     
     try {
-      console.log(`🔍 Fetching user activities using contract ABI for: ${userAddress}`);
+      console.log(`Fetching user activities using contract ABI for: ${userAddress}`);
       
       const initialized = await this.isInitialized();
       if (!initialized) {
@@ -259,13 +259,13 @@ export class OptimizedActivityTracker {
       // Get activity IDs for this user using view function
       const activityIds = await cedraClient.view({
         payload: {
-          function: getViewFunction('get_user_activities'),
+          function: getViewFunction('get_user_activities') as `${string}::${string}::${string}`,
           functionArguments: [userAddress]
         }
       });
 
       const ids = activityIds[0] as number[];
-      console.log(`📊 Found ${ids.length} activity IDs for user ${userAddress}`);
+      console.log(`Found ${ids.length} activity IDs for user ${userAddress}`);
 
       if (ids.length === 0) {
         return this.getEmptyResult(page, limit);
@@ -306,7 +306,7 @@ export class OptimizedActivityTracker {
       };
 
     } catch (error) {
-      console.error(`❌ Error fetching user activities for ${userAddress}:`, error);
+      console.error(`Error fetching user activities for ${userAddress}:`, error);
       return this.getEmptyResult(page, limit);
     }
   }
@@ -318,7 +318,7 @@ export class OptimizedActivityTracker {
     const { page = 1, limit = 50 } = options;
     
     try {
-      console.log(`🔍 Fetching global activities using contract ABI`);
+      console.log(`Fetching global activities using contract ABI`);
       
       const initialized = await this.isInitialized();
       if (!initialized) {
@@ -328,13 +328,13 @@ export class OptimizedActivityTracker {
       // Get total activities count using view function
       const totalActivitiesResult = await cedraClient.view({
         payload: {
-          function: getViewFunction('get_total_activities'),
+          function: getViewFunction('get_total_activities') as `${string}::${string}::${string}`,
           functionArguments: []
         }
       });
 
       const totalActivities = Number(totalActivitiesResult[0]);
-      console.log(`📊 Total activities in system: ${totalActivities}`);
+      console.log(`Total activities in system: ${totalActivities}`);
 
       if (totalActivities === 0) {
         return this.getEmptyResult(page, limit);
@@ -344,7 +344,7 @@ export class OptimizedActivityTracker {
       const startIndex = Math.max(0, totalActivities - (page * limit));
       const endIndex = Math.max(0, totalActivities - ((page - 1) * limit));
       
-      console.log(`📄 Fetching recent activities from ${startIndex} to ${endIndex}`);
+      console.log(`Fetching recent activities from ${startIndex} to ${endIndex}`);
 
       const activities: Activity[] = [];
       
@@ -384,7 +384,7 @@ export class OptimizedActivityTracker {
       };
 
     } catch (error) {
-      console.error(`❌ Error fetching global activities:`, error);
+      console.error(`Error fetching global activities:`, error);
       return this.getEmptyResult(page, limit);
     }
   }
@@ -403,7 +403,7 @@ export class OptimizedActivityTracker {
       // Fetch activity by ID using view function
       const activityRecord = await cedraClient.view({
         payload: {
-          function: getViewFunction('get_activity_by_id'),
+          function: getViewFunction('get_activity_by_id') as `${string}::${string}::${string}`,
           functionArguments: [activityId]
         }
       });

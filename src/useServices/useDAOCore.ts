@@ -134,7 +134,7 @@ export function useCreateDAO() {
 
       // Prepare payload in exact format wallet expects
       const payload = {
-        function: DAO_FUNCTIONS.CREATE_DAO,
+        function: DAO_FUNCTIONS.CREATE_DAO as `${string}::${string}::${string}`,
         typeArguments: [] as string[],
         functionArguments: [
           params.name,
@@ -167,9 +167,9 @@ export function useCreateDAO() {
           accountAddress: MODULE_ADDRESS,
           moduleName: 'dao_core_file'
         });
-        console.log('✅ Contract verified on-chain:', module ? 'exists' : 'not found')
+        console.log(' Contract verified on-chain:', module ? 'exists' : 'not found')
       } catch (verifyError) {
-        console.error('⚠️ WARNING: Contract may not be deployed:', verifyError)
+        console.error(' WARNING: Contract may not be deployed:', verifyError)
         throw new Error('DAO contract not found on Cedra testnet. Please ensure the contract is deployed.')
       }
 
@@ -226,7 +226,7 @@ export function useCreateDAO() {
             throw retryError;
           }
 
-          console.log(`⚠️ Network error on attempt ${retryCount}, retrying...`);
+          console.log(` Network error on attempt ${retryCount}, retrying...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
         }
       }
@@ -246,27 +246,27 @@ export function useCreateDAO() {
               timeoutSecs: 45
             }
           });
-          console.log(`✅ DAO created successfully! Transaction: ${txHash}`)
+          console.log(` DAO created successfully! Transaction: ${txHash}`)
         } catch (waitError) {
-          console.warn('⚠️ Transaction confirmation timeout. DAO creation likely succeeded.')
+          console.warn(' Transaction confirmation timeout. DAO creation likely succeeded.')
         }
       }
 
       // Verify DAO creation using ABI resource type
       try {
-        const daoResource = await cedraClient.getAccountResource({
+        await cedraClient.getAccountResource({
           accountAddress: account.address,
-          resourceType: DAO_RESOURCES.DAO_INFO
+          resourceType: DAO_RESOURCES.DAO_INFO as `${string}::${string}::${string}`
         })
-        console.log('✅ DAO resource verified on-chain')
+        console.log('DAO resource verified on-chain')
       } catch (verifyError) {
-        console.warn('⚠️ DAO verification pending (indexer delay)')
+        console.warn(' DAO verification pending (indexer delay)')
       }
 
       setIsPending(false)
       return resultTx
     } catch (err: any) {
-      console.error('❌ Error in createDAO:', err)
+      console.error('Error in createDAO:', err)
 
       // Enhanced error handling
       let errorMessage = 'Failed to create DAO'
@@ -298,7 +298,7 @@ export function useCreateDAO() {
     setError(null)
 
     try {
-      console.log('📋 Creating DAO with URLs on Cedra Network')
+      console.log('Creating DAO with URLs on Cedra Network')
 
       // Validate parameters
       if (!params.name || params.name.trim().length < 3) {
@@ -309,7 +309,7 @@ export function useCreateDAO() {
       }
 
       const payload = {
-        function: DAO_FUNCTIONS.CREATE_DAO_WITH_URLS,
+        function: DAO_FUNCTIONS.CREATE_DAO_WITH_URLS as `${string}::${string}::${string}`,
         typeArguments: [],
         functionArguments: [
           params.name,
@@ -326,7 +326,7 @@ export function useCreateDAO() {
         ],
       }
 
-      console.log('🚀 Submitting DAO creation with URLs...')
+      console.log('Submitting DAO creation with URLs...')
 
       const tx = await signAndSubmitTransaction({
         payload,
@@ -340,21 +340,21 @@ export function useCreateDAO() {
 
       if (txHash) {
         try {
-          console.log('⏳ Waiting for confirmation...')
+          console.log('Waiting for confirmation...')
           await cedraClient.waitForTransaction({
             transactionHash: txHash,
             options: { checkSuccess: true, timeoutSecs: 30 }
           });
-          console.log(`✅ DAO created with URLs! Transaction: ${txHash}`)
+          console.log(`DAO created with URLs! Transaction: ${txHash}`)
         } catch (waitError) {
-          console.warn('⚠️ Confirmation timeout')
+          console.warn(' Confirmation timeout')
         }
       }
 
       setIsPending(false)
       return tx
     } catch (err: any) {
-      console.error('❌ Error creating DAO with URLs:', err)
+      console.error('Error creating DAO with URLs:', err)
 
       let errorMessage = 'Failed to create DAO with URLs'
 
@@ -375,10 +375,10 @@ export function useCreateDAO() {
       throw new Error('Wallet not connected')
     }
 
-    console.log('🧪 Testing minimal DAO creation transaction...')
+    console.log('Testing minimal DAO creation transaction...')
 
     const payload = {
-      function: DAO_FUNCTIONS.CREATE_DAO,
+      function: DAO_FUNCTIONS.CREATE_DAO as `${string}::${string}::${string}`,
       typeArguments: [],
       functionArguments: [
         "Test DAO",
@@ -395,7 +395,7 @@ export function useCreateDAO() {
       const result = await signAndSubmitTransaction({ payload } as any)
       return result
     } catch (testError) {
-      console.error('❌ Minimal transaction failed:', testError)
+      console.error('Minimal transaction failed:', testError)
       throw testError
     }
   }
@@ -538,7 +538,7 @@ export function useGetDAOInfo(daoAddress: string | null) {
         createdAt: Number(createdAt),
       })
     } catch (err) {
-      console.error('❌ Failed to fetch DAO info:', err);
+      console.error('Failed to fetch DAO info:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch DAO info'
       setError(errorMessage)
     } finally {

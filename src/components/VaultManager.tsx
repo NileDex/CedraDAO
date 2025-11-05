@@ -10,15 +10,12 @@ interface VaultManagerProps {
 const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) => {
   const {
     vaults,
-    isLoading,
     error,
     isAdmin,
     createVault,
     depositToVault,
     withdrawFromVault,
     refreshData,
-    toTokenAmount,
-    fromTokenAmount,
     KNOWN_TOKENS
   } = useVault(daoId, treasuryObject);
 

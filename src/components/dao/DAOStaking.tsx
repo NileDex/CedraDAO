@@ -466,7 +466,7 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao, sidebarCollapsed = false }
       setIsStaking(false);
 
       // Show success alert
-      showAlert(`✅ Successfully staked ${stakeAmountNumber.toFixed(2)} CEDRA in ${dao.name}!`, 'success');
+      showAlert(` Successfully staked ${stakeAmountNumber.toFixed(2)} CEDRA in ${dao.name}!`, 'success');
 
       // Refresh to get accurate on-chain state (in background, don't block UI)
       Promise.all([
@@ -567,7 +567,7 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao, sidebarCollapsed = false }
       setIsUnstaking(false);
 
       // Show success alert
-      showAlert(`✅ Successfully unstaked ${unstakeAmountNumber.toFixed(2)} CEDRA from ${dao.name}!`, 'success');
+      showAlert(` Successfully unstaked ${unstakeAmountNumber.toFixed(2)} CEDRA from ${dao.name}!`, 'success');
 
       // Refresh to get accurate on-chain state (in background, don't block UI)
       Promise.all([
@@ -658,7 +658,7 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao, sidebarCollapsed = false }
         memberSince: undefined
       });
 
-      showAlert(`✅ Successfully left ${dao.name}. You can rejoin anytime by staking.`, 'success');
+      showAlert(` Successfully left ${dao.name}. You can rejoin anytime by staking.`, 'success');
 
       await Promise.all([
         refreshOnChain(),
@@ -700,7 +700,7 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao, sidebarCollapsed = false }
 
       if (tx && (tx as any).hash) {
         await cedraClient.waitForTransaction({ transactionHash: (tx as any).hash, options: { checkSuccess: true } });
-        showAlert('✅ Staking initialized successfully! You can now stake tokens.', 'success');
+        showAlert(' Staking initialized successfully! You can now stake tokens.', 'success');
 
         // Refresh data
         await refreshOnChain();
@@ -709,7 +709,7 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao, sidebarCollapsed = false }
       console.error('Initialize staking failed:', e);
       const msg = String(e?.message || e || '');
       if (msg.includes('0x80001') || msg.includes('EOBJECT_EXISTS') || msg.includes('object already exists')) {
-        showAlert('✅ Staking is already initialized for this DAO!', 'success');
+        showAlert(' Staking is already initialized for this DAO!', 'success');
         await refreshOnChain();
       } else if (msg.includes('1')) {
         showAlert('Staking is already initialized for this DAO.', 'info');

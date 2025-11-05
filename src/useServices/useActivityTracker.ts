@@ -779,68 +779,6 @@ export class ActivityTracker {
     }
   }
 
-  /**
-   * Get recent transactions involving our module with pagination
-   */
-  private static async getModuleTransactionsPaginated(
-    options: PaginationOptions
-  ): Promise<{ transactions: any[]; pagination: any }> {
-    const { limit = 100, offset = 0, startVersion } = options;
-    
-    try {
-      const { transactions: allTransactions, pagination } = await this.getAllRecentTransactionsPaginated({
-        limit: limit * 5,
-        offset,
-        startVersion
-      });
-      
-      // Filter transactions that involve our module
-      const moduleTransactions = allTransactions.filter(tx => {
-        if (tx.type !== 'user_transaction') return false;
-        if (!tx.payload || !tx.payload.function) return false;
-        return tx.payload.function.startsWith(MODULE_ADDRESS);
-      });
-
-      // Take only what we need
-      const paginatedTransactions = moduleTransactions.slice(0, limit);
-
-      return {
-        transactions: paginatedTransactions,
-        pagination
-      };
-    } catch (error) {
-      console.error('Error fetching module transactions:', error);
-      return {
-        transactions: [],
-        pagination: {
-          nextCursor: undefined,
-          hasMore: false
-        }
-      };
-    }
-  }
-
-  /**
-   * Cache management
-   */
-  private static getCachedActivities(key: string): Activity[] | null {
-    try {
-      const cached = localStorage.getItem(key);
-      if (!cached) return null;
-
-      const parsed = JSON.parse(cached);
-      const now = Date.now();
-
-      if (now - parsed.timestamp > this.CACHE_DURATION) {
-        localStorage.removeItem(key);
-        return null;
-      }
-
-      return parsed.activities;
-    } catch {
-      return null;
-    }
-  }
 
   private static setCachedActivities(key: string, activities: Activity[]): void {
     try {
@@ -878,7 +816,7 @@ export class ActivityTracker {
       join_dao: '👥',
       vote: '🗳️',
       proposal_created: '📝',
-      proposal_executed: '✅',
+      proposal_executed: '',
       treasury_deposit: '💰',
       treasury_withdrawal: '💸',
       reward_claimed: '🏆'

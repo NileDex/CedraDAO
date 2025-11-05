@@ -62,7 +62,7 @@ const DAOCard: React.FC<DAOCardProps> = ({ dao, onClick, sidebarCollapsed = true
       };
 
       if (!isValidUrl(dao.background)) {
-        console.warn(`⚠️ Invalid background URL for ${dao.name}:`, dao.background);
+        console.warn(` Invalid background URL for ${dao.name}:`, dao.background);
         setBackgroundError(true);
         return;
       }

@@ -233,7 +233,7 @@ class APIRequestManager {
   private resetCircuitBreaker(): void {
     if (this.circuitBreakerState === 'HALF_OPEN') {
       this.circuitBreakerState = 'CLOSED';
-      console.log('✅ Circuit breaker closed - requests restored');
+      console.log(' Circuit breaker closed - requests restored');
     }
     this.failureCount = 0;
   }

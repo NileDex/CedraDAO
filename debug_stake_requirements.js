@@ -24,10 +24,10 @@ async function checkStakeRequirements(daoAddress, userAddress) {
       accountAddress: daoAddress,
       resourceType: `${MODULE_ADDRESS}::dao_core::DAOInfo`
     });
-    console.log("✅ DAO Info found:", daoInfo);
+    console.log(" DAO Info found:", daoInfo);
     console.log("DAO Creator:", daoInfo.data.creator);
   } catch (error) {
-    console.log("❌ DAO Info not found:", error.message);
+    console.log(" DAO Info not found:", error.message);
   }
   
   // Check what resources actually exist at this address
@@ -36,7 +36,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     const accountResources = await aptos.getAccountResources({
       accountAddress: daoAddress
     });
-    console.log("✅ Found resources:");
+    console.log(" Found resources:");
     accountResources.forEach(resource => {
       if (resource.type.includes(MODULE_ADDRESS)) {
         console.log(`  - ${resource.type}`);
@@ -46,7 +46,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
       console.log("  No DAO-related resources found! This DAO may not be properly initialized.");
     }
   } catch (error) {
-    console.log("❌ Error getting account resources:", error.message);
+    console.log(" Error getting account resources:", error.message);
   }
   
   try {
@@ -57,9 +57,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
         accountAddress: daoAddress,
         resourceType: `${MODULE_ADDRESS}::membership::MembershipConfig`
       });
-      console.log("✅ MembershipConfig found:", membershipConfig);
+      console.log(" MembershipConfig found:", membershipConfig);
     } catch (error) {
-      console.log("❌ MembershipConfig NOT found:", error.message);
+      console.log(" MembershipConfig NOT found:", error.message);
     }
     
     // Test each view function individually
@@ -78,9 +78,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
             functionArguments: [daoAddress]
           }
         });
-        console.log(`✅ ${desc}: ${result[0]} octas (${Number(result[0]) / 1e8} MOVE)`);
+        console.log(` ${desc}: ${result[0]} octas (${Number(result[0]) / 1e8} MOVE)`);
       } catch (error) {
-        console.log(`❌ ${desc} failed:`, error.message);
+        console.log(` ${desc} failed:`, error.message);
       }
     }
     
@@ -102,9 +102,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
             functionArguments: [daoAddress, userAddress]
           }
         });
-        console.log(`✅ ${desc}: ${result[0]} octas (${Number(result[0]) / 1e8} MOVE)`);
+        console.log(` ${desc}: ${result[0]} octas (${Number(result[0]) / 1e8} MOVE)`);
       } catch (error) {
-        console.log(`❌ ${desc} failed:`, error.message);
+        console.log(` ${desc} failed:`, error.message);
       }
     }
     
@@ -117,9 +117,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
           functionArguments: [userAddress]
         }
       });
-      console.log(`✅ Global staked balance: ${globalStake[0]} octas (${Number(globalStake[0]) / 1e8} MOVE)`);
+      console.log(` Global staked balance: ${globalStake[0]} octas (${Number(globalStake[0]) / 1e8} MOVE)`);
     } catch (error) {
-      console.log(`❌ Global staked balance failed:`, error.message);
+      console.log(` Global staked balance failed:`, error.message);
     }
     
     // Check if user has a staker profile at all
@@ -131,13 +131,13 @@ async function checkStakeRequirements(daoAddress, userAddress) {
           functionArguments: [userAddress]
         }
       });
-      console.log(`✅ Is staker (has profile): ${isStaker[0]}`);
+      console.log(` Is staker (has profile): ${isStaker[0]}`);
       
       if (!isStaker[0]) {
-        console.log("❌ User has no staking profile - they have never staked anything!");
+        console.log(" User has no staking profile - they have never staked anything!");
       }
     } catch (error) {
-      console.log(`❌ Staker profile check failed:`, error.message);
+      console.log(` Staker profile check failed:`, error.message);
     }
     
     // Check wallet balance
@@ -150,9 +150,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
           functionArguments: [userAddress]
         }
       });
-      console.log(`✅ Wallet MOVE balance: ${balance[0]} octas (${Number(balance[0]) / 1e8} MOVE)`);
+      console.log(` Wallet MOVE balance: ${balance[0]} octas (${Number(balance[0]) / 1e8} MOVE)`);
     } catch (error) {
-      console.log(`❌ Wallet balance check failed:`, error.message);
+      console.log(` Wallet balance check failed:`, error.message);
     }
     
     // Test admin functions
@@ -164,9 +164,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
           functionArguments: [daoAddress, userAddress]
         }
       });
-      console.log(`✅ Is Admin: ${isAdmin[0]}`);
+      console.log(` Is Admin: ${isAdmin[0]}`);
     } catch (error) {
-      console.log(`❌ Admin check failed:`, error.message);
+      console.log(` Admin check failed:`, error.message);
     }
     
     // Test membership functions
@@ -184,9 +184,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
             functionArguments: [daoAddress, userAddress]
           }
         });
-        console.log(`✅ ${desc}: ${result[0]}`);
+        console.log(` ${desc}: ${result[0]}`);
       } catch (error) {
-        console.log(`❌ ${desc} failed:`, error.message);
+        console.log(` ${desc} failed:`, error.message);
       }
     }
     
@@ -199,9 +199,9 @@ async function checkStakeRequirements(daoAddress, userAddress) {
           functionArguments: [daoAddress, userAddress]
         }
       });
-      console.log(`✅ Can create proposals (proposal module): ${canCreateProposals[0]}`);
+      console.log(` Can create proposals (proposal module): ${canCreateProposals[0]}`);
     } catch (error) {
-      console.log(`❌ Proposal creation check failed:`, error.message);
+      console.log(` Proposal creation check failed:`, error.message);
     }
     
   } catch (error) {

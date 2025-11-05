@@ -70,10 +70,10 @@ export const CedraWalletProvider: React.FC<CedraWalletProviderProps> = ({
       // For wallets that don't implement Cedra standard yet, try getting account directly
       const accountFeature = selectedWallet.features['cedra:account'];
       if (accountFeature) {
-        console.log('✅ Found cedra:account feature');
+        console.log(' Found cedra:account feature');
         try {
           const accountInfo = await accountFeature.account();
-          console.log('📊 Account info from cedra:account:', accountInfo);
+          console.log(' Account info from cedra:account:', accountInfo);
 
           if (accountInfo) {
             setWallet(selectedWallet);
@@ -91,11 +91,11 @@ export const CedraWalletProvider: React.FC<CedraWalletProviderProps> = ({
               console.log('🌐 Network info:', networkInfo);
             }
 
-            console.log('✅ Wallet connected successfully via cedra:account');
+            console.log(' Wallet connected successfully via cedra:account');
             return;
           }
         } catch (err) {
-          console.log('⚠️ cedra:account failed, trying cedra:connect:', err);
+          console.log(' cedra:account failed, trying cedra:connect:', err);
         }
       }
 
@@ -131,7 +131,7 @@ export const CedraWalletProvider: React.FC<CedraWalletProviderProps> = ({
         });
         setConnected(true);
 
-        console.log('✅ Wallet connected successfully:', { address });
+        console.log(' Wallet connected successfully:', { address });
 
         // Get network info
         const networkFeature = selectedWallet.features['cedra:network'];
@@ -141,12 +141,12 @@ export const CedraWalletProvider: React.FC<CedraWalletProviderProps> = ({
           console.log('🌐 Network info:', networkInfo);
         }
       } else {
-        console.log('❌ Connection was not approved or missing args');
+        console.log(' Connection was not approved or missing args');
         console.log('Status check - result:', result);
         throw new Error('Connection was rejected or failed');
       }
     } catch (error) {
-      console.error('❌ Failed to connect wallet:', error);
+      console.error(' Failed to connect wallet:', error);
       throw error;
     } finally {
       setConnecting(false);
@@ -194,7 +194,7 @@ export const CedraWalletProvider: React.FC<CedraWalletProviderProps> = ({
     const signAndSubmitFeature = (wallet.features as any)['cedra:signAndSubmitTransaction'];
 
     if ((hasPayload || isBuiltTransaction) && signAndSubmitFeature) {
-      console.log('✅ Using cedra:signAndSubmitTransaction feature');
+      console.log(' Using cedra:signAndSubmitTransaction feature');
 
       let transactionToSend = transaction;
 
@@ -278,7 +278,7 @@ export const CedraWalletProvider: React.FC<CedraWalletProviderProps> = ({
       } catch {}
 
       if (result.status !== UserResponseStatus.APPROVED) {
-        console.error('❌ Transaction rejected by wallet:', {
+        console.error(' Transaction rejected by wallet:', {
           status: result.status,
           result: result,
         });
@@ -291,7 +291,7 @@ export const CedraWalletProvider: React.FC<CedraWalletProviderProps> = ({
       }
       throw new Error('Transaction signing failed: missing args');
     } catch (error: any) {
-      console.error('❌ Error in signTransaction:', {
+      console.error(' Error in signTransaction:', {
         error: error,
         message: error?.message,
         stack: error?.stack,

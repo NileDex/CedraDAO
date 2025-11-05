@@ -69,7 +69,7 @@ const FeaturedDAOs: React.FC<FeaturedDAOsProps> = ({ onDAOSelect, onCreateDAO, s
       {error && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
           <div className="text-red-300 text-sm">
-            <span className="text-red-400">❌</span> {error}
+            <span className="text-red-400"></span> {error}
           </div>
         </div>
       )}

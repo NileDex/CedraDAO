@@ -48,42 +48,12 @@ function App() {
     }
   });
 
-  // Helper: Create a safe placeholder DAO from just an id (for deep link restore)
-  const createPlaceholderDAO = (id: string): DAO => ({
-    id,
-    name: id.slice(0, 10) + '...',
-    description: '',
-    image: '',
-    background: '',
-    subname: '',
-    chain: 'movement',
-    tokenName: '',
-    tokenSymbol: '',
-    initialSupply: '0',
-    minimumStake: '0',
-    votingPeriod: '0',
-    quorum: '0',
-    threshold: '0',
-    proposalThreshold: '0',
-    adminRole: '',
-    councils: [],
-    tvl: '0',
-    proposals: 0,
-    members: 0,
-    established: '',
-    category: 'community',
-    isFollowing: false,
-  });
-
   // Clear hash from URL on mount
   useEffect(() => {
     if (window.location.hash) {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
-
-  // Disable hash routing; rely solely on localStorage persistence (no URL changes)
-  const updateHash = (_view: string, _id?: string | null, _tab?: string) => {};
 
   const handleDAOSelect = (dao: DAO) => {
     setSelectedDAO(dao);
@@ -99,7 +69,7 @@ function App() {
     // No URL hash updates
   };
 
-  const handleDaoTabChange = (daoId: string, tabId: string) => {
+  const handleDaoTabChange = (_daoId: string, tabId: string) => {
     setDaoActiveTab(tabId);
     // No URL hash updates
   };
@@ -174,7 +144,7 @@ function App() {
               <h1 className="text-3xl font-bold text-white mb-4">Explore DAOs</h1>
               <p className="text-gray-400 mb-8">Advanced search and discovery features</p>
               <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl flex items-center justify-center mx-auto">
-                <span className="text-2xl">🔍</span>
+                <span className="text-2xl">Search</span>
               </div>
               <p className="text-gray-500 mt-4">Coming soon...</p>
             </div>

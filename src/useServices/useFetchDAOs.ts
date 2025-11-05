@@ -12,21 +12,10 @@ import { cedraClient } from '../cedra_service/cedra-client'
 import { MODULE_ADDRESS } from '../cedra_service/constants'
 import { DAO } from '../types/dao'
 import { fetchDAOCreationEvents } from '../services/graphqlService'
-import { DAO_FUNCTIONS, DAO_RESOURCES, DAO_EVENTS } from '../services_abi/dao_core'
+import { DAO_FUNCTIONS, DAO_EVENTS } from '../services_abi/dao_core'
 
 // Utility function to add delays for rate limiting
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-interface DAOCreatedEvent {
-  movedao_addrx: string
-  creator: string
-  name: string
-  subname: string
-  description: string
-  created_at: string
-  initial_council_size: string
-}
-
 
 export function useFetchCreatedDAOs() {
   // Load cache immediately on mount for instant display
@@ -114,53 +103,8 @@ export function useFetchCreatedDAOs() {
       const optimized = urlObj.toString()
       return optimized
     } catch (error) {
-      console.warn('⚠️ URL optimization failed:', error)
+      console.warn('URL optimization failed:', error)
       return url // Return original if URL parsing fails
-    }
-  }
-
-  const preloadImage = (url: string): Promise<void> => {
-    return new Promise((resolve) => {
-      if (!url || !url.startsWith('http')) {
-        resolve()
-        return
-      }
-      
-      const img = new Image()
-      
-      img.onload = () => {
-        resolve()
-      }
-      
-      img.onerror = () => {
-        resolve() // Don't fail on image errors
-      }
-      
-      // Add performance hints
-      img.loading = 'eager'
-      img.fetchPriority = 'high'
-      img.src = url
-      
-      // Quick timeout - don't wait too long for external images
-      setTimeout(() => {
-        resolve()
-      }, 1000) // Reduced to 1 second, no logging
-    })
-  }
-
-  const preloadImagesBatch = async (urls: string[]): Promise<void> => {
-    const validUrls = urls.filter(url => url && url.startsWith('http'))
-    if (validUrls.length === 0) return
-    
-    // Preload in batches of 3 for better performance
-    const batchSize = 3
-    const batches = []
-    for (let i = 0; i < validUrls.length; i += batchSize) {
-      batches.push(validUrls.slice(i, i + batchSize))
-    }
-    
-    for (const batch of batches) {
-      await Promise.allSettled(batch.map(preloadImage))
     }
   }
 
@@ -273,7 +217,7 @@ export function useFetchCreatedDAOs() {
           imageCache.set(cacheKey, dataUrl);
           return dataUrl;
         } catch (conversionError) {
-          console.error('❌ Image conversion failed:', conversionError);
+          console.error('Image conversion failed:', conversionError);
           const fallback = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iIzM3NDE1MSIvPgo8L3N2Zz4K';
           imageCache.set(cacheKey, fallback);
           return fallback;
@@ -285,7 +229,7 @@ export function useFetchCreatedDAOs() {
       imageCache.set(cacheKey, '');
       return ''
     } catch (error) {
-      console.error('❌ Error converting bytes to image URL:', error);
+      console.error('Error converting bytes to image URL:', error);
       return ''
     }
   }
@@ -303,7 +247,7 @@ export function useFetchCreatedDAOs() {
       
       const daoInfo = await cedraClient.view({
         payload: {
-          function: DAO_FUNCTIONS.GET_DAO_INFO,
+          function: DAO_FUNCTIONS.GET_DAO_INFO as `${string}::${string}::${string}`,
           functionArguments: [address],
         },
       })
@@ -392,7 +336,7 @@ export function useFetchCreatedDAOs() {
       const batchResults = await Promise.allSettled(batchPromises)
       
       // Add successful results to foundDAOs
-      batchResults.forEach((result, index) => {
+      batchResults.forEach((result) => {
         if (result.status === 'fulfilled' && result.value !== null) {
           foundDAOs.push(result.value)
         }
@@ -444,98 +388,6 @@ export function useFetchCreatedDAOs() {
     }
   }
 
-  // Helper function to check if an address has a DAO resource
-  const checkDAOAtAddress = async (_address: string): Promise<DAO | null> => {
-    try {
-      
-      // Get the DAOInfo resource directly (similar to vaccine attestation approach)
-      const resource = await cedraClient.getAccountResource({
-        accountAddress: _address,
-        resourceType: DAO_RESOURCES.DAO_INFO
-      })
-      
-      
-      if (resource) {
-        // Get detailed DAO info using the view function with subname support
-        const daoInfo = await cedraClient.view({
-          payload: {
-            function: DAO_FUNCTIONS.GET_DAO_INFO,
-            functionArguments: [_address],
-          },
-        })
-        
-        // Handle different DAO info formats - according to ABI: (name, subname, description, logo_is_url, logo_url, logo_data, bg_is_url, bg_url, bg_data, created_at)
-        let name, subname, description, logoIsUrl, logoUrl, logoData, bgIsUrl, bgUrl, bgData, createdAt;
-        if (daoInfo.length >= 10) {
-          // New format with subname: (name, subname, description, logoIsUrl, logoUrl, logoData, bgIsUrl, bgUrl, bgData, createdAt)
-          [name, subname, description, logoIsUrl, logoUrl, logoData, bgIsUrl, bgUrl, bgData, createdAt] = daoInfo;
-          const subLen = typeof subname === 'string' ? (subname as string).length : 0
-        } else if (daoInfo.length >= 9) {
-          // Format without subname: (name, description, logoIsUrl, logoUrl, logoData, bgIsUrl, bgUrl, bgData, createdAt)
-          [name, description, logoIsUrl, logoUrl, logoData, bgIsUrl, bgUrl, bgData, createdAt] = daoInfo;
-          subname = undefined;
-        } else {
-          // Legacy format: (name, description, logo, background, createdAt)
-          [name, description, logoData, bgData, createdAt] = daoInfo;
-          logoIsUrl = false;
-          bgIsUrl = false;
-          logoUrl = '';
-          bgUrl = '';
-          subname = undefined;
-        }
-
-        // Convert possible bytes (vector<u8> or 0x-hex) to URLs
-        let logoUrl_final: string;
-        if (logoIsUrl) {
-          logoUrl_final = optimizeImageUrl(logoUrl as string);
-        } else {
-          logoUrl_final = toImageUrl(logoData);
-        }
-        
-        let backgroundUrl_final: string;
-        if (bgIsUrl) {
-          backgroundUrl_final = optimizeImageUrl(bgUrl as string);
-        } else {
-          backgroundUrl_final = toImageUrl(bgData);
-        }
-
-        // Fetch real DAO statistics
-        const stats = await fetchDAOStats(_address)
-        
-        const subnameStr = typeof subname === 'string' ? (subname as string) : undefined;
-        const dao: DAO = {
-          id: _address,
-          name: name as string,
-          description: description as string,
-          image: logoUrl_final, // Only use actual compressed logo, no fallback
-          background: backgroundUrl_final,
-          subname: subnameStr,
-          chain: subnameStr || 'Movement',
-          tokenName: subnameStr || 'DAO',
-          tokenSymbol: subnameStr || 'DAO',
-          tvl: '0',
-          proposals: stats.proposals,
-          members: stats.members,
-          established: new Date(parseInt(createdAt as string) * 1000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }) + ' at ' + new Date(parseInt(createdAt as string) * 1000).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-          }),
-          category: 'featured',
-          isFollowing: false
-        }
-        
-        return dao
-      }
-    } catch (error) {
-      return null
-    }
-    
-    return null
-  }
 
   const fetchDAOs = async (forceRefresh = false) => {
     // Enhanced caching with stale-while-revalidate pattern
@@ -585,7 +437,7 @@ export function useFetchCreatedDAOs() {
         
         const totalDAOs = await cedraClient.view({
           payload: {
-            function: DAO_FUNCTIONS.GET_TOTAL_DAO_COUNT,
+            function: DAO_FUNCTIONS.GET_TOTAL_DAO_COUNT as `${string}::${string}::${string}`,
             functionArguments: [],
           },
         })
@@ -594,7 +446,7 @@ export function useFetchCreatedDAOs() {
           
           const allAddresses = await cedraClient.view({
             payload: {
-              function: DAO_FUNCTIONS.GET_ALL_DAO_ADDRESSES,
+              function: DAO_FUNCTIONS.GET_ALL_DAO_ADDRESSES as `${string}::${string}::${string}`,
               functionArguments: [],
             },
           })
@@ -632,7 +484,7 @@ export function useFetchCreatedDAOs() {
         } else {
         }
       } catch (registryError) {
-        console.warn('⚠️ Registry method failed, falling back to event discovery:', registryError)
+        console.warn(' Registry method failed, falling back to event discovery:', registryError)
       }
 
       // Fallback: GraphQL indexer-based discovery if registry fails
@@ -652,7 +504,7 @@ export function useFetchCreatedDAOs() {
           } else {
           }
         } catch (eventError) {
-          console.warn('⚠️ GraphQL indexer discovery failed:', eventError)
+          console.warn('GraphQL indexer discovery failed:', eventError)
         }
       }
       
@@ -679,7 +531,7 @@ export function useFetchCreatedDAOs() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch DAOs via SDK'
       setError(errorMessage)
-      console.error('❌ Error fetching DAOs:', err)
+      console.error('Error fetching DAOs:', err)
     } finally {
       setIsLoading(false)
     }
@@ -718,21 +570,21 @@ export function useDAOStats() {
       
       // Debug: If no DAOs found, try to check if the problem is with DAO discovery
       if (fetchedDAOs.length === 0) {
-        console.warn('⚠️ No DAOs found by main fetcher. This could mean:')
+        console.warn(' No DAOs found by main fetcher. This could mean:')
         console.warn('   1. No DAOs have been created yet')
         console.warn('   2. Event indexing is not working')
         console.warn('   3. There is an issue with the MODULE_ADDRESS or event types')
         
         // Try to test if view functions work by testing against MODULE_ADDRESS itself
         try {
-          const testMembersRes = await cedraClient.view({
+          await cedraClient.view({
             payload: {
-              function: `${MODULE_ADDRESS}::membership::total_members`,
+              function: `${MODULE_ADDRESS}::membership::total_members` as `${string}::${string}::${string}`,
               functionArguments: [MODULE_ADDRESS]
             }
           })
         } catch (e) {
-          console.warn('❌ View function test failed:', e)
+          console.warn(' View function test failed:', e)
           console.warn('   This suggests either:')
           console.warn('   • No DAO exists at MODULE_ADDRESS (expected)')
           console.warn('   • Contract is not deployed properly')

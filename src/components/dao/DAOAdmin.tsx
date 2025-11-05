@@ -190,16 +190,16 @@ const DAOAdmin: React.FC<AdminProps> = ({ dao }) => {
               } else {
               }
             } else {
-              console.warn('⚠️ No transaction version found in creation event');
+              console.warn(' No transaction version found in creation event');
             }
           } catch (txnError) {
-            console.warn('⚠️ Could not extract council from transaction details:', txnError);
+            console.warn(' Could not extract council from transaction details:', txnError);
           }
         } else {
-          console.warn('⚠️ No DAO creation event found for this DAO');
+          console.warn(' No DAO creation event found for this DAO');
         }
       } catch (eventError) {
-        console.warn('⚠️ Could not fetch DAO creation events:', eventError);
+        console.warn(' Could not fetch DAO creation events:', eventError);
       }
       
       // If creator still unknown, try events again directly
