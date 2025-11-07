@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Upload, Plus, X, Sparkles, Shield, Settings, DollarSign, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Upload, Plus, X, Sparkles, Shield, Settings, DollarSign, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useWallet } from '../contexts/CedraWalletProvider';
 import { useCreateDAO, useCheckSubnameAvailability } from '../useServices/useDAOCore';
 import { useAlert } from './alert/AlertContext';
+import { uploadToPinata } from '../services/pinataService';
+import { cedraClient } from '../cedra_service/cedra-client';
+import { MODULE_ADDRESS } from '../cedra_service/constants';
 
 interface CreateDAOProps {
   onBack: () => void;
@@ -14,7 +17,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
     name: '',
     subname: '',
     description: '',
-    chain: 'movement',
+    chain: 'cedra',
     minimumStake: '6',
     logo: null as File | null,
     background: null as File | null,
@@ -41,12 +44,6 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
   const { createDAO, createDAOWithUrls, testMinimalTransaction, isPending: isDAOPending, error: daoError } = useCreateDAO();
   const { checkSubname, isPending: isCheckingSubname } = useCheckSubnameAvailability();
 
-  const steps = [
-    { id: 1, title: 'Basic Info', icon: Sparkles },
-    { id: 2, title: 'Governance', icon: Settings },
-    { id: 3, title: 'Review', icon: Shield },
-  ];
-
   // Validate subname availability
   const validateSubname = async (subname: string): Promise<string | null> => {
     if (!subname.trim()) return 'Subname is required';
@@ -69,6 +66,12 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
       return 'Unable to verify subname availability. Please try again.';
     }
   };
+
+  const steps = [
+    { id: 1, title: 'Basic Info', icon: Sparkles },
+    { id: 2, title: 'Governance', icon: Settings },
+    { id: 3, title: 'Review', icon: Shield },
+  ];
 
   // Aggressive but quality-preserving compression for blockchain storage
   const compressImage = (file: File, maxSizeKB: number, quality: number = 0.9, mimeOverride?: string): Promise<File> => {
@@ -201,20 +204,38 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
       setErrors({...errors, [type]: 'File size must be less than 10MB'});
       return;
     }
-    
+
     if (!file.type.startsWith('image/')) {
       setErrors({...errors, [type]: 'File must be an image'});
       return;
     }
 
-    // Lightly optimize images while preserving quality (skip if already small)
+    // Upload to Pinata IPFS - stay in upload mode, just store IPFS URL internally
     try {
-      const optimized = await optimizeImage(file, type);
-      
-      setFormData({...formData, [type]: optimized});
+      showAlert(`Uploading ${type} to IPFS...`, 'info');
+
+      const result = await uploadToPinata(file);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      // Store IPFS URL in the corresponding URL field, but DON'T switch modes
+      const urlField = type === 'logo' ? 'logoUrl' : 'backgroundUrl';
+      setFormData({
+        ...formData,
+        [type]: file,  // Keep the file reference for display
+        [urlField]: result.ipfsUrl  // Store IPFS URL internally
+        // useUrls stays false - we're still in upload mode
+      });
+
       setErrors({...errors, [type]: ''});
+      showAlert(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded to IPFS successfully!`, 'success');
+
     } catch (error) {
-      setErrors({...errors, [type]: 'Failed to compress image. Please try a different file.'});
+      console.error(`Failed to upload ${type}:`, error);
+      setErrors({...errors, [type]: `Failed to upload to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`});
+      showAlert(`Failed to upload ${type} to IPFS`, 'error');
     }
   };
 
@@ -234,6 +255,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
 
         // Validate images based on mode
         if (formData.useUrls) {
+          // URL mode - require manual URL inputs
           if (!formData.logoUrl.trim()) newErrors.logoUrl = 'Logo URL is required';
           if (!formData.backgroundUrl.trim()) newErrors.backgroundUrl = 'Background URL is required';
           // Basic URL validation
@@ -243,6 +265,10 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
           try {
             if (formData.backgroundUrl) new URL(formData.backgroundUrl);
           } catch { newErrors.backgroundUrl = 'Invalid background URL format'; }
+        } else {
+          // Upload mode - require either files uploaded or IPFS URLs from uploads
+          if (!formData.logo && !formData.logoUrl) newErrors.logo = 'Logo is required';
+          if (!formData.background && !formData.backgroundUrl) newErrors.background = 'Background is required';
         }
         break;
 
@@ -264,21 +290,34 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
     e.preventDefault();
 
     if (!validateStep(3)) return;
-    
+
     if (!account) {
       showAlert('Please connect your wallet to create a DAO', 'error');
       setErrors({...errors, submit: 'Please connect your wallet to create a DAO'});
       return;
     }
-    
+
+    // Validate subname availability before submitting
+    const subnameError = await validateSubname(formData.subname);
+    if (subnameError) {
+      showAlert(subnameError, 'error');
+      setErrors({...errors, subname: subnameError});
+      setCurrentStep(1); // Go back to step 1 to fix subname
+      return;
+    }
+
     setIsSubmitting(true);
     setErrors({});
     setTransactionHash('');
-    
+
     try {
-      // Check if using URL mode or binary mode
-      if (formData.useUrls) {
+      // Check if using URL mode or if files were uploaded to IPFS
+      // If logoUrl or backgroundUrl exist, use URL-based creation regardless of mode
+      const hasUploadedFiles = formData.logoUrl || formData.backgroundUrl;
+
+      if (formData.useUrls || hasUploadedFiles) {
         // URL-based creation - much faster!
+        // Uses IPFS URLs from either manual URL input or file uploads
 
         const createDAOParams = {
           name: formData.name.trim(),
@@ -310,8 +349,8 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
         }
 
         setShowSuccessModal({
-          title: 'All done',
-          message: `DAO "${formData.name}" created successfully`,
+          title: 'DAO Created Successfully!',
+          message: `"${formData.name}" has been created on Cedra blockchain. It may take 1-2 minutes to appear in the DAO list while the indexer processes your transaction.`,
         });
 
         // Optimistically broadcast a lightweight DAO object so list updates instantly
@@ -323,7 +362,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
             image: formData.logoUrl.trim(),
             background: formData.backgroundUrl.trim(),
             subname: formData.subname.trim(),
-            chain: formData.subname.trim() || 'Movement',
+            chain: formData.subname.trim() || 'Cedra',
             tokenName: formData.subname.trim() || 'DAO',
             tokenSymbol: formData.subname.trim() || 'DAO',
             tvl: '0',
@@ -391,10 +430,10 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
       if (txHash) {
         setTransactionHash(txHash)
       }
-      
+
         setShowSuccessModal({
-          title: 'All done',
-          message: `DAO "${formData.name}" created successfully`,
+          title: 'DAO Created Successfully!',
+          message: `"${formData.name}" has been created on Cedra blockchain. It may take 1-2 minutes to appear in the DAO list while the indexer processes your transaction.`,
         });
 
         // Optimistic broadcast for binary mode as well (no URLs available; images will resolve after refetch)
@@ -406,7 +445,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
             image: '',
             background: '',
             subname: formData.subname.trim(),
-            chain: formData.subname.trim() || 'Movement',
+            chain: formData.subname.trim() || 'Cedra',
             tokenName: formData.subname.trim() || 'DAO',
             tokenSymbol: formData.subname.trim() || 'DAO',
             tvl: '0',
@@ -426,7 +465,7 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
           name: '',
           subname: '',
           description: '',
-          chain: 'movement',
+          chain: 'cedra',
           minimumStake: '6',
           logo: null,
           background: null,
@@ -643,23 +682,29 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
                       </div>
                     </>
                   ) : (
-                    // File upload mode
+                    // File upload mode - Now uploads to IPFS automatically
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                           DAO Logo
                         </label>
-                    <div 
+                    <div
                       className={`border-2 border-dashed rounded-xl p-4 sm:p-6 text-center hover:border-indigo-500/50 transition-colors cursor-pointer ${formData.logo ? 'border-green-500/50 bg-green-500/10' : 'border-white/20'}`}
                       onClick={() => document.getElementById('logo-upload')?.click()}
                     >
-                      <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-300 text-xs sm:text-sm mb-1">
-                        {formData.logo ? ` ${formData.logo.name}` : 'Upload DAO logo'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formData.logo ? `${(formData.logo.size / 1024).toFixed(1)}KB (compressed)` : 'Auto-compressed to ~400KB'}
-                      </p>
+                      {formData.logo && formData.logoUrl ? (
+                        <>
+                          <img src={formData.logoUrl} alt="Logo preview" className="w-20 h-20 object-cover mx-auto mb-2 rounded-lg" />
+                          <p className="text-green-300 text-xs sm:text-sm mb-1">✓ {formData.logo.name}</p>
+                          <p className="text-xs text-gray-500">Uploaded to IPFS</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-300 text-xs sm:text-sm mb-1">Upload DAO logo</p>
+                          <p className="text-xs text-gray-500">Will be uploaded to IPFS</p>
+                        </>
+                      )}
                     </div>
                     <input
                       id="logo-upload"
@@ -673,22 +718,28 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
                     />
                     {errors.logo && <p className="text-red-400 text-sm mt-1">{errors.logo}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Background Image
                     </label>
-                    <div 
+                    <div
                       className={`border-2 border-dashed rounded-xl p-4 sm:p-6 text-center hover:border-indigo-500/50 transition-colors cursor-pointer ${formData.background ? 'border-green-500/50 bg-green-500/10' : 'border-white/20'}`}
                       onClick={() => document.getElementById('background-upload')?.click()}
                     >
-                      <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-300 text-xs sm:text-sm mb-1">
-                        {formData.background ? ` ${formData.background.name}` : 'Upload background'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formData.background ? `${(formData.background.size / 1024).toFixed(1)}KB (compressed)` : 'Auto-compressed to ~600KB'}
-                      </p>
+                      {formData.background && formData.backgroundUrl ? (
+                        <>
+                          <img src={formData.backgroundUrl} alt="Background preview" className="w-full h-24 object-cover mx-auto mb-2 rounded-lg" />
+                          <p className="text-green-300 text-xs sm:text-sm mb-1">✓ {formData.background.name}</p>
+                          <p className="text-xs text-gray-500">Uploaded to IPFS</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-300 text-xs sm:text-sm mb-1">Upload background</p>
+                          <p className="text-xs text-gray-500">Will be uploaded to IPFS</p>
+                        </>
+                      )}
                     </div>
                     <input
                       id="background-upload"
@@ -916,7 +967,18 @@ const CreateDAO: React.FC<CreateDAOProps> = ({ onBack }) => {
         })}
       </div>
 
-      {/* Wallet Connection Status removed by request */}
+      {/* Important Notice about One DAO per Wallet */}
+      <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+        <div className="flex items-start space-x-3">
+          <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+          <div className="text-yellow-300">
+            <h4 className="font-medium mb-1">One DAO per Wallet Address</h4>
+            <p className="text-sm">
+              Each wallet address can create and manage only <strong>ONE DAO</strong>. If you create a new DAO from this wallet, it will replace any existing DAO at your address ({account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : ''}). To create multiple DAOs, please use different wallet addresses.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Transaction Hash (if available) */}
       {transactionHash && (

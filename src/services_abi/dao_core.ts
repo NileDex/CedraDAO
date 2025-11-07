@@ -1091,7 +1091,10 @@ export const DAO_FUNCTIONS = {
   GET_DAO_INFO: getFunction('get_dao_info_with_subname'),
   GET_TOTAL_DAO_COUNT: getFunction('get_total_dao_count'),
   GET_ALL_DAO_ADDRESSES: getFunction('get_all_dao_addresses'),
-  CHECK_SUBNAME: getFunction('check_subname_available'),
+  IS_SUBNAME_TAKEN: getFunction('is_subname_taken'),
+  GET_SUBNAME_OWNER: getFunction('get_subname_owner'),
+  DAO_EXISTS: getFunction('dao_exists'),
+  IS_REGISTRY_INITIALIZED: getFunction('is_registry_initialized'),
 } as const;
 
 export const DAO_RESOURCES = {

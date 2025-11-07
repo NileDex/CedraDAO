@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Home, Plus, Search, Users, Settings, TrendingUp, ChevronLeft, ChevronRight, Rocket } from 'lucide-react';
+import { Home, Plus, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import mainLogo from '../assets/Logonew.png';
 
 interface SidebarProps {

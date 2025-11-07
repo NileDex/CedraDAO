@@ -7,12 +7,12 @@
  * @see https://docs.cedra.network/sdks/typescript-sdk
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { cedraClient } from '../cedra_service/cedra-client'
 import { MODULE_ADDRESS } from '../cedra_service/constants'
 import { DAO } from '../types/dao'
 import { fetchDAOCreationEvents } from '../services/graphqlService'
-import { DAO_FUNCTIONS, DAO_EVENTS } from '../services_abi/dao_core'
+import { DAO_FUNCTIONS } from '../services_abi/dao_core'
 
 // Utility function to add delays for rate limiting
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -111,14 +111,191 @@ export function useFetchCreatedDAOs() {
   // Image cache to avoid reprocessing
   const imageCache = new Map<string, string>();
 
+  // Define fetchDAOs function with useCallback so it can be used in the event listener
+  const fetchDAOs = useCallback(async (forceRefresh = false) => {
+    // Enhanced caching with stale-while-revalidate pattern
+    let usedStaleCache = false
+    
+    try {
+      const cachedRaw = typeof window !== 'undefined' ? window.localStorage.getItem(CACHE_KEY) : null
+      if (cachedRaw && !forceRefresh) {
+        const cached = JSON.parse(cachedRaw) as { daos: DAO[]; updatedAt: number; count: number }
+        if (cached?.daos?.length && cached?.count) {
+          const age = Date.now() - (cached.updatedAt || 0)
+          
+          if (age < FRESH_TTL_MS) {
+            // Fresh cache - use immediately and don't fetch
+            setDAOs(cached.daos)
+            setIsLoading(false)
+            return cached.daos
+          } else if (age < STALE_TTL_MS) {
+            // Stale but valid - show immediately and fetch in background
+            setDAOs(cached.daos)
+            setIsLoading(false)
+            usedStaleCache = true
+          }
+        }
+      }
+    } catch {}
+
+    // Only show loading if we don't have stale cache
+    if (!usedStaleCache) {
+      setIsLoading(true)
+    }
+    setError(null)
+
+    try {
+      
+      // First verify contract deployment (but proceed even if network issues)
+      const isContractDeployed = await verifyContractDeployment();
+      if (!isContractDeployed) {
+        // Don't return empty - try to use cached data or continue with other methods
+      }
+      
+
+      let foundDAOs: DAO[] = []
+      let registryAddresses: string[] = []
+      let eventAddresses: string[] = []
+
+      // Step 1: Check if registry is initialized and try to use it
+      try {
+        console.log('🔍 Checking DAO registry status...')
+        const registryInitialized = await cedraClient.view({
+          payload: {
+            function: `${MODULE_ADDRESS}::dao_core_file::is_registry_initialized` as `${string}::${string}::${string}`,
+            functionArguments: [],
+          },
+        }).catch(() => [false])
+
+        const isRegistryReady = Boolean(registryInitialized[0])
+        console.log(`📊 Registry status: ${isRegistryReady ? 'Initialized' : 'Not initialized'}`)
+
+        if (isRegistryReady) {
+          try {
+            const totalDAOs = await cedraClient.view({
+              payload: {
+                function: DAO_FUNCTIONS.GET_TOTAL_DAO_COUNT as `${string}::${string}::${string}`,
+                functionArguments: [],
+              },
+            })
+
+            const totalCount = Number(totalDAOs[0] || 0)
+            console.log(`📊 Registry reports ${totalCount} DAOs`)
+
+            if (totalCount > 0) {
+              const allAddresses = await cedraClient.view({
+                payload: {
+                  function: DAO_FUNCTIONS.GET_ALL_DAO_ADDRESSES as `${string}::${string}::${string}`,
+                  functionArguments: [],
+                },
+              })
+
+              if (Array.isArray(allAddresses[0]) && allAddresses[0].length > 0) {
+                registryAddresses = allAddresses[0] as string[]
+                console.log(`✅ Found ${registryAddresses.length} DAOs from registry`)
+              }
+            }
+          } catch (registryError: any) {
+            console.warn('⚠️ Failed to fetch from registry:', registryError?.message || registryError)
+          }
+        } else {
+          console.warn('⚠️ Registry not initialized - will use event-based discovery')
+        }
+      } catch (registryCheckError: any) {
+        console.warn('⚠️ Registry check failed:', registryCheckError?.message || registryCheckError)
+      }
+
+      // Step 2: Always try event-based discovery (as fallback or to find missing DAOs)
+      try {
+        console.log('🔍 Fetching DAOs from event indexer (all event types)...')
+        // fetchDAOCreationEvents will fetch all DAO creation event types if no specific type provided
+        // This includes: DAOCreated, CouncilDAOCreated, and DAORegistered
+        eventAddresses = await fetchDAOCreationEvents(MODULE_ADDRESS)
+        console.log(`✅ Found ${eventAddresses.length} DAOs from events`)
+      } catch (eventError: any) {
+        console.warn('⚠️ Event-based discovery failed:', eventError?.message || eventError)
+      }
+
+      // Step 3: Combine addresses from both sources (remove duplicates)
+      const allAddressesSet = new Set<string>()
+      
+      // Add registry addresses first (they're more reliable)
+      registryAddresses.forEach(addr => {
+        if (addr) allAddressesSet.add(addr.toLowerCase())
+      })
+      
+      // Add event addresses (may include DAOs not in registry)
+      eventAddresses.forEach(addr => {
+        if (addr) allAddressesSet.add(addr.toLowerCase())
+      })
+
+      const uniqueAddresses = Array.from(allAddressesSet)
+      console.log(`📊 Total unique DAOs found: ${uniqueAddresses.length} (${registryAddresses.length} from registry, ${eventAddresses.length} from events)`)
+
+      // Step 4: Process all unique DAO addresses
+      if (uniqueAddresses.length > 0) {
+        foundDAOs = await processDAOsInBatches(uniqueAddresses)
+        console.log(`✅ Successfully processed ${foundDAOs.length} DAOs`)
+      } else {
+        console.warn('⚠️ No DAOs found from either registry or events')
+      }
+      
+      // Step 5: Always set the found DAOs (even if empty)
+      setDAOs(foundDAOs)
+      
+      // Cache the final results for consistency
+      try {
+        const cacheData = {
+          daos: foundDAOs,
+          updatedAt: Date.now(),
+          version: 4,
+          count: foundDAOs.length,
+          sources: {
+            registry: registryAddresses.length,
+            events: eventAddresses.length,
+            unique: uniqueAddresses.length
+          }
+        }
+        
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
+          window.localStorage.setItem(`${CACHE_KEY}_backup`, JSON.stringify(cacheData))
+        }
+        
+        console.log(`💾 Cached ${foundDAOs.length} DAOs`)
+      } catch (error) {
+        console.warn('Failed to cache DAOs:', error)
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch DAOs via SDK'
+      setError(errorMessage)
+      console.error('Error fetching DAOs:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   // Optimistic add: allow other parts of app to inject a just-created DAO for instant UI update
   // Usage: window.dispatchEvent(new CustomEvent('dao:created', { detail: dao }))
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as Partial<DAO> | undefined
-      if (!detail || !detail.id) return
+      if (!detail || !detail.id) {
+        // If no detail provided, just trigger a refresh
+        console.log('🔄 DAO created event received - triggering refresh...')
+        fetchDAOs(true).catch(err => console.warn('Failed to refresh after DAO creation:', err))
+        return
+      }
+      
+      console.log('🔄 DAO created event received with details - adding optimistically and refreshing...', detail)
+      
       setDAOs(prev => {
-        if (prev.some(d => d.id === detail.id)) return prev
+        if (prev.some(d => d.id === detail.id)) {
+          // DAO already exists, just trigger refresh
+          setTimeout(() => { fetchDAOs(true).catch(() => {}) }, 1000)
+          return prev
+        }
+        
         const optimistic: DAO = {
           id: detail.id as string,
           name: detail.name || 'New DAO',
@@ -140,20 +317,31 @@ export function useFetchCreatedDAOs() {
         const next = [optimistic, ...prev]
         // cache immediately
         try {
-          const cacheData = { daos: next, updatedAt: Date.now(), version: 2, count: next.length }
+          const cacheData = { daos: next, updatedAt: Date.now(), version: 4, count: next.length }
           if (typeof window !== 'undefined') {
             window.localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
             window.localStorage.setItem(`${CACHE_KEY}_backup`, JSON.stringify(cacheData))
           }
         } catch {}
-        // kick a silent background refetch to reconcile details
-        setTimeout(() => { fetchDAOs(true).catch(() => {}) }, 500)
+        // Trigger immediate refresh to get real data from blockchain
+        // Wait for blockchain indexer to process the transaction
+        // GraphQL indexer typically takes 30-60 seconds
+        setTimeout(() => {
+          console.log('🔄 Refreshing DAO list after creation (30s delay)...')
+          fetchDAOs(true).catch(err => console.warn('Failed to refresh after DAO creation:', err))
+        }, 30000) // 30 second delay to allow GraphQL indexer to process
+
+        // Additional refresh after 60 seconds as backup
+        setTimeout(() => {
+          console.log('🔄 Second refresh attempt (60s delay)...')
+          fetchDAOs(true).catch(err => console.warn('Failed to refresh after DAO creation:', err))
+        }, 60000)
         return next
       })
     }
     window.addEventListener('dao:created', handler as EventListener)
     return () => window.removeEventListener('dao:created', handler as EventListener)
-  }, [])
+  }, [fetchDAOs])
 
   const toImageUrl = (maybeBytes: unknown): string => {
     try {
@@ -388,159 +576,10 @@ export function useFetchCreatedDAOs() {
     }
   }
 
-
-  const fetchDAOs = async (forceRefresh = false) => {
-    // Enhanced caching with stale-while-revalidate pattern
-    let usedStaleCache = false
-    
-    try {
-      const cachedRaw = typeof window !== 'undefined' ? window.localStorage.getItem(CACHE_KEY) : null
-      if (cachedRaw && !forceRefresh) {
-        const cached = JSON.parse(cachedRaw) as { daos: DAO[]; updatedAt: number; count: number }
-        if (cached?.daos?.length && cached?.count) {
-          const age = Date.now() - (cached.updatedAt || 0)
-          
-          if (age < FRESH_TTL_MS) {
-            // Fresh cache - use immediately and don't fetch
-            setDAOs(cached.daos)
-            setIsLoading(false)
-            return cached.daos
-          } else if (age < STALE_TTL_MS) {
-            // Stale but valid - show immediately and fetch in background
-            setDAOs(cached.daos)
-            setIsLoading(false)
-            usedStaleCache = true
-          }
-        }
-      }
-    } catch {}
-
-    // Only show loading if we don't have stale cache
-    if (!usedStaleCache) {
-      setIsLoading(true)
-    }
-    setError(null)
-
-    try {
-      
-      // First verify contract deployment (but proceed even if network issues)
-      const isContractDeployed = await verifyContractDeployment();
-      if (!isContractDeployed) {
-        // Don't return empty - try to use cached data or continue with other methods
-      }
-      
-
-      let foundDAOs: DAO[] = []
-
-      // Primary Strategy: Use registry-based method (most reliable)
-      try {
-        
-        const totalDAOs = await cedraClient.view({
-          payload: {
-            function: DAO_FUNCTIONS.GET_TOTAL_DAO_COUNT as `${string}::${string}::${string}`,
-            functionArguments: [],
-          },
-        })
-        
-        if (Number(totalDAOs[0]) > 0) {
-          
-          const allAddresses = await cedraClient.view({
-            payload: {
-              function: DAO_FUNCTIONS.GET_ALL_DAO_ADDRESSES as `${string}::${string}::${string}`,
-              functionArguments: [],
-            },
-          })
-          
-          if (Array.isArray(allAddresses[0]) && allAddresses[0].length > 0) {
-            const addresses = allAddresses[0] as string[]
-            
-            // Process DAOs in batches to avoid rate limiting
-            foundDAOs = await processDAOsInBatches(addresses)
-            
-            // Use registry data as the definitive source
-            setDAOs(foundDAOs)
-            
-            // Cache with registry count for consistency
-            const cacheData = {
-              daos: foundDAOs,
-              updatedAt: Date.now(),
-              version: 4,
-              count: foundDAOs.length,
-              registryCount: Number(totalDAOs[0])
-            }
-            
-            try {
-              if (typeof window !== 'undefined') {
-                window.localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
-                window.localStorage.setItem(`${CACHE_KEY}_backup`, JSON.stringify(cacheData))
-              }
-            } catch (error) {
-              console.warn('Failed to cache DAOs:', error)
-            }
-            
-            setIsLoading(false)
-            return foundDAOs
-          }
-        } else {
-        }
-      } catch (registryError) {
-        console.warn(' Registry method failed, falling back to event discovery:', registryError)
-      }
-
-      // Fallback: GraphQL indexer-based discovery if registry fails
-      if (foundDAOs.length === 0) {
-
-        try {
-          // Use Cedra GraphQL indexer for event discovery
-          const daoAddresses = await fetchDAOCreationEvents(
-            MODULE_ADDRESS,
-            DAO_EVENTS.DAO_CREATED
-          )
-
-          if (daoAddresses && daoAddresses.length > 0) {
-
-            // Process DAOs in batches
-            foundDAOs = await processDAOsInBatches(daoAddresses)
-          } else {
-          }
-        } catch (eventError) {
-          console.warn('GraphQL indexer discovery failed:', eventError)
-        }
-      }
-      
-      
-      // Always set the found DAOs (even if empty)
-      setDAOs(foundDAOs)
-      
-      // Cache the final results for consistency
-      try {
-        const cacheData = {
-          daos: foundDAOs,
-          updatedAt: Date.now(),
-          version: 4,
-          count: foundDAOs.length
-        }
-        
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
-          window.localStorage.setItem(`${CACHE_KEY}_backup`, JSON.stringify(cacheData))
-        }
-      } catch (error) {
-        console.warn('Failed to cache DAOs:', error)
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch DAOs via SDK'
-      setError(errorMessage)
-      console.error('Error fetching DAOs:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
     fetchDAOs()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchDAOs])
 
   return {
     daos,

@@ -403,12 +403,13 @@ module movedao_addrx::staking {
 
     #[test(cedra_framework = @0x1, creator = @movedao_addrx, alice = @0x3)]
     public entry fun test_staking(
-        cedra_framework: &signer, 
-        creator: &signer, 
+        cedra_framework: &signer,
+        creator: &signer,
         alice: &signer
     ) acquires StakerProfile, Vault, StakerRegistry {
         let (burn_cap, mint_cap) = cedra_coin::initialize_for_test(cedra_framework);
         timestamp::set_time_has_started_for_testing(cedra_framework);
+        activity_tracker::initialize(creator); // Initialize activity tracker for tests
         test_init_module(creator);
         
         account::create_account_for_test(@0x3);
@@ -419,7 +420,8 @@ module movedao_addrx::staking {
         assert!(get_staked_balance(@0x3) == 500, 100);
         assert!(is_staker(@0x3), 101);
 
-        // No need to wait - can unstake immediately
+        // Advance time past minimum staking period (1 hour = 3600 seconds)
+        timestamp::fast_forward_seconds(3601);
         unstake(alice, @movedao_addrx, 200);
         assert!(get_staked_balance(@0x3) == 300, 102);
 
@@ -428,14 +430,15 @@ module movedao_addrx::staking {
     }
 
     #[test(cedra_framework = @0x1, creator = @movedao_addrx, alice = @0x3)]
-    #[expected_failure(abort_code = 8, location = movedao_addrx::staking)]
+    #[expected_failure(abort_code = 5, location = movedao_addrx::staking)]
     public entry fun test_block_unstake_limit(
-        cedra_framework: &signer, 
-        creator: &signer, 
+        cedra_framework: &signer,
+        creator: &signer,
         alice: &signer
     ) acquires StakerProfile, Vault, StakerRegistry {
         let (burn_cap, mint_cap) = cedra_coin::initialize_for_test(cedra_framework);
         timestamp::set_time_has_started_for_testing(cedra_framework);
+        activity_tracker::initialize(creator); // Initialize activity tracker for tests
         test_init_module(creator);
         
         account::create_account_for_test(@0x3);
@@ -455,12 +458,13 @@ module movedao_addrx::staking {
 
     #[test(cedra_framework = @0x1, creator = @movedao_addrx, alice = @0x3)]
     public entry fun test_should_allow_multiple_stakes(
-        cedra_framework: &signer, 
-        creator: &signer, 
+        cedra_framework: &signer,
+        creator: &signer,
         alice: &signer
     ) acquires StakerProfile, Vault, StakerRegistry {
         let (burn_cap, mint_cap) = cedra_coin::initialize_for_test(cedra_framework);
         timestamp::set_time_has_started_for_testing(cedra_framework);
+        activity_tracker::initialize(creator); // Initialize activity tracker for tests
         test_init_module(creator);
         
         account::create_account_for_test(@0x3);
@@ -477,13 +481,14 @@ module movedao_addrx::staking {
 
     #[test(cedra_framework = @0x1, creator = @movedao_addrx, alice = @0x3, bob = @0x4)]
     public entry fun test_vote(
-        cedra_framework: &signer, 
-        creator: &signer, 
-        alice: &signer, 
+        cedra_framework: &signer,
+        creator: &signer,
+        alice: &signer,
         bob: &signer
     ) acquires StakerProfile, Vault, VoteRepository, StakerRegistry {
         let (burn_cap, mint_cap) = cedra_coin::initialize_for_test(cedra_framework);
         timestamp::set_time_has_started_for_testing(cedra_framework);
+        activity_tracker::initialize(creator); // Initialize activity tracker for tests
         test_init_module(creator);
         admin::init_admin(creator, 1); // Initialize admin module for tests
         
@@ -494,7 +499,7 @@ module movedao_addrx::staking {
         coin::deposit(@0x3, coin::mint(1000, &mint_cap));
         coin::deposit(@0x4, coin::mint(1000, &mint_cap));
 
-        create_vote(creator, @movedao_addrx, string::utf8(b"Test Vote"), string::utf8(b"This is a test vote"), 100, 200);
+        create_vote(creator, @movedao_addrx, string::utf8(b"Test Vote"), string::utf8(b"This is a test vote"), 100, 5000);
         stake(alice, @movedao_addrx, 500);
         stake(bob, @movedao_addrx, 300);
 
@@ -502,11 +507,13 @@ module movedao_addrx::staking {
 
         vote(alice, @movedao_addrx, 0, true);
         vote(bob, @movedao_addrx, 0, false);
-        
-        // No time lock - can unstake immediately
+
+        // Advance time past minimum staking period before unstaking (3601 seconds from start)
+        timestamp::update_global_time_for_test_secs(3700);
         unstake(alice, @movedao_addrx, 200);
 
-        timestamp::update_global_time_for_test_secs(200);
+        // Advance to vote end time
+        timestamp::update_global_time_for_test_secs(5001);
         declare_winner(creator, @movedao_addrx, 0);
 
         let vote_repository = borrow_global<VoteRepository>(@movedao_addrx);
@@ -522,12 +529,13 @@ module movedao_addrx::staking {
     #[test(cedra_framework = @0x1, creator = @movedao_addrx, alice = @0x3)]
     #[expected_failure(abort_code = 202, location = movedao_addrx::staking)]
     public entry fun test_can_only_vote_once(
-        cedra_framework: &signer, 
-        creator: &signer, 
+        cedra_framework: &signer,
+        creator: &signer,
         alice: &signer
     ) acquires StakerProfile, VoteRepository, Vault, StakerRegistry {
         let (burn_cap, mint_cap) = cedra_coin::initialize_for_test(cedra_framework);
         timestamp::set_time_has_started_for_testing(cedra_framework);
+        activity_tracker::initialize(creator); // Initialize activity tracker for tests
         test_init_module(creator);
         admin::init_admin(creator, 1); // Initialize admin module for tests
         
@@ -548,11 +556,12 @@ module movedao_addrx::staking {
 
     #[test(cedra_framework = @0x1, creator = @movedao_addrx)]
     public entry fun test_total_staked(
-        cedra_framework: &signer, 
+        cedra_framework: &signer,
         creator: &signer
     ) acquires Vault, StakerProfile, StakerRegistry {
         let (burn_cap, mint_cap) = cedra_coin::initialize_for_test(cedra_framework);
         timestamp::set_time_has_started_for_testing(cedra_framework);
+        activity_tracker::initialize(creator); // Initialize activity tracker for tests
         test_init_module(creator);
         
         let alice = account::create_account_for_test(@0x3);
@@ -664,14 +673,15 @@ module movedao_addrx::staking {
 
     #[test(cedra_framework = @0x1, dao1 = @movedao_addrx, dao2 = @0x5, alice = @0x3)]
     public entry fun test_multi_dao_staking(
-        cedra_framework: &signer, 
-        dao1: &signer, 
+        cedra_framework: &signer,
+        dao1: &signer,
         dao2: &signer,
         alice: &signer
     ) acquires StakerProfile, Vault, StakerRegistry {
         let (burn_cap, mint_cap) = cedra_coin::initialize_for_test(cedra_framework);
         timestamp::set_time_has_started_for_testing(cedra_framework);
-        
+        activity_tracker::initialize(dao1); // Initialize activity tracker for tests
+
         // Initialize both DAOs
         test_init_module(dao1);
         test_init_module(dao2);
