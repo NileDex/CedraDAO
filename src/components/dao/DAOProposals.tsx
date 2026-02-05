@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Plus,
-  Clock,
-  XCircle,
   Play,
-  Pause,
-  Target,
-  BarChart3,
-  RefreshCw,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight
+  ArrowLeft,
+  Search
 } from 'lucide-react';
 import { FaCheckCircle } from 'react-icons/fa';
+import { FaDiscord } from 'react-icons/fa6';
 import { DAO } from '../../types/dao';
 import { useWallet } from '../../contexts/CedraWalletProvider';
 import { cedraClient } from '../../cedra_service/cedra-client';
@@ -20,11 +14,9 @@ import { safeView, batchSafeView } from '../../utils/rpcUtils';
 import { MODULE_ADDRESS } from '../../cedra_service/constants';
 import DAOProposalDetails from './DAOProposalDetails';
 import { useDAOMembership } from '../../hooks/useDAOMembership';
-import { useDAOState } from '../../contexts/DAOStateContext';
 import { useWalletBalance } from '../../hooks/useWalletBalance';
 import { useAlert } from '../alert/AlertContext';
 import { useSectionLoader } from '../../hooks/useSectionLoader';
-import SectionLoader from '../common/SectionLoader';
 
 interface DAOProposalsProps {
   dao: DAO;
@@ -58,30 +50,62 @@ interface ProposalData {
   needsFinalization?: boolean; // Flag indicating if proposal needs manual finalization
 }
 
-  // Simple in-memory cache for proposal data (keep legacy but extend session cache TTL)
-  const proposalCache = new Map<string, { data: ProposalData[]; timestamp: number }>();
-  const PROPOSAL_CACHE_TTL = 30000; // legacy
+// Simple in-memory cache for proposal data (keep legacy but extend session cache TTL)
+const proposalCache = new Map<string, { data: ProposalData[]; timestamp: number }>();
+const PROPOSAL_CACHE_TTL = 30000; // legacy
 
-const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = false }) => {
+interface OnChainProposalData {
+  id: { toString: () => string };
+  title: string;
+  description: string;
+  proposer: string;
+  status: { value: number };
+  yes_votes?: string | number;
+  no_votes?: string | number;
+  abstain_votes?: string | number;
+  voting_start?: string | number;
+  voting_end?: string | number;
+  execution_window?: string | number;
+  created_at?: string | number;
+  min_quorum_percent?: string | number;
+  votes?: Array<{
+    voter: string;
+    vote_type: { value: number } | number;
+  }>;
+}
+
+const DAOProposals: React.FC<DAOProposalsProps> = ({ dao }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<ProposalData | null>(null);
+
   // In-memory cache so tab switches are instant (session-scoped)
-  // @ts-ignore
-  const proposalsCache: Map<string, { items: ProposalData[]; timestamp: number }> = (window as any).__proposalsCache || ((window as any).__proposalsCache = new Map());
+  const proposalsCache = useMemo(() => {
+    const win = window as unknown as { __proposalsCache?: Map<string, { items: ProposalData[]; timestamp: number }> };
+    if (!win.__proposalsCache) {
+      win.__proposalsCache = new Map();
+    }
+    return win.__proposalsCache;
+  }, []);
+
   const PROPOSALS_TTL_MS = 5 * 60 * 1000; // 5 minutes session TTL
   const PROPOSALS_MAX_STALE_MS = 10 * 60 * 1000; // 10 minutes stale window
-  const nowForInit = Date.now();
-  const cachedForInit = proposalsCache.get(dao.id);
-  const initialProposals = cachedForInit && (nowForInit - cachedForInit.timestamp) < PROPOSALS_TTL_MS
-    ? cachedForInit.items
-    : [];
+
+  const initialProposals = useMemo(() => {
+    const now = Date.now();
+    const cached = proposalsCache.get(dao.id);
+    return cached && (now - cached.timestamp) < PROPOSALS_TTL_MS
+      ? cached.items
+      : [];
+  }, [dao.id, proposalsCache]);
+
   const [proposals, setProposals] = useState<ProposalData[]>(initialProposals);
+  const [searchTerm, setSearchTerm] = useState('');
   const [, setProposalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   // Section-level loader for unified loading state (like Overview)
   const sectionLoader = useSectionLoader();
   const [isCreating, setIsCreating] = useState(false);
-  const [userStatus, setUserStatus] = useState({ isAdmin: false, isMember: false, isStaker: false });
+  const [userStatus, setUserStatus] = useState({ isAdmin: false, isMember: false, isStaker: false, isCouncil: false });
   const [newProposal, setNewProposal] = useState({
     title: '',
     description: '',
@@ -94,26 +118,18 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
   });
 
   const { account, signAndSubmitTransaction } = useWallet();
-  
+
   // Use persistent membership state
-  const { 
-    membershipData, 
-    isMember, 
-    isStaker, 
-    canJoinDAO 
+  const {
+    isStaker,
+    isMember,
+    membershipData
   } = useDAOMembership(dao);
-  
-  // Get wallet balance from DAO state context and wallet balance hook
-  const { userState } = useDAOState();
-  const { 
-    balance: hookWalletBalance, 
-    isLoading: balanceLoading, 
-    error: balanceError, 
-    refresh: refreshBalance 
-  } = useWalletBalance();
+
+  useWalletBalance();
   // Membership and proposal stakes use 6 decimals (1e6), not 8 decimals (1e8) like Cedra coins
   const MEMBERSHIP_DECIMALS = 1e6;  // 6 decimals for membership/proposal stakes
-  const toMOVE = (u64: number): number => u64 / MEMBERSHIP_DECIMALS;
+  const toCEDRA = (u64: number): number => u64 / MEMBERSHIP_DECIMALS;
   const [canCreateProposal, setCanCreateProposal] = useState(true);
   const [nextProposalTime, setNextProposalTime] = useState<Date | null>(null);
   const [stakeRequirements, setStakeRequirements] = useState({
@@ -125,28 +141,17 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
     canPropose: false
   });
   const [membershipConfigMissing, setMembershipConfigMissing] = useState(false);
-  const [votingError, setVotingError] = useState<string>('');
-  const [showVotingError, setShowVotingError] = useState(false);
   const { showAlert } = useAlert();
 
   // Status mappings from contract
   const statusMap: { [key: number]: string } = {
     0: 'draft',
-    1: 'active', 
+    1: 'active',
     2: 'passed',
     3: 'rejected',
     4: 'executed',
     5: 'cancelled'
   };
-
-  // UI helpers
-  const Pill: React.FC<{ className?: string; icon?: React.ReactNode; children: React.ReactNode }>
-    = ({ className = '', icon, children }) => (
-    <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium border ${className}`}>
-      {icon ? <span className="-ml-0.5">{icon}</span> : null}
-      <span>{children}</span>
-    </span>
-  );
 
   // Keep user status in sync with context membership state immediately
   useEffect(() => {
@@ -176,8 +181,8 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
             return {
               ...prev,
               isAdmin: code === 3,
-      // Treat admin as member for UI purposes
-      isMember: code === 1 || code === 3 || prev.isMember,
+              // Treat admin as member for UI purposes
+              isMember: code === 1 || code === 3 || prev.isMember,
             };
           }
           return prev;
@@ -190,14 +195,14 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
           ? Boolean(canCreateRes.value?.[0])
           : null;
         setCanCreateProposal(prev => adminIs || (canCreateNow === null ? prev : canCreateNow));
-      } catch {}
+      } catch (_err) { /* ignore recheck failures */ }
     };
     recheck();
     return () => { cancelled = true; };
-  }, [dao.id, account?.address]);
+  }, [dao.id, account?.address, userStatus.isAdmin]);
 
 
-  const checkProposalEligibility = async () => {
+  const checkProposalEligibility = useCallback(async () => {
     if (!account?.address) {
       setCanCreateProposal(false);
       setStakeRequirements({
@@ -208,36 +213,36 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         isMember: false,
         canPropose: false
       });
-      setUserStatus({ isAdmin: false, isMember: false, isStaker: false });
+      setUserStatus({ isAdmin: false, isMember: false, isStaker: false, isCouncil: false });
       return;
     }
 
     try {
       // Batch fetch staking requirements and user status with timeout
       const eligibilityPromises = [
-        safeView({ 
-            function: `${MODULE_ADDRESS}::membership::get_min_stake`, 
-            functionArguments: [dao.id] 
+        safeView({
+          function: `${MODULE_ADDRESS}::membership::get_min_stake`,
+          functionArguments: [dao.id]
         }),
-        safeView({ 
-            function: `${MODULE_ADDRESS}::membership::get_min_proposal_stake`, 
-            functionArguments: [dao.id] 
+        safeView({
+          function: `${MODULE_ADDRESS}::membership::get_min_proposal_stake`,
+          functionArguments: [dao.id]
         }),
-        safeView({ 
-          function: `${MODULE_ADDRESS}::staking::get_dao_staked_balance`, 
-            functionArguments: [dao.id, account.address] 
+        safeView({
+          function: `${MODULE_ADDRESS}::staking::get_dao_staked_balance`,
+          functionArguments: [dao.id, account.address]
         }),
-        safeView({ 
-            function: `${MODULE_ADDRESS}::admin::is_admin`, 
-            functionArguments: [dao.id, account.address] 
+        safeView({
+          function: `${MODULE_ADDRESS}::admin::is_admin`,
+          functionArguments: [dao.id, account.address]
         }),
-        safeView({ 
-            function: `${MODULE_ADDRESS}::membership::is_member`, 
-            functionArguments: [dao.id, account.address] 
+        safeView({
+          function: `${MODULE_ADDRESS}::membership::is_member`,
+          functionArguments: [dao.id, account.address]
         }),
-        safeView({ 
-            function: `${MODULE_ADDRESS}::membership::can_create_proposal`, 
-            functionArguments: [dao.id, account.address] 
+        safeView({
+          function: `${MODULE_ADDRESS}::membership::can_create_proposal`,
+          functionArguments: [dao.id, account.address]
         }),
         cedraClient.getAccountResource({
           accountAddress: account.address,
@@ -246,6 +251,11 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       ];
 
       // Add timeout to prevent hanging on slow calls (increased timeout)
+      const results = await Promise.race([
+        Promise.allSettled(eligibilityPromises),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Eligibility check timeout')), 15000))
+      ]) as PromiseSettledResult<unknown>[];
+
       const [
         minStakeToJoinRes,
         minStakeToProposRes,
@@ -254,25 +264,22 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         isMemberRes,
         canProposeRes,
         proposerRecord
-      ] = await Promise.race([
-        Promise.allSettled(eligibilityPromises),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Eligibility check timeout')), 15000))
-      ]) as any[];
+      ] = results as PromiseSettledResult<unknown>[]; // Type assertion for individual results
 
       // Helpers for safe extraction from view responses
-      const getU64 = (res: any): number => {
+      const getU64 = (res: PromiseSettledResult<unknown>): number => {
         return res && res.status === 'fulfilled' && Array.isArray(res.value)
           ? Number(res.value?.[0] ?? 0)
           : 0;
       };
-      const getBool = (res: any): boolean => {
+      const getBool = (res: PromiseSettledResult<unknown>): boolean => {
         return res && res.status === 'fulfilled' && Array.isArray(res.value)
           ? Boolean(res.value?.[0])
           : false;
       };
-      
+
       // Check if membership config is missing and provide fallback values
-      const membershipConfigMissingCheck = minStakeToJoinRes?.status === 'rejected' && 
+      const membershipConfigMissingCheck = minStakeToJoinRes?.status === 'rejected' &&
         minStakeToJoinRes?.reason?.message?.includes('MISSING_DATA');
       setMembershipConfigMissing(membershipConfigMissingCheck);
 
@@ -280,39 +287,39 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       const rawMinStakeToJoin = getU64(minStakeToJoinRes);
       const rawMinStakeToPropose = getU64(minStakeToProposRes);
       const rawUserCurrentStake = getU64(userStakeRes);
-      
+
       // IMPORTANT: The contract stores ALL stakes with 6 decimal places (1e6)
       // Convert all stake values consistently using the same decimal conversion:
-      let minStakeToJoin = toMOVE(rawMinStakeToJoin); // Convert from 6-decimal to MOVE tokens
-      let minStakeToPropose = toMOVE(rawMinStakeToPropose); // Convert from 6-decimal to MOVE tokens  
-      const userCurrentStake = toMOVE(rawUserCurrentStake); // Convert from 6-decimal to MOVE
+      let minStakeToJoin = toCEDRA(rawMinStakeToJoin); // Convert from 6-decimal to CEDRA tokens
+      let minStakeToPropose = toCEDRA(rawMinStakeToPropose); // Convert from 6-decimal to CEDRA tokens  
+      const userCurrentStake = toCEDRA(rawUserCurrentStake); // Convert from 6-decimal to CEDRA
       const isAdmin = getBool(isAdminRes);
       const isMember = getBool(isMemberRes);
-      
+
       // ADMIN BYPASS: If user is DAO creator (same address), they are admin
       const isDAOCreator = account.address === dao.id;
-      
+
       // Handle missing membership configuration or admin bypass
       if (membershipConfigMissingCheck || isDAOCreator || isAdmin) {
         // Set reasonable defaults when calls fail
         if (minStakeToJoin === 0) minStakeToJoin = 6;
         if (minStakeToPropose === 0) minStakeToPropose = 6;
       }
-      
+
       let canPropose = getBool(canProposeRes);
-      
+
       // Handle missing membership configuration or RPC failures - allow proposal creation for:
       // 1. Admins (always allowed - bypass all stake requirements)
       // 2. Users with sufficient stake when config is missing or calls fail
       if (membershipConfigMissingCheck || canProposeRes?.status === 'rejected') {
         canPropose = isAdmin || isDAOCreator || userCurrentStake >= minStakeToPropose;
       }
-      
+
       // CRITICAL: Admins and DAO creators should ALWAYS be able to create proposals regardless of config
       if (isAdmin || isDAOCreator) {
         canPropose = true;
       }
-      
+
       // FALLBACK: If member and has enough stake but RPC failed, allow proposal creation
       if (isMember && userCurrentStake >= minStakeToPropose && !canPropose) {
         canPropose = true;
@@ -332,22 +339,23 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       setUserStatus({
         isAdmin,
         isMember: membershipData?.isMember ?? isMember,
-        isStaker: membershipData?.isStaker || (userCurrentStake > 0)
+        isStaker: membershipData?.isStaker || (userCurrentStake > 0),
+        isCouncil: false
       });
 
       // Check cooldown period
       let canCreateDueToCooldown = true;
-      if (proposerRecord && proposerRecord.status === 'fulfilled' && proposerRecord.value?.data) {
-        const lastProposalTime = Number((proposerRecord.value.data as any)?.last_proposal_time || 0);
-        
-        if (lastProposalTime > 0) {
-        const cooldownPeriod = 24 * 60 * 60; // 24 hours in seconds
-        const nowSeconds = Math.floor(Date.now() / 1000);
-        const nextAllowedTime = lastProposalTime + cooldownPeriod;
+      if (proposerRecord && proposerRecord.status === 'fulfilled' && (proposerRecord.value as { data?: { last_proposal_time: string } })?.data) {
+        const lastProposalTime = Number((proposerRecord.value as { data: { last_proposal_time: string } }).data.last_proposal_time || 0);
 
-        if (nowSeconds < nextAllowedTime) {
-          canCreateDueToCooldown = false;
-          setNextProposalTime(new Date(nextAllowedTime * 1000));
+        if (lastProposalTime > 0) {
+          const cooldownPeriod = 24 * 60 * 60; // 24 hours in seconds
+          const nowSeconds = Math.floor(Date.now() / 1000);
+          const nextAllowedTime = lastProposalTime + cooldownPeriod;
+
+          if (nowSeconds < nextAllowedTime) {
+            canCreateDueToCooldown = false;
+            setNextProposalTime(new Date(nextAllowedTime * 1000));
           } else {
             setNextProposalTime(null);
           }
@@ -373,11 +381,11 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         isMember: false,
         canPropose: false
       });
-      setUserStatus({ isAdmin: false, isMember: false, isStaker: false });
+      setUserStatus({ isAdmin: false, isMember: false, isStaker: false, isCouncil: false });
     }
-  };
+  }, [account?.address, dao.id, membershipData?.minStakeRequired, membershipData?.stakedAmount, membershipData?.isMember, membershipData?.isStaker]);
 
-  const fetchProposals = async (forceRefresh = false) => {
+  const fetchProposals = useCallback(async (forceRefresh = false) => {
     try {
       // Persist roles before any list refresh to avoid UI flicker/down-grading
       try {
@@ -394,23 +402,23 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
             }));
           }
         }
-      } catch {}
+      } catch (_err) { /* ignore initial role check errors */ }
 
       // For connected users, prefer fresh data for voting status.
       // For guests, use cache.
       const cacheKey = `proposals_${dao.id}`;
+      const now = Date.now();
       if (!forceRefresh && !account?.address) {
         // Only use cache if user is not connected (no need to check voting status)
         // legacy cache
         const cachedLegacy = proposalCache.get(cacheKey);
-        if (cachedLegacy && Date.now() - cachedLegacy.timestamp < PROPOSAL_CACHE_TTL) {
+        if (cachedLegacy && now - cachedLegacy.timestamp < PROPOSAL_CACHE_TTL) {
           setProposals(cachedLegacy.data);
           setIsLoading(false);
           return;
         }
         // session cache
         const cached = proposalsCache.get(dao.id);
-        const now = Date.now();
         if (cached && (now - cached.timestamp) < PROPOSALS_TTL_MS) {
           setProposals(cached.items);
           setIsLoading(false);
@@ -421,22 +429,22 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
           setProposals(cached.items);
           setIsLoading(false);
           // Silent background refresh
-          (async () => { try { await fetchProposals(true); } catch {} })();
+          (async () => { try { await fetchProposals(true); } catch (_err) { /* ignore silent refresh errors */ } })();
           return;
         }
       }
-      
+
       setIsLoading(true);
-      
+
       // First, get the total number of proposals (with circuit breaker + cache)
-      const countRes = await safeView({ 
-        function: `${MODULE_ADDRESS}::proposal::get_proposals_count`, 
-        functionArguments: [dao.id] 
+      const countRes = await safeView({
+        function: `${MODULE_ADDRESS}::proposal::get_proposals_count`,
+        functionArguments: [dao.id]
       }, `proposals_count_${dao.id}`);
-      
+
       const count = Number(countRes[0] || 0);
       setProposalCount(count);
-      
+
       if (count === 0) {
         setProposals([]);
         return;
@@ -467,13 +475,13 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         const result = proposalResults[i];
         if (!result || !result[0]) continue;
 
-        const proposalData = result[0] as any;
-        
+        const proposalData = result[0] as OnChainProposalData;
+
         // Check if user can vote (is member with sufficient stake)
         let userCanVote = false;
         let userVoted = false;
         let userVoteType = null;
-        
+
         if (account?.address) {
           // Use the dedicated ABI function to check if user has voted
           try {
@@ -505,10 +513,10 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
             console.warn(`Error checking if user voted on proposal ${i}:`, error);
             // Fallback to old method
             const votes = proposalData.votes || [];
-            const userVote = votes.find((vote: any) => vote.voter === account.address);
+            const userVote = votes.find((vote) => vote.voter === account.address);
             if (userVote) {
               userVoted = true;
-              userVoteType = userVote.vote_type.value;
+              userVoteType = typeof userVote.vote_type === 'object' ? userVote.vote_type.value : userVote.vote_type;
               userCanVote = true;
             } else {
               userCanVote = isMember && isStaker;
@@ -517,12 +525,12 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         }
 
         // Tally vote COUNTS from the on-chain votes vector (individual voters)
-        const votesVec = (proposalData.votes || []) as any[];
+        const votesVec = (proposalData.votes || []);
         let yesCount = 0;
         let noCount = 0;
         let abstainCount = 0;
         for (const v of votesVec) {
-          const vt = typeof v.vote_type?.value === 'number' ? v.vote_type.value : v.vote_type;
+          const vt = typeof v.vote_type === 'object' ? v.vote_type.value : v.vote_type;
           if (vt === 1) yesCount += 1;
           else if (vt === 2) noCount += 1;
           else if (vt === 3) abstainCount += 1;
@@ -530,9 +538,9 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         const totalVoters = yesCount + noCount + abstainCount;
 
         // Keep turnout (quorum) based on WEIGHT (staked voting power)
-        const totalVotingWeight = toMOVE(Number(proposalData.yes_votes || 0))
-          + toMOVE(Number(proposalData.no_votes || 0))
-          + toMOVE(Number(proposalData.abstain_votes || 0));
+        const totalVotingWeight = toCEDRA(Number(proposalData.yes_votes || 0))
+          + toCEDRA(Number(proposalData.no_votes || 0))
+          + toCEDRA(Number(proposalData.abstain_votes || 0));
         const totalStaked = 85200; // TODO: Get from DAO stats
         const quorumCurrent = totalStaked > 0 ? (totalVotingWeight / totalStaked) * 100 : 0;
 
@@ -541,9 +549,9 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         const now = Date.now();
         const votingStart = new Date((Number(proposalData.voting_start || 0)) * 1000).getTime();
         const votingEnd = new Date((Number(proposalData.voting_end || 0)) * 1000).getTime();
-        
+
         let effectiveStatus = contractStatus;
-        
+
         // Keep status constant with contract; do not auto-transition in UI
         effectiveStatus = contractStatus;
 
@@ -580,11 +588,11 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
 
       const finalProposals = validProposals.reverse(); // Show newest first
       setProposals(finalProposals);
-      
+
       // Cache the results
       proposalCache.set(cacheKey, { data: finalProposals, timestamp: Date.now() });
       proposalsCache.set(dao.id, { items: finalProposals, timestamp: Date.now() });
-      
+
     } catch (error: any) {
       console.error('Failed to fetch proposals:', error);
       const msg = String(error?.message || error);
@@ -599,13 +607,13 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [dao.id, account?.address, proposalsCache, isMember, isStaker, membershipData?.votingPower]);
 
   // Load proposals once per DAO; avoid reloading on tab switches
   // Eligibility still updates with account changes
   useEffect(() => {
     sectionLoader.executeWithLoader(fetchProposals);
-  }, [dao.id]);
+  }, [dao.id, fetchProposals, sectionLoader]);
 
   // Light, real‑time refresh triggers without over-modifying logic
   useEffect(() => {
@@ -621,7 +629,7 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       if (!savedId) return;
       const found = proposals.find(p => p.id === savedId);
       if (found) setSelectedProposal(found);
-    } catch {}
+    } catch { }
   }, [dao.id, proposals]);
 
   useEffect(() => {
@@ -638,11 +646,11 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
   // Periodic status sync effect
   useEffect(() => {
     if (proposals.length === 0) return;
-    
+
     const intervalId = setInterval(() => {
       fetchProposals(); // Refresh proposals to sync status
     }, 15000); // 15s cadence for snappier updates
-    
+
     return () => clearInterval(intervalId);
   }, [proposals.length]);
 
@@ -653,7 +661,7 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       showAlert('Please connect your wallet to start voting', 'error');
       return;
     }
-    
+
     try {
       const payload = {
         function: `${MODULE_ADDRESS}::proposal::start_voting`,
@@ -663,33 +671,33 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
           parseInt(proposalId)
         ]
       };
-      
+
       const response = await signAndSubmitTransaction({ payload } as any);
-      
+
       // If user cancels or no hash, treat as cancelled
       if (!response || !(response as any).hash) {
         showAlert('Transaction cancelled', 'error');
         return;
       }
-      
+
       // Refresh proposals to update status
       await fetchProposals();
       showAlert('Voting started successfully! The proposal is now active for voting.', 'success');
     } catch (error: any) {
       console.error('Failed to start voting:', error);
-      
+
       // Handle specific errors
       let errorMessage = 'Failed to start voting. Please try again.';
       if (error?.message || error?.toString()) {
         const errorString = error.message || error.toString();
-        
+
         if (errorString.includes('invalid_status') || errorString.includes('0xc5')) {
           errorMessage = 'This proposal is not in draft status and cannot be activated.';
         } else if (errorString.includes('not_admin_or_proposer') || errorString.includes('0xc6')) {
           errorMessage = 'Only the proposal creator or DAO admins can start voting.';
         }
       }
-      
+
       showAlert(errorMessage, 'error');
     }
   };
@@ -697,12 +705,12 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
   // Auto-activation function for proposals that should be active
   const autoActivateEligibleProposals = async () => {
     if (!account?.address) return;
-    
-    const eligibleProposals = proposals.filter(proposal => 
-      proposal.needsActivation && 
+
+    const eligibleProposals = proposals.filter(proposal =>
+      proposal.needsActivation &&
       (proposal.proposer === account.address)
     );
-    
+
     for (const proposal of eligibleProposals) {
       try {
         await handleStartVoting(proposal.id);
@@ -719,23 +727,23 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       showAlert('Please connect your wallet to finalize this proposal', 'error');
       return;
     }
-    
+
     try {
       const proposal = proposals.find(p => p.id === proposalId);
       if (!proposal) {
         showAlert('Proposal not found. Please refresh the page.', 'error');
         return;
       }
-      
+
       // Check if voting period has ended
       const now = Date.now();
       const votingEnd = new Date(proposal.votingEnd).getTime();
-      
+
       if (now < votingEnd) {
         showAlert('Voting period has not ended yet. Please wait for the voting period to end before finalizing.', 'error');
         return;
       }
-      
+
       // Authorization check - only admins can finalize
       try {
         const isAdminRes = await cedraClient.view({
@@ -755,7 +763,7 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       } catch (authError) {
         console.warn('Authorization check failed, proceeding with transaction:', authError);
       }
-      
+
       // Double-check proposal status and voting times on-chain before finalizing
       try {
         const [statusCheck, proposalDetails] = await Promise.allSettled([
@@ -772,16 +780,16 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
             }
           })
         ]);
-        
-        const currentStatus = statusCheck.status === 'fulfilled' && Array.isArray(statusCheck.value) 
-          ? Number(statusCheck.value[0]) 
+
+        const currentStatus = statusCheck.status === 'fulfilled' && Array.isArray(statusCheck.value)
+          ? Number(statusCheck.value[0])
           : null;
-        
+
         if (currentStatus !== 1) { // 1 = active status
           showAlert(`This proposal cannot be finalized. Current status: ${currentStatus === 0 ? 'draft' : currentStatus === 2 ? 'passed' : currentStatus === 3 ? 'rejected' : currentStatus === 4 ? 'executed' : 'unknown'}. Only active proposals can be finalized.`, 'error');
           return;
         }
-        
+
         // Check voting end time on-chain
         if (proposalDetails.status === 'fulfilled' && Array.isArray(proposalDetails.value)) {
           const details = proposalDetails.value;
@@ -795,10 +803,10 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
             return;
           }
         }
-        
+
         // Check if staking module is properly initialized (needed for finalization)
         try {
-          const totalStaked = await cedraClient.view({
+          await cedraClient.view({
             payload: {
               function: `${MODULE_ADDRESS}::staking::get_total_staked`,
               functionArguments: [dao.id]
@@ -820,7 +828,7 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
           parseInt(proposalId)
         ]
       };
-      
+
       const response = await signAndSubmitTransaction({ payload } as any);
 
       // Wait for transaction to be confirmed
@@ -844,7 +852,7 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       console.error('Error type:', typeof error);
       console.error('Error keys:', Object.keys(error || {}));
       console.error('Error stack:', error?.stack);
-      
+
       // Try to extract more detailed error information
       let errorDetails = {};
       if (error) {
@@ -859,11 +867,11 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         };
       }
       console.error('Detailed error info:', errorDetails);
-      
+
       let errorMessage = 'Failed to finalize proposal. ';
       if (error?.message || error?.toString()) {
         const errorString = error.message || error.toString();
-        
+
         if (errorString.includes('User rejected')) {
           errorMessage = 'Transaction was cancelled by user.';
         } else if (errorString.includes('simulation')) {
@@ -883,43 +891,51 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       } else {
         errorMessage += 'No error details available. Check console logs for more information.';
       }
-      
+
       showAlert(errorMessage, 'error');
     }
   };
 
   // Enhanced voting function with automatic activation check
   const handleVoteWithActivation = async (proposalId: string, voteType: number) => {
-    // Clear any previous errors
-    setShowVotingError(false);
-    setVotingError('');
-    
     const proposal = proposals.find(p => p.id === proposalId);
-    
+
     if (!proposal) {
-      setVotingError('Proposal not found. Please refresh the page.');
-      setShowVotingError(true);
+      showAlert('Proposal not found. Please refresh the page.', 'error');
       return;
     }
-    
-    // If proposal needs activation and user can activate it, try auto-activation first
-    if (proposal.needsActivation && proposal.contractStatus === 'draft') {
-      const canActivate = proposal.proposer === account?.address;
-      
-      if (canActivate) {
-        try {
-          await handleStartVoting(proposalId);
-          // Wait a moment for status to update, then proceed with voting
-          setTimeout(() => handleVote(proposalId, voteType), 1000);
-          return;
-        } catch (error) {
-          console.warn('Auto-activation failed, proceeding with regular vote:', error);
+
+    try {
+      // If proposal needs activation and user can activate it, try auto-activation first
+      if (proposal.needsActivation && proposal.contractStatus === 'draft') {
+        const canActivate = proposal.proposer === account?.address;
+
+        if (canActivate) {
+          try {
+            await handleStartVoting(proposalId);
+            // Wait a moment for status to update, then proceed with voting
+            setTimeout(() => {
+              handleVote(proposalId, voteType).catch(err => {
+                console.error('Delayed vote failed:', err);
+              });
+            }, 1000);
+            return;
+          } catch (error) {
+            console.warn('Auto-activation failed, proceeding with regular vote:', error);
+          }
         }
       }
+
+      // Proceed with regular voting
+      await handleVote(proposalId, voteType);
+    } catch (error: any) {
+      console.error('Voting workflow failed:', error);
+      // handleVote already shows alerts for its internal errors, 
+      // but if something else fails here, we show it.
+      if (error?.message && !error.message.includes('Cast your vote')) {
+        showAlert(error.message, 'error');
+      }
     }
-    
-    // Proceed with regular voting
-    await handleVote(proposalId, voteType);
   };
 
   // Voting functions
@@ -959,22 +975,22 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       // Frontend checks can use stale cached data, so we skip them and let the contract decide
 
       const payload = {
-          function: `${MODULE_ADDRESS}::proposal::cast_vote`,
+        function: `${MODULE_ADDRESS}::proposal::cast_vote`,
         typeArguments: [],
-          functionArguments: [
-            dao.id,
-            parseInt(proposalId),
-            voteType // 1 = yes, 2 = no, 3 = abstain
-          ]
+        functionArguments: [
+          dao.id,
+          parseInt(proposalId),
+          voteType // 1 = yes, 2 = no, 3 = abstain
+        ]
       };
 
       const response = await signAndSubmitTransaction({ payload } as any);
 
       // Check if transaction was rejected by user - handle various rejection formats
       if (!response ||
-          response?.status === 'Rejected' ||
-          response?.status === 'rejected' ||
-          String(response?.status || '').toLowerCase().includes('reject')) {
+        response?.status === 'Rejected' ||
+        response?.status === 'rejected' ||
+        String(response?.status || '').toLowerCase().includes('reject')) {
         return; // Exit silently without showing success message
       }
 
@@ -1028,12 +1044,12 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       if (!isAdmin) {
         if (!isMember) {
           if (!isStaker) {
-            errorMessage += `You are not a member - you need to stake at least ${membershipData?.minStakeRequired || 'some'} MOVE tokens to join and vote.`;
+            errorMessage += `You are not a member - you need to stake at least ${membershipData?.minStakeRequired || 'some'} CEDRA tokens to join and vote.`;
           } else {
-            errorMessage += `You have ${membershipData?.stakedAmount || 0} MOVE staked but need to join the DAO to vote.`;
+            errorMessage += `You have ${membershipData?.stakedAmount || 0} CEDRA staked but need to join the DAO to vote.`;
           }
         } else if ((membershipData?.votingPower || 0) <= 0) {
-          errorMessage += `You are a member but have no voting power. Current stake: ${membershipData?.stakedAmount || 0} MOVE.`;
+          errorMessage += `You are a member but have no voting power. Current stake: ${membershipData?.stakedAmount || 0} CEDRA.`;
         } else {
           errorMessage += 'Please check your membership status and try again.';
         }
@@ -1062,15 +1078,8 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         errorMessage = 'Insufficient stake to vote. You need to stake more tokens to participate in DAO governance.';
       }
 
-      // Show error to user instead of throwing
-      setVotingError(errorMessage);
-      setShowVotingError(true);
-
-      // Auto-hide error after 8 seconds for longer messages
-      setTimeout(() => {
-        setShowVotingError(false);
-        setVotingError('');
-      }, 8000);
+      // Show error to user via global alert
+      showAlert(errorMessage, 'error');
     }
   };
 
@@ -1095,18 +1104,18 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       } else if (!stakeRequirements.canPropose) {
         // Only show staking errors to non-admin users
         let errorMessage = 'You cannot create proposals. ';
-        
+
         // Check if membership config is missing and user has sufficient stake
         if (membershipConfigMissing && stakeRequirements.userCurrentStake >= 5) {
           errorMessage = 'DAO membership configuration is missing. You have sufficient stake but membership validation failed. Contact the DAO creator to initialize membership settings.';
         } else if (stakeRequirements.userCurrentStake === 0 && stakeRequirements.minStakeToJoin === 0) {
-          errorMessage = ` DAO CONFIGURATION ISSUE: This DAO appears to be incorrectly configured or doesn't exist. Both your stake and minimum requirements show 0.00 MOVE. Please verify you're using the correct DAO address, or contact the DAO creator to properly initialize this DAO.`;
+          errorMessage = ` DAO CONFIGURATION ISSUE: This DAO appears to be incorrectly configured or doesn't exist. Both your stake and minimum requirements show 0.00 CEDRA. Please verify you're using the correct DAO address, or contact the DAO creator to properly initialize this DAO.`;
         } else if (!stakeRequirements.isMember) {
-          errorMessage += `You need to be a DAO member first. Minimum stake to join: ${stakeRequirements.minStakeToJoin.toFixed(2)} MOVE tokens. Your current stake: ${stakeRequirements.userCurrentStake.toFixed(2)} MOVE tokens.`;
+          errorMessage += `You need to be a DAO member first. Minimum stake to join: ${stakeRequirements.minStakeToJoin.toFixed(2)} CEDRA tokens. Your current stake: ${stakeRequirements.userCurrentStake.toFixed(2)} CEDRA tokens.`;
         } else {
-          errorMessage += `You need to stake more tokens. Minimum stake for proposals: ${stakeRequirements.minStakeToPropose.toFixed(2)} MOVE tokens. Your current stake: ${stakeRequirements.userCurrentStake.toFixed(2)} MOVE tokens.`;
+          errorMessage += `You need to stake more tokens. Minimum stake for proposals: ${stakeRequirements.minStakeToPropose.toFixed(2)} CEDRA tokens. Your current stake: ${stakeRequirements.userCurrentStake.toFixed(2)} CEDRA tokens.`;
         }
-        
+
         showAlert(errorMessage, 'error');
         return;
       }
@@ -1156,9 +1165,9 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
       }
 
       const functionArguments = [
-            dao.id,
-            newProposal.title,
-            newProposal.description,
+        dao.id,
+        newProposal.title,
+        newProposal.description,
         startTimestamp.toString(),
         endTimestamp.toString(),
         executionWindowSeconds.toString(),
@@ -1179,7 +1188,7 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
         functionArguments
       };
 
-      const response = await signAndSubmitTransaction({ payload } as any);
+      await signAndSubmitTransaction({ payload } as any);
 
       // Reset form and close
       setNewProposal({
@@ -1218,21 +1227,21 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
           const can = Boolean(canCreateRes.value?.[0]);
           setCanCreateProposal(prev => userStatus.isAdmin || can || prev);
         }
-      } catch {}
-      
+      } catch { }
+
       showAlert('Proposal created successfully!', 'success');
     } catch (error: any) {
       console.error('Failed to create proposal:', error);
       let errorMessage = 'Failed to create proposal';
-      
+
       // Check for specific error codes
       if (error?.message || error?.toString()) {
         const errorString = error.message || error.toString();
-        
+
         if (errorString.includes('0x262') || errorString.includes('610')) {
           errorMessage = 'You can only create one proposal per 24 hours. Please wait before creating another proposal.';
         } else if (errorString.includes('insufficient') || errorString.includes('Not enough coins')) {
-          errorMessage = 'Insufficient MOVE tokens. Creating a proposal requires 0.01 MOVE tokens as a fee (plus ~0.5 MOVE for gas). Please ensure you have at least 0.51 MOVE in your wallet.';
+          errorMessage = 'Insufficient CEDRA tokens. Creating a proposal requires 0.01 CEDRA tokens as a fee (plus ~0.5 CEDRA for gas). Please ensure you have at least 0.51 CEDRA in your wallet.';
         } else if (errorString.includes('0x4') || errorString.includes('invalid_amount')) {
           errorMessage = 'Invalid proposal parameters. Please check your input values.';
         } else if (errorString.includes('0x9') || errorString.includes('not_authorized')) {
@@ -1241,48 +1250,10 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
           errorMessage = `Failed to create proposal: ${errorString}`;
         }
       }
-      
+
       showAlert(errorMessage, 'error');
     } finally {
       setIsCreating(false);
-    }
-  };
-
-  // No filtering - show all proposals
-  const filteredProposals = proposals;
-
-  // Mobile stats carousel index
-  const [carouselIndex, setCarouselIndex] = useState(0);
-
-  // Proposal statistics
-  const proposalStats = {
-    total: proposals.length,
-    active: proposals.filter(p => p.status === 'active').length,
-    passed: proposals.filter(p => p.status === 'passed').length,
-    rejected: proposals.filter(p => p.status === 'rejected').length,
-    executed: proposals.filter(p => p.status === 'executed').length
-  };
-
-  // Utility functions
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
-      case 'passed': return 'text-green-400 bg-green-500/20 border-green-500/30';
-      case 'rejected': return 'text-red-400 bg-red-500/20 border-red-500/30';
-      case 'executed': return 'text-purple-400 bg-purple-500/20 border-purple-500/30';
-      case 'cancelled': return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
-      default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <Play className="w-4 h-4" />;
-              case 'passed': return <FaCheckCircle className="w-4 h-4" />;
-      case 'rejected': return <XCircle className="w-4 h-4" />;
-      case 'executed': return <Target className="w-4 h-4" />;
-      case 'cancelled': return <Pause className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
     }
   };
 
@@ -1295,45 +1266,29 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
 
   const formatShortDate = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+  const filteredProposals = proposals.filter(p =>
+    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="w-full px-4 sm:px-6 space-y-8">
-      {/* Main wrapper with border */}
-      <div className="border border-white/10 rounded-xl py-4 px-2 space-y-6" style={{ background: 'transparent' }}>
+    <div className="w-full space-y-8 animate-fade-in">
       {/* Details view when a proposal is selected */}
       {selectedProposal ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => {
-                setSelectedProposal(null);
-                try { localStorage.removeItem(`dao_${dao.id}_selected_proposal_id`); } catch {}
-              }}
-              className="px-3 py-2 bg-white/5 hover:bg.White/10 text-gray-300 rounded-lg text-sm"
-            >
-              ← Back to proposals
-            </button>
-          </div>
-          
-          {/* Voting Error Display - Proposal Details View */}
-          {showVotingError && (
-            <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start space-x-3">
-              <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-red-300 font-medium mb-1">Voting Error</h3>
-                <p className="text-red-200 text-sm">{votingError}</p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowVotingError(false);
-                  setVotingError('');
-                }}
-                className="text-red-400 hover:text-red-300 transition-colors"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          
+        <div className="space-y-6 text-left">
+          <button
+            onClick={() => {
+              setSelectedProposal(null);
+              try { localStorage.removeItem(`dao_${dao.id}_selected_proposal_id`); } catch { }
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-xs font-medium transition-all border border-white/10"
+          >
+            <ArrowLeft size={16} />
+            Back to Proposals
+          </button>
+
+
           <DAOProposalDetails
             title={selectedProposal.title}
             description={selectedProposal.description}
@@ -1359,591 +1314,254 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao, sidebarCollapsed = fal
             canStartVoting={Boolean(selectedProposal.proposer === account?.address || userStatus.isAdmin)}
             canFinalize={Boolean(userStatus.isAdmin)}
             userAddress={account?.address}
+            daoAddress={dao.id}
             userIsAdmin={userStatus.isAdmin}
-            userIsCouncil={false}
+            userIsCouncil={userStatus.isCouncil}
             userIsMember={userStatus.isMember}
           />
         </div>
-      ) : (
-        <>
-          {/* Voting Error Display */}
-          {showVotingError && (
-            <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start space-x-3">
-              <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-red-300 font-medium mb-1">Voting Error</h3>
-                <p className="text-red-200 text-sm">{votingError}</p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowVotingError(false);
-                  setVotingError('');
-                }}
-                className="text-red-400 hover:text-red-300 transition-colors"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
+      ) : showCreateForm ? (
+        <div className="w-full max-w-4xl mx-auto space-y-8 animate-fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">Create a proposal</h1>
+              <p className="text-sm text-white/40">Submit a new governance proposal for {dao.name}</p>
             </div>
-          )}
-          
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-lg sm:text-xl font-bold text-white leading-tight">Proposals</h1>
-        <div className="flex items-center space-x-3 flex-shrink-0">
-          <button
-            onClick={() => fetchProposals(true)}
-            disabled={isLoading}
-            className="p-2 text-[#e1fd6a] hover:text-[#e1fd6a]/80 hover:bg-white/5 rounded-lg transition-all disabled:opacity-50"
-            title="Refresh proposals"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-            {(() => {
-              const canCreate = userStatus.isAdmin || stakeRequirements.canPropose; // ABI: admin OR can_create_proposal
-              const isAdmin = userStatus.isAdmin;
-              const isMember = userStatus.isMember;
-              let tooltip = 'Create a new governance proposal';
-              let label = 'New Proposal';
-              let isBecomeMember = false;
-              if (!canCreate) {
-                if (nextProposalTime) {
-                  tooltip = `You can create another proposal at ${nextProposalTime.toLocaleString()}`;
-                  label = `Wait ${Math.ceil((nextProposalTime.getTime() - Date.now()) / (1000 * 60 * 60))}h`;
-                } else {
-                  // Minimal, ABI-aligned messaging (no hard join gate)
-                  if (!isAdmin) {
-                    if (!isMember) {
-                      label = 'Become Member';
-                      tooltip = `Become a member to propose. Minimum stake to join: ${stakeRequirements.minStakeToJoin.toFixed(2)} MOVE.`;
-                      isBecomeMember = true;
-                    } else {
-                      label = 'Not Eligible';
-                      tooltip = `Stake ≥ ${stakeRequirements.minStakeToPropose.toFixed(2)} MOVE to propose. Your stake: ${stakeRequirements.userCurrentStake.toFixed(2)} MOVE.`;
-                    }
-                  }
-                }
-              }
-              return (
-                <button
-                  onClick={() => canCreate && setShowCreateForm(true)}
-                  disabled={isBecomeMember || !canCreate}
-                  title={tooltip}
-                  className={`flex items-center space-x-2 px-4 py-2 font-semibold text-sm transition-all rounded-lg ${
-                    canCreate || isBecomeMember
-                      ? 'hover:opacity-80'
-                      : 'cursor-not-allowed opacity-50'
-                  }`}
-                  style={
-                    canCreate || isBecomeMember
-                      ? { background: '#e1fd6a', color: '#000000' }
-                      : { background: '#e1fd6a', color: '#000000' }
-                  }
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>{label}</span>
-                </button>
-              );
-            })()}
-        </div>
-      </div>
-
-      {/* Stats - single card carousel on mobile, grid on larger screens */}
-      <div className="sm:hidden">
-        <div className="relative">
-          {/* Total */}
-          {carouselIndex === 0 && (
-            <div className="professional-card p-4 text-center rounded-xl relative">
-              <button
-                type="button"
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i - 1 + 5) % 5)}
-                aria-label="Previous stat"
-              >
-                <ChevronLeft className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <button
-                type="button"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i + 1) % 5)}
-                aria-label="Next stat"
-              >
-                <ChevronRight className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <div className="text-xl font-bold text-white">{proposalStats.total}</div>
-              <div className="text-sm text-gray-400">Total</div>
-            </div>
-          )}
-          {/* Active */}
-          {carouselIndex === 1 && (
-            <div className="professional-card p-4 text-center rounded-xl relative">
-              <button
-                type="button"
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i - 1 + 5) % 5)}
-                aria-label="Previous stat"
-              >
-                <ChevronLeft className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <button
-                type="button"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i + 1) % 5)}
-                aria-label="Next stat"
-              >
-                <ChevronRight className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <div className="text-xl font-bold text-white">{proposalStats.active}</div>
-              <div className="text-sm text-gray-400">Active</div>
-            </div>
-          )}
-          {/* Passed */}
-          {carouselIndex === 2 && (
-            <div className="professional-card p-4 text-center rounded-xl relative">
-              <button
-                type="button"
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i - 1 + 5) % 5)}
-                aria-label="Previous stat"
-              >
-                <ChevronLeft className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <button
-                type="button"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i + 1) % 5)}
-                aria-label="Next stat"
-              >
-                <ChevronRight className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <div className="text-xl font-bold text-white">{proposalStats.passed}</div>
-              <div className="text-sm text-gray-400">Passed</div>
-            </div>
-          )}
-          {/* Rejected */}
-          {carouselIndex === 3 && (
-            <div className="professional-card p-4 text-center rounded-xl relative">
-              <button
-                type="button"
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i - 1 + 5) % 5)}
-                aria-label="Previous stat"
-              >
-                <ChevronLeft className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <button
-                type="button"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i + 1) % 5)}
-                aria-label="Next stat"
-              >
-                <ChevronRight className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <div className="text-xl font-bold text-white">{proposalStats.rejected}</div>
-              <div className="text-sm text-gray-400">Rejected</div>
-            </div>
-          )}
-          {/* Executed */}
-          {carouselIndex === 4 && (
-            <div className="professional-card p-4 text-center rounded-xl relative">
-              <button
-                type="button"
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i - 1 + 5) % 5)}
-                aria-label="Previous stat"
-              >
-                <ChevronLeft className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <button
-                type="button"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setCarouselIndex((i) => (i + 1) % 5)}
-                aria-label="Next stat"
-              >
-                <ChevronRight className="w-5 h-5 text-black dark:text-white" style={{ color: 'inherit' }} />
-              </button>
-              <div className="text-xl font-bold text-white">{proposalStats.executed}</div>
-              <div className="text-sm text-gray-400">Executed</div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Grid for tablets and up */}
-      <div className="hidden sm:grid grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-        <div className="professional-card p-3 sm:p-4 text-center rounded-xl">
-          <div className="text-lg sm:text-xl font-bold text-white">{proposalStats.total}</div>
-          <div className="text-xs sm:text-sm text-gray-400">Total</div>
-        </div>
-        <div className="professional-card p-3 sm:p-4 text-center rounded-xl">
-          <div className="text-lg sm:text-xl font-bold text-white">{proposalStats.active}</div>
-          <div className="text-xs sm:text-sm text-gray-400">Active</div>
-        </div>
-        <div className="professional-card p-3 sm:p-4 text-center rounded-xl">
-          <div className="text-lg sm:text-xl font-bold text-white">{proposalStats.passed}</div>
-          <div className="text-xs sm:text-sm text-gray-400">Passed</div>
-        </div>
-        <div className="professional-card p-3 sm:p-4 text-center rounded-xl">
-          <div className="text-lg sm:text-xl font-bold text-white">{proposalStats.rejected}</div>
-          <div className="text-xs sm:text-sm text-gray-400">Rejected</div>
-        </div>
-        <div className="professional-card p-3 sm:p-4 text-center rounded-xl">
-          <div className="text-lg sm:text-xl font-bold text-white">{proposalStats.executed}</div>
-          <div className="text-xs sm:text-sm text-gray-400">Executed</div>
-        </div>
-      </div>
-
-
-      {/* Create Proposal Inline (non-modal) */}
-      {showCreateForm && (
-        <div className="professional-card rounded-xl p-6 w-full">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Create New Proposal</h2>
             <button
               onClick={() => setShowCreateForm(false)}
-              className="text-gray-400 hover:text-white p-1"
+              className="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-medium text-sm transition-all"
             >
-              <XCircle className="w-5 h-5" />
+              Cancel
             </button>
-                </div>
+          </div>
 
-          {/* Comprehensive Proposal Requirements Notice - themed */}
-          <div className="professional-card mb-6 p-4 rounded-xl">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-              <div className="space-y-2">
-                <h3 className="text-white font-semibold">Important Requirements & Fees</h3>
-                <div className="text-sm text-gray-300 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#facc16' }}></span>
-                    <span><strong className="text-gray-100">Proposal Fee:</strong> 0.01 MOVE tokens (anti-spam fee)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#facc16' }}></span>
-                    <span><strong className="text-gray-100">Gas Fees:</strong> ~0.5 MOVE for transaction</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#facc16' }}></span>
-                    <span><strong className="text-gray-100">Cooldown:</strong> 24 hours between proposals</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#facc16' }}></span>
-                    <span><strong className="text-gray-100">Total Needed:</strong> At least 0.51 MOVE in wallet</span>
-                  </div>
-                </div>
-                {/* User Wallet Balance Status */}
-                <div className="mt-3 p-3 professional-card rounded-lg">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-300">Your Wallet Balance:</span>
-                    <div className="flex items-center gap-3">
-                      {balanceLoading ? (
-                        <span className="text-gray-400 font-mono"></span>
-                      ) : (
-                        <>
-                          <span className={`font-mono font-bold ${
-                            (hookWalletBalance || userState?.totalBalance || 0) >= 0.51 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                            {(hookWalletBalance || userState?.totalBalance || 0).toFixed(2)} MOVE
-                          </span>
-                          {(hookWalletBalance || userState?.totalBalance || 0) >= 0.51 ? (
-                            <FaCheckCircle className="w-4 h-4 text-green-400" />
-                          ) : (
-                            <XCircle className="w-4 h-4 text-red-400" />
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {!balanceLoading && (hookWalletBalance || userState?.totalBalance || 0) < 0.51 && (
-                    <div className="mt-2 text-xs text-red-300">
-                       Insufficient funds. You need {(0.51 - (hookWalletBalance || userState?.totalBalance || 0)).toFixed(2)} more MOVE.
-                    </div>
-                  )}
-                  {balanceError && (
-                    <div className="mt-2 text-xs text-amber-300">
-                       Unable to fetch balance: {balanceError}
-                    </div>
-                  )}
-                </div>
-                {nextProposalTime && (
-                  <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded">
-                    <div className="flex items-center gap-2 text-red-300 text-sm">
-                      <Clock className="w-4 h-4" />
-                      <span>Next proposal available: {nextProposalTime.toLocaleString()}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-                </div>
-
-          {/* Stake Requirements Info - themed */}
-          {stakeRequirements.minStakeToPropose > 0 && (
-            <div className="professional-card mb-6 p-4 rounded-xl">
-              <h3 className="text-white font-medium mb-2">Proposal Creation Requirements</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                  <span className="text-gray-400">Your Current Stake:</span>
-                  <div className={`font-mono font-bold ${
-                    stakeRequirements.userCurrentStake >= stakeRequirements.minStakeToPropose 
-                      ? 'text-green-400' 
-                      : 'text-red-400'
-                  }`}>
-                    {stakeRequirements.userCurrentStake.toFixed(2)} MOVE
-                    </div>
-                    </div>
-                    <div>
-                  <span className="text-gray-400">Required for Proposals:</span>
-                  <div className="text-blue-300 font-mono font-bold">
-                    {stakeRequirements.minStakeToPropose.toFixed(2)} MOVE
-                  </div>
-                    </div>
-                    <div>
-                  <span className="text-gray-400">Status:</span>
-                  <div className={`font-medium ${
-                    stakeRequirements.isAdmin
-                      ? 'text-purple-400'
-                      : stakeRequirements.canPropose
-                        ? 'text-green-400'
-                        : 'text-red-400'
-                  }`}>
-                    {stakeRequirements.isAdmin 
-                      ? 'Admin (No stake required)' 
-                      : stakeRequirements.canPropose 
-                        ? 'Eligible' 
-                        : 'Need more stake'
-                    }
-                      </div>
-                    </div>
-                  </div>
-              {!stakeRequirements.isAdmin && !stakeRequirements.canPropose && (
-                <div className="mt-3 text-sm text-blue-200">
-                  💡 You need to stake {(stakeRequirements.minStakeToPropose - stakeRequirements.userCurrentStake).toFixed(2)} more MOVE tokens to create proposals.
-                      </div>
-                    )}
-                  </div>
-                )}
-
+          {/* Form */}
           <div className="space-y-6">
-              <div>
-              <h3 className="text-sm font-semibold text-gray-300 mb-3">Basics</h3>
-                <label className="block text-sm font-medium text-white mb-2">Title</label>
+            {/* Title */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/60">Title</label>
+              <input
+                type="text"
+                placeholder="Enter proposal title..."
+                className="w-full px-6 py-4 bg-white/[0.02] border border-white/10 rounded-2xl text-white placeholder-white/20 focus:border-white/20 outline-none transition-all text-base"
+                value={newProposal.title}
+                onChange={e => setNewProposal({ ...newProposal, title: e.target.value })}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/60">Description</label>
+              <textarea
+                value={newProposal.description}
+                onChange={(e) => setNewProposal({ ...newProposal, description: e.target.value })}
+                className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-6 py-4 text-base text-white/90 outline-none focus:border-white/20 min-h-[200px] resize-none transition-all placeholder-white/20"
+                placeholder="Provide a detailed description of your proposal..."
+              />
+            </div>
+
+            {/* Grid for timing and quorum */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Quorum (%)</label>
                 <input
-                  type="text"
-                  value={newProposal.title}
-                  onChange={(e) => setNewProposal({...newProposal, title: e.target.value})}
-                  className="professional-input w-full px-3 py-2 rounded-xl text-sm"
-                  placeholder="Enter proposal title"
+                  type="number"
+                  value={newProposal.minQuorum}
+                  onChange={(e) => setNewProposal({ ...newProposal, minQuorum: parseFloat(e.target.value) || 0 })}
+                  className="w-full bg-white/[0.02] border border-white/10 rounded-xl px-4 py-3.5 text-base text-white outline-none focus:border-white/20 transition-all"
+                  placeholder="20"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">Description</label>
-                <textarea
-                  value={newProposal.description}
-                  onChange={(e) => setNewProposal({...newProposal, description: e.target.value})}
-                  className="professional-input w-full px-3 py-2 rounded-xl text-sm h-24 resize-none"
-                  placeholder="Describe your proposal in detail"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">Category</label>
-                <select
-                  value={newProposal.category}
-                  onChange={(e) => setNewProposal({...newProposal, category: e.target.value})}
-                  className="professional-input w-full px-3 py-2 rounded-xl text-sm"
-                >
-                  <option value="general" className="text-white bg-[#121214]" style={{ backgroundColor: '#121214', color: '#ffffff' }}>General</option>
-                  <option value="governance" className="text-white bg-[#121214]" style={{ backgroundColor: '#121214', color: '#ffffff' }}>Governance</option>
-                  <option value="treasury" className="text-white bg-[#121214]" style={{ backgroundColor: '#121214', color: '#ffffff' }}>Treasury</option>
-                  <option value="technical" className="text-white bg-[#121214]" style={{ backgroundColor: '#121214', color: '#ffffff' }}>Technical</option>
-                  <option value="community" className="text-white bg-[#121214]" style={{ backgroundColor: '#121214', color: '#ffffff' }}>Community</option>
-                </select>
-              </div>
-
-            <div className={`grid grid-cols-1 gap-4 ${
-              sidebarCollapsed ? 'md:grid-cols-2' : 'md:grid-cols-1'
-            }`}>
-                <div>
-                <h3 className="text-sm font-semibold text-gray-300 mb-3">Voting Schedule</h3>
-                <label className="block text-sm font-medium text-white mb-2">Start Time</label>
-                  <input
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">Start Time</label>
+                <input
                   type="datetime-local"
                   value={newProposal.startTime}
-                  onChange={(e) => setNewProposal({...newProposal, startTime: e.target.value})}
-                    className="professional-input w-full px-3 py-2 rounded-xl text-sm"
-                  min={new Date().toISOString().slice(0, 16)}
-                  />
-                </div>
-
-                <div>
-                <label className="block text-sm font-medium text-white mb-2">End Time</label>
+                  onChange={(e) => setNewProposal({ ...newProposal, startTime: e.target.value })}
+                  className="w-full bg-white/[0.02] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white outline-none focus:border-white/20 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white/60">End Time</label>
                 <input
                   type="datetime-local"
                   value={newProposal.endTime}
-                  onChange={(e) => setNewProposal({...newProposal, endTime: e.target.value})}
-                  className="professional-input w-full px-3 py-2 rounded-xl text-sm"
-                  min={newProposal.startTime || new Date().toISOString().slice(0, 16)}
+                  onChange={(e) => setNewProposal({ ...newProposal, endTime: e.target.value })}
+                  className="w-full bg-white/[0.02] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white outline-none focus:border-white/20 transition-all"
                 />
               </div>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 ${
-              sidebarCollapsed ? 'md:grid-cols-2' : 'md:grid-cols-1'
-            }`}>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-300 mb-3">Governance Parameters</h3>
-                <label className="block text-sm font-medium text-white mb-2">Minimum Quorum (%)</label>
-                  <input
-                    type="number"
-                    value={newProposal.minQuorum}
-                  onChange={(e) => setNewProposal({...newProposal, minQuorum: parseFloat(e.target.value) || 0})}
-                    className="professional-input w-full px-3 py-2 rounded-xl text-sm"
-                  placeholder="e.g., 25"
-                    min="1"
-                    max="100"
-                  />
-                </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white mb-2">Execution Window (days)</label>
-                <input
-                  type="number"
-                  value={newProposal.executionWindow}
-                  onChange={(e) => setNewProposal({...newProposal, executionWindow: parseInt(e.target.value) || 7})}
-                  className="professional-input w-full px-3 py-2 rounded-xl text-sm"
-                  placeholder="e.g., 7"
-                  min="1"
-                  max="365"
-                />
-              </div>
-              </div>
-
-            <div className="flex justify-end space-x-3">
+            {/* Submit Button */}
+            <div className="pt-4 flex justify-center">
               <button
                 onClick={handleCreateProposal}
-                disabled={isCreating || !newProposal.title || !newProposal.description || !newProposal.startTime || !newProposal.endTime}
-                className="px-6 py-2 rounded-xl text-sm font-semibold transition-all"
-                style={{
-                  backgroundColor: (isCreating || !newProposal.title || !newProposal.description || !newProposal.startTime || !newProposal.endTime) ? '#facc1660' : '#facc16',
-                  color: '#0f172a',
-                  cursor: (isCreating || !newProposal.title || !newProposal.description || !newProposal.startTime || !newProposal.endTime) ? 'not-allowed' : 'pointer'
-                }}
+                disabled={isCreating}
+                className="px-12 py-4 bg-white text-black rounded-xl font-semibold text-base hover:opacity-90 disabled:opacity-50 transition-all active:scale-[0.98]"
               >
-                {isCreating ? 'Creating...' : 'Create Proposal'}
+                {isCreating ? 'Submitting...' : 'Submit Proposal'}
               </button>
-              <button
-                onClick={() => setShowCreateForm(false)}
-                className="px-5 py-2 rounded-xl text-sm font-semibold bg-white/10 text-gray-300 hover:bg-white/15 border border-white/15"
-              >
-                Cancel
-              </button>
-            </div>
             </div>
           </div>
-      )}
-
-      {/* Proposals List (compact rows) */}
-      {sectionLoader.isLoading && proposals.length === 0 ? (
-        <div></div>
-      ) : filteredProposals.length === 0 ? (
-        <div className="text-center py-12">
-          {proposals.length > 0 ? (
-            // When cached proposals exist but filter yields none, keep the area compact without the big empty-state
-            <p className="text-gray-400">No results match your filters.</p>
-          ) : (
-            <>
-              <h3 className="text-lg font-medium text-white mb-2">No proposals found</h3>
-              <p className="text-gray-400 mb-4">
-                This DAO has no proposals yet. Be the first to create one!
-              </p>
-            </>
-          )}
         </div>
       ) : (
-        <div className="professional-card rounded-xl p-0 overflow-hidden">
-          <div className="divide-y divide-white/10">
-            {filteredProposals.map((proposal) => (
-              <div
-                key={proposal.id}
-                className="p-4 hover:bg-white/5 transition-all cursor-pointer"
-                onClick={() => {
-                  setSelectedProposal(proposal);
-                  try { localStorage.setItem(`dao_${dao.id}_selected_proposal_id`, proposal.id); } catch {}
-                }}
-              >
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
-                      <span className="text-xs sm:text-sm font-mono text-gray-400 w-16 shrink-0">{formatProposalId(proposal.id)}</span>
-                      <Pill className={`${getStatusColor(proposal.status)} border-0 shrink-0`} icon={getStatusIcon(proposal.status)}>
-                        <span className="capitalize">{proposal.status}</span>
-                      </Pill>
-                      <h3 className="text-white font-medium break-words text-sm sm:text-base">{proposal.title}</h3>
-                    </div>
-                    <div className="flex items-center gap-2 sm:gap-3 sm:self-auto self-start">
-                      {/* Finalize button for active proposals that have ended (Admin only) */}
-                      {proposal.needsFinalization && userStatus.isAdmin && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleFinalizeProposal(proposal.id);
-                          }}
-                          className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-medium transition-all"
-                          title="Finalize proposal - voting period has ended"
-                        >
-                          Finalize
-                        </button>
-                      )}
-                      {/* Status text for non-admins when proposal needs finalization */}
-                      {proposal.needsFinalization && !userStatus.isAdmin && (
-                        <span className="px-3 py-1 bg-gray-600/20 text-gray-300 rounded-lg text-xs font-medium border border-gray-600/30">
-                          Awaiting finalization
-                        </span>
-                      )}
-                      {/* Activation button for draft proposals */}
-                      {proposal.needsActivation && (proposal.proposer === account?.address || userStatus.isAdmin) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartVoting(proposal.id);
-                          }}
-                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-all"
-                          title="Start voting for this proposal"
-                        >
-                          Start Voting
-                        </button>
-                      )}
-                    <span className="text-xs sm:text-sm text-gray-400 whitespace-nowrap">{formatShortDate(proposal.created || proposal.votingEnd)}</span>
-                    </div>
-                  </div>
+        <>
+          {/* Create a proposal header */}
+          <div className="flex items-center justify-between px-1 mb-10">
+            <h2 className="text-xl font-medium text-white tracking-tight">Create a proposal</h2>
+            {(() => {
+              const canCreate = canCreateProposal;
+              const isAdmin = userStatus.isAdmin;
+              const isMember = userStatus.isMember;
+              let label = 'New proposal';
+              let isBecomeMember = false;
 
-                  {/* Quorum Progress Bar */}
-                  <div className="w-full">
-                    <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                      <span>Quorum Progress</span>
-                      <span>{proposal.quorumCurrent.toFixed(1)}% / {proposal.quorumRequired.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${Math.min((proposal.quorumCurrent / Math.max(proposal.quorumRequired, 0.001)) * 100, 100)}%`,
-                          backgroundColor: '#facc16'
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+              if (!canCreate) {
+                if (nextProposalTime) {
+                  label = `Cooldown: ${Math.ceil((nextProposalTime.getTime() - Date.now()) / (1000 * 60 * 60))}h`;
+                } else if (!isAdmin && !isMember) {
+                  label = 'Become member';
+                  isBecomeMember = true;
+                } else if (!isAdmin) {
+                  label = 'Low stake';
+                }
+              }
+
+              return (
+                <button
+                  onClick={() => !isBecomeMember && canCreate && setShowCreateForm(!showCreateForm)}
+                  disabled={isBecomeMember || (!canCreate && !showCreateForm)}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-sm transition-all shadow-lg active:scale-95 ${showCreateForm
+                    ? 'bg-white/10 text-white border border-white/20'
+                    : 'bg-white text-black hover:bg-white/90'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {!showCreateForm && <Plus size={16} />}
+                  <span>{showCreateForm ? 'Cancel' : label}</span>
+                </button>
+              );
+            })()}
           </div>
-        </div>
-        )}
+
+          {/* Proposals List Header */}
+          <div className="flex items-center justify-between px-1 mb-6">
+            <h2 className="text-xl font-medium text-white">Proposals</h2>
+            <div className="p-2 text-white/40 hover:text-white transition-colors cursor-pointer">
+              <FaDiscord size={20} />
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative mb-10">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+            <input
+              type="text"
+              placeholder="Search proposals..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-black/20 border border-white/5 rounded-xl py-3.5 pl-12 pr-6 text-sm text-white placeholder:text-white/20 outline-none focus:border-white/10 transition-all"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="px-1 py-4 flex items-center gap-2 text-white/40 text-[13px] font-medium">
+              <span className="cursor-pointer hover:text-white/80 transition-colors flex items-center gap-1.5">
+                <Play size={10} className="rotate-90" />
+                History • {proposals.length} proposals
+              </span>
+            </div>
+
+            {isLoading && proposals.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="w-8 h-8 border-2 border-white/10 border-t-white rounded-full animate-spin" />
+                <p className="text-[10px] font-medium text-white/40">Loading Proposals...</p>
+              </div>
+            ) : filteredProposals.length === 0 ? (
+              <div className="py-20 text-center">
+                <p className="text-white/40 font-medium text-[10px]">No proposals found</p>
+              </div>
+            ) : (
+              <div className="space-y-3 border-white/5">
+                {filteredProposals.map((proposal) => {
+                  const statusLabel = proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1);
+                  const isClosed = proposal.status === 'rejected' || proposal.status === 'cancelled' || proposal.status === 'closed';
+                  const isExecuted = proposal.status === 'executed';
+
+                  return (
+                    <div
+                      key={proposal.id}
+                      onClick={() => {
+                        setSelectedProposal(proposal);
+                        try { localStorage.setItem(`dao_${dao.id}_selected_proposal_id`, proposal.id); } catch { }
+                      }}
+                      className="group flex flex-col sm:flex-row sm:items-center justify-between py-5 px-6 bg-white/[0.02] border border-white/5 rounded-2xl cursor-pointer transition-all hover:border-[#e1fd6a]/20 space-y-4 sm:space-y-0"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8">
+                        {/* ID Section */}
+                        <div className="flex items-center justify-between sm:justify-start gap-4">
+                          <span className="text-[11px] font-bold text-[#e1fd6a]/40 uppercase tracking-widest sm:w-16">
+                            {formatProposalId(proposal.id)}
+                          </span>
+
+                          <div className={`sm:hidden shrink-0 w-4 h-4 rounded-full flex items-center justify-center border ${isClosed ? 'border-white/10' : 'border-[#e1fd6a]/50'
+                            }`}>
+                            {isExecuted || proposal.status === 'passed' ? (
+                              <FaCheckCircle className="w-2.5 h-2.5 text-[#e1fd6a]" />
+                            ) : isClosed ? (
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#e1fd6a] animate-pulse" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Status Section (Desktop) */}
+                        <div className="hidden sm:flex items-center gap-2.5 w-28">
+                          <div className={`shrink-0 w-4 h-4 rounded-full flex items-center justify-center border ${isClosed ? 'border-white/10' : 'border-[#e1fd6a]/50'
+                            }`}>
+                            {isExecuted || proposal.status === 'passed' ? (
+                              <FaCheckCircle className="w-2.5 h-2.5 text-[#e1fd6a]" />
+                            ) : isClosed ? (
+                              <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#e1fd6a] animate-pulse" />
+                            )}
+                          </div>
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${isClosed ? 'text-white/40' : 'text-white'
+                            }`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        {/* Title Section */}
+                        <h3 className="text-sm font-semibold text-white tracking-tight leading-snug group-hover:text-[#e1fd6a] transition-colors">
+                          {proposal.title}
+                        </h3>
+                      </div>
+
+                      {/* Info Row for Mobile */}
+                      <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                        <div className="sm:hidden flex items-center gap-2">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${isClosed ? 'text-white/40' : 'text-white'
+                            }`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
+                          {formatShortDate(proposal.created)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </>
-      )}
-      </div>
-    </div>
+      )
+      }
+    </div >
   );
 };
 

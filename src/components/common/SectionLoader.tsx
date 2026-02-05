@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 interface SectionLoaderProps {
   isLoading: boolean;
@@ -18,7 +18,7 @@ const SectionLoader: React.FC<SectionLoaderProps> = ({
   children,
   className = '',
   minHeight = '400px',
-  loadingText = 'Loading...'
+  loadingText: _loadingText = 'Loading...'
 }) => {
   // Do not obstruct UI: render children without overlay while loading
   if (isLoading) {

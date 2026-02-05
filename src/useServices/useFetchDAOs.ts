@@ -26,7 +26,7 @@ export function useFetchCreatedDAOs() {
         const parsed = JSON.parse(cached);
         return parsed?.daos || [];
       }
-    } catch {}
+    } catch { }
     return [];
   })();
 
@@ -76,26 +76,26 @@ export function useFetchCreatedDAOs() {
   // Enhanced image optimization and preloading functions
   const optimizeImageUrl = (url: string): string => {
     if (!url) return ''
-    
-    
+
+
     try {
       // For Twitter images, use minimal optimization for maximum clarity
       if (url.includes('pbs.twimg.com')) {
         let optimizedUrl = url
-        
+
         // Profile images: use original size for maximum clarity
         if (url.includes('profile_images')) {
           optimizedUrl = url.replace('_400x400', '_400x400') // Keep original size (400x400)
         }
-        
+
         // Banner images: use original size for maximum clarity
         if (url.includes('profile_banners')) {
           optimizedUrl = url.replace('/1500x500', '/1500x500') // Keep original size for clarity
         }
-        
+
         return optimizedUrl
       }
-      
+
       // For other URLs, use minimal optimization for clarity
       const urlObj = new URL(url)
       urlObj.searchParams.set('w', '800') // Much larger max width for clarity
@@ -115,14 +115,14 @@ export function useFetchCreatedDAOs() {
   const fetchDAOs = useCallback(async (forceRefresh = false) => {
     // Enhanced caching with stale-while-revalidate pattern
     let usedStaleCache = false
-    
+
     try {
       const cachedRaw = typeof window !== 'undefined' ? window.localStorage.getItem(CACHE_KEY) : null
       if (cachedRaw && !forceRefresh) {
         const cached = JSON.parse(cachedRaw) as { daos: DAO[]; updatedAt: number; count: number }
         if (cached?.daos?.length && cached?.count) {
           const age = Date.now() - (cached.updatedAt || 0)
-          
+
           if (age < FRESH_TTL_MS) {
             // Fresh cache - use immediately and don't fetch
             setDAOs(cached.daos)
@@ -136,7 +136,7 @@ export function useFetchCreatedDAOs() {
           }
         }
       }
-    } catch {}
+    } catch { }
 
     // Only show loading if we don't have stale cache
     if (!usedStaleCache) {
@@ -145,13 +145,13 @@ export function useFetchCreatedDAOs() {
     setError(null)
 
     try {
-      
+
       // First verify contract deployment (but proceed even if network issues)
       const isContractDeployed = await verifyContractDeployment();
       if (!isContractDeployed) {
         // Don't return empty - try to use cached data or continue with other methods
       }
-      
+
 
       let foundDAOs: DAO[] = []
       let registryAddresses: string[] = []
@@ -216,16 +216,39 @@ export function useFetchCreatedDAOs() {
         console.warn('⚠️ Event-based discovery failed:', eventError?.message || eventError)
       }
 
-      // Step 3: Combine addresses from both sources (remove duplicates)
+      // Step 2.5: Try filter module discovery
+      let filterAddresses: string[] = []
+      try {
+        const filterResults = await cedraClient.view({
+          payload: {
+            function: `${MODULE_ADDRESS}::filter::get_newest_daos` as `${string}::${string}::${string}`,
+            functionArguments: ["100"],
+          },
+        }).catch(() => [[]])
+
+        if (Array.isArray(filterResults[0])) {
+          filterAddresses = (filterResults[0] as any[]).map(f => f.address?.toLowerCase()).filter(Boolean)
+          console.log(`✅ Found ${filterAddresses.length} DAOs from filter module`)
+        }
+      } catch (filterError: any) {
+        console.warn('⚠️ Filter-based discovery failed:', filterError?.message || filterError)
+      }
+
+      // Step 3: Combine addresses from all sources (remove duplicates)
       const allAddressesSet = new Set<string>()
-      
+
       // Add registry addresses first (they're more reliable)
       registryAddresses.forEach(addr => {
         if (addr) allAddressesSet.add(addr.toLowerCase())
       })
-      
-      // Add event addresses (may include DAOs not in registry)
+
+      // Add event addresses
       eventAddresses.forEach(addr => {
+        if (addr) allAddressesSet.add(addr.toLowerCase())
+      })
+
+      // Add filter addresses
+      filterAddresses.forEach(addr => {
         if (addr) allAddressesSet.add(addr.toLowerCase())
       })
 
@@ -239,10 +262,10 @@ export function useFetchCreatedDAOs() {
       } else {
         console.warn('⚠️ No DAOs found from either registry or events')
       }
-      
+
       // Step 5: Always set the found DAOs (even if empty)
       setDAOs(foundDAOs)
-      
+
       // Cache the final results for consistency
       try {
         const cacheData = {
@@ -256,12 +279,12 @@ export function useFetchCreatedDAOs() {
             unique: uniqueAddresses.length
           }
         }
-        
+
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
           window.localStorage.setItem(`${CACHE_KEY}_backup`, JSON.stringify(cacheData))
         }
-        
+
         console.log(`💾 Cached ${foundDAOs.length} DAOs`)
       } catch (error) {
         console.warn('Failed to cache DAOs:', error)
@@ -286,16 +309,16 @@ export function useFetchCreatedDAOs() {
         fetchDAOs(true).catch(err => console.warn('Failed to refresh after DAO creation:', err))
         return
       }
-      
+
       console.log('🔄 DAO created event received with details - adding optimistically and refreshing...', detail)
-      
+
       setDAOs(prev => {
         if (prev.some(d => d.id === detail.id)) {
           // DAO already exists, just trigger refresh
-          setTimeout(() => { fetchDAOs(true).catch(() => {}) }, 1000)
+          setTimeout(() => { fetchDAOs(true).catch(() => { }) }, 1000)
           return prev
         }
-        
+
         const optimistic: DAO = {
           id: detail.id as string,
           name: detail.name || 'New DAO',
@@ -303,7 +326,7 @@ export function useFetchCreatedDAOs() {
           image: detail.image || '',
           background: detail.background || '',
           subname: detail.subname,
-          chain: detail.subname ?? 'Movement',
+          chain: detail.subname ?? 'Cedra',
           tokenName: detail.tokenName ?? 'DAO',
           tokenSymbol: detail.tokenSymbol ?? 'DAO',
           tvl: '0',
@@ -322,7 +345,7 @@ export function useFetchCreatedDAOs() {
             window.localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
             window.localStorage.setItem(`${CACHE_KEY}_backup`, JSON.stringify(cacheData))
           }
-        } catch {}
+        } catch { }
         // Trigger immediate refresh to get real data from blockchain
         // Wait for blockchain indexer to process the transaction
         // GraphQL indexer typically takes 30-60 seconds
@@ -346,10 +369,10 @@ export function useFetchCreatedDAOs() {
   const toImageUrl = (maybeBytes: unknown): string => {
     try {
       // Create cache key from the data
-      const cacheKey = Array.isArray(maybeBytes) ? 
-        `bytes_${maybeBytes.length}_${maybeBytes.slice(0, 10).join('')}` : 
+      const cacheKey = Array.isArray(maybeBytes) ?
+        `bytes_${maybeBytes.length}_${maybeBytes.slice(0, 10).join('')}` :
         `str_${String(maybeBytes).substring(0, 50)}`;
-      
+
       // Check cache first
       if (imageCache.has(cacheKey)) {
         return imageCache.get(cacheKey)!;
@@ -364,9 +387,9 @@ export function useFetchCreatedDAOs() {
         bytes = hexToBytes(maybeBytes)
       } else {
       }
-      
+
       if (bytes && bytes.length > 0) {
-        
+
         try {
           // Detect image format from magic bytes
           let mimeType = 'image/jpeg'; // default
@@ -382,7 +405,7 @@ export function useFetchCreatedDAOs() {
               mimeType = 'image/webp';
             }
           }
-          
+
           // Use more efficient conversion for large images
           let dataUrl: string;
           if (bytes.length > 100000) { // > 100KB - use chunked processing
@@ -400,7 +423,7 @@ export function useFetchCreatedDAOs() {
             const base64 = btoa(binary);
             dataUrl = `data:${mimeType};base64,${base64}`;
           }
-          
+
           // Cache the result
           imageCache.set(cacheKey, dataUrl);
           return dataUrl;
@@ -412,7 +435,7 @@ export function useFetchCreatedDAOs() {
         }
       } else {
       }
-      
+
       // Cache empty result too
       imageCache.set(cacheKey, '');
       return ''
@@ -432,14 +455,14 @@ export function useFetchCreatedDAOs() {
     try {
       // Add small delay before each DAO processing to avoid overwhelming the RPC
       await delay(REQUEST_DELAY)
-      
+
       const daoInfo = await cedraClient.view({
         payload: {
           function: DAO_FUNCTIONS.GET_DAO_INFO as `${string}::${string}::${string}`,
           functionArguments: [address],
         },
       })
-      
+
       // Handle different DAO info formats - according to ABI: (name, subname, description, logo_is_url, logo_url, logo_data, bg_is_url, bg_url, bg_data, created_at)
       let name, subname, description, logoIsUrl, logoUrl, logoData, bgIsUrl, bgUrl, bgData, createdAt;
       if (daoInfo.length >= 10) {
@@ -458,7 +481,7 @@ export function useFetchCreatedDAOs() {
         bgUrl = '';
         subname = undefined;
       }
-      
+
       // Handle images using the working pattern with optimization
       let logoUrl_final: string;
       if (logoIsUrl) {
@@ -466,18 +489,18 @@ export function useFetchCreatedDAOs() {
       } else {
         logoUrl_final = toImageUrl(logoData);
       }
-      
+
       let backgroundUrl_final: string;
       if (bgIsUrl) {
         backgroundUrl_final = optimizeImageUrl(bgUrl as string);
       } else {
         backgroundUrl_final = toImageUrl(bgData);
       }
-      
+
       // Fetch real DAO statistics with a small delay
       await delay(REQUEST_DELAY)
       const stats = await fetchDAOStats(address)
-      
+
       const subnameStr = typeof subname === 'string' ? (subname as string) : undefined;
       const dao: DAO = {
         id: address,
@@ -486,7 +509,7 @@ export function useFetchCreatedDAOs() {
         image: logoUrl_final,
         background: backgroundUrl_final,
         subname: subnameStr,
-        chain: subnameStr || 'Movement',
+        chain: subnameStr || 'Cedra',
         tokenName: subnameStr || 'DAO',
         tokenSymbol: subnameStr || 'DAO',
         tvl: '0',
@@ -503,7 +526,7 @@ export function useFetchCreatedDAOs() {
         category: 'featured' as const,
         isFollowing: false
       }
-      
+
       return dao
     } catch (error) {
       console.warn('Failed to process DAO address:', address, error)
@@ -514,38 +537,38 @@ export function useFetchCreatedDAOs() {
   // Helper function to process DAOs in batches
   const processDAOsInBatches = async (addresses: string[]): Promise<DAO[]> => {
     const foundDAOs: DAO[] = []
-    
-    
+
+
     for (let i = 0; i < addresses.length; i += BATCH_SIZE) {
       const batch = addresses.slice(i, i + BATCH_SIZE)
-      
+
       // Process batch concurrently
       const batchPromises = batch.map(address => processSingleDAO(address))
       const batchResults = await Promise.allSettled(batchPromises)
-      
+
       // Add successful results to foundDAOs
       batchResults.forEach((result) => {
         if (result.status === 'fulfilled' && result.value !== null) {
           foundDAOs.push(result.value)
         }
       })
-      
+
       // Wait between batches (except for the last batch)
       if (i + BATCH_SIZE < addresses.length) {
         await delay(BATCH_DELAY)
       }
     }
-    
+
     return foundDAOs
   }
 
   // Helper function to fetch real DAO statistics (members and proposals)
   const fetchDAOStats = async (daoAddress: string): Promise<{ members: number; proposals: number }> => {
     try {
-      
+
       // Small delay to reduce RPC pressure when called in batches
       await delay(100)
-      
+
       const [membersRes, proposalsRes] = await Promise.allSettled([
         cedraClient.view({
           payload: {
@@ -560,15 +583,15 @@ export function useFetchCreatedDAOs() {
           }
         })
       ])
-      
-      const memberCount = membersRes.status === 'fulfilled' && Array.isArray(membersRes.value) 
-        ? Number(membersRes.value[0] || 0) 
+
+      const memberCount = membersRes.status === 'fulfilled' && Array.isArray(membersRes.value)
+        ? Number(membersRes.value[0] || 0)
         : 0
-      const proposalCount = proposalsRes.status === 'fulfilled' && Array.isArray(proposalsRes.value) 
-        ? Number(proposalsRes.value[0] || 0) 
+      const proposalCount = proposalsRes.status === 'fulfilled' && Array.isArray(proposalsRes.value)
+        ? Number(proposalsRes.value[0] || 0)
         : 0
-      
-      
+
+
       return { members: memberCount, proposals: proposalCount }
     } catch (error) {
       console.warn(`Failed to fetch stats for DAO ${daoAddress}:`, error)
@@ -578,7 +601,7 @@ export function useFetchCreatedDAOs() {
 
   useEffect(() => {
     fetchDAOs()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchDAOs])
 
   return {
@@ -599,21 +622,21 @@ export function useDAOStats() {
     totalVotes: 0
   })
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Use the main DAO fetcher to get the same DAOs
   const { daos: fetchedDAOs } = useFetchCreatedDAOs()
 
   const fetchStats = async () => {
     setIsLoading(true)
     try {
-      
+
       // Debug: If no DAOs found, try to check if the problem is with DAO discovery
       if (fetchedDAOs.length === 0) {
         console.warn(' No DAOs found by main fetcher. This could mean:')
         console.warn('   1. No DAOs have been created yet')
         console.warn('   2. Event indexing is not working')
         console.warn('   3. There is an issue with the MODULE_ADDRESS or event types')
-        
+
         // Try to test if view functions work by testing against MODULE_ADDRESS itself
         try {
           await cedraClient.view({
@@ -630,7 +653,7 @@ export function useDAOStats() {
           console.warn('   • Network/RPC issues')
         }
       }
-      
+
       // Use the DAOs that were already fetched by the main DAO fetcher
       const daoAddresses = fetchedDAOs.map(dao => dao.id)
 
@@ -675,13 +698,13 @@ export function useDAOStats() {
                 }
               })
             ])
-            
+
             const memberCount = membersRes.status === 'fulfilled' ? Number(membersRes.value[0] || 0) : 0
             const proposalCount = proposalCountRes.status === 'fulfilled' ? Number(proposalCountRes.value[0] || 0) : 0
-            
+
             let activeCount = 0
             let voteCount = 0
-            
+
             // Fetch proposal data in smaller batches if there are many proposals
             if (proposalCount > 0) {
               const proposalBatchSize = 5
@@ -689,7 +712,7 @@ export function useDAOStats() {
               for (let i = 0; i < proposalCount; i += proposalBatchSize) {
                 proposalBatches.push(Array.from({ length: Math.min(proposalBatchSize, proposalCount - i) }, (_, idx) => i + idx))
               }
-              
+
               for (const propBatch of proposalBatches) {
                 const propPromises = propBatch.map(async (i) => {
                   try {
@@ -707,22 +730,22 @@ export function useDAOStats() {
                         }
                       })
                     ])
-                    
+
                     const status = statusRes.status === 'fulfilled' ? Number(statusRes.value[0] || 0) : 0
                     const isActive = status === activeStatusValue ? 1 : 0
-                    
+
                     let votes = 0
                     if (proposalRes.status === 'fulfilled' && proposalRes.value?.[0]) {
                       const proposalData = proposalRes.value[0] as any
                       votes = Number(proposalData.yes_votes || 0) + Number(proposalData.no_votes || 0) + Number(proposalData.abstain_votes || 0)
                     }
-                    
+
                     return { isActive, votes }
                   } catch {
                     return { isActive: 0, votes: 0 }
                   }
                 })
-                
+
                 const propResults = await Promise.allSettled(propPromises)
                 propResults.forEach(result => {
                   if (result.status === 'fulfilled') {
@@ -732,14 +755,14 @@ export function useDAOStats() {
                 })
               }
             }
-            
+
             return { memberCount, proposalCount, activeCount, voteCount }
           } catch (error) {
             console.warn(`Failed to fetch stats for DAO ${daoAddr}:`, error)
             return { memberCount: 0, proposalCount: 0, activeCount: 0, voteCount: 0 }
           }
         })
-        
+
         const batchResults = await Promise.allSettled(batchPromises)
         batchResults.forEach(result => {
           if (result.status === 'fulfilled') {
@@ -778,7 +801,7 @@ export function useDAOStats() {
     if (fetchedDAOs.length > 0) {
       fetchStats()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchedDAOs.length]) // Re-run when DAO count changes
 
   return {

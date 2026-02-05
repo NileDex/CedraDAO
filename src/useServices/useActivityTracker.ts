@@ -73,21 +73,21 @@ export class ActivityTracker {
       cursor
     } = options;
 
-    
+
     // Try contract-based activities first
     try {
       const contractResult = await ContractActivityService.getContractActivitiesPaginated(
         { dao_address: daoAddress },
         { page, limit }
       );
-      
+
       if (contractResult.activities.length > 0) {
         return contractResult;
       }
     } catch (error) {
       console.warn('Contract activity query failed, falling back to transaction parsing:', error);
     }
-    
+
     // Fallback to transaction parsing
     const result = await this.fetchDAOActivitiesPaginated(daoAddress, {
       page,
@@ -96,7 +96,7 @@ export class ActivityTracker {
       startVersion,
       cursor
     });
-    
+
     return result;
   }
 
@@ -112,7 +112,7 @@ export class ActivityTracker {
       cursor
     } = options;
 
-    
+
     const result = await this.fetchUserActivitiesPaginated(userAddress, {
       page,
       limit,
@@ -120,7 +120,7 @@ export class ActivityTracker {
       startVersion,
       cursor
     });
-    
+
     return result;
   }
 
@@ -136,21 +136,21 @@ export class ActivityTracker {
       cursor
     } = options;
 
-    
+
     // Try contract-based activities first
     try {
       const contractResult = await ContractActivityService.getContractActivitiesPaginated(
         {},
         { page, limit }
       );
-      
+
       if (contractResult.activities.length > 0) {
         return contractResult;
       }
     } catch (error) {
       console.warn('Contract activity query failed, falling back to transaction parsing:', error);
     }
-    
+
     // Fallback to transaction parsing
     const result = await this.fetchGlobalActivitiesPaginated({
       page,
@@ -159,7 +159,7 @@ export class ActivityTracker {
       startVersion,
       cursor
     });
-    
+
     return result;
   }
 
@@ -167,27 +167,27 @@ export class ActivityTracker {
    * Fetch activities for a specific DAO from blockchain with pagination
    */
   private static async fetchDAOActivitiesPaginated(
-    daoAddress: string, 
+    daoAddress: string,
     options: PaginationOptions
   ): Promise<PaginatedActivities> {
     const { page = 1, limit = 50 } = options;
     const activities: Activity[] = [];
-    
+
     try {
-      
+
       // Multi-strategy approach to find DAO activities
-      
+
       // Strategy 1: Search network for transactions mentioning this DAO
       const networkActivities = await this.searchNetworkForDAOActivities(daoAddress, limit);
       activities.push(...networkActivities);
-      
+
       // Strategy 2: Get recent transactions and filter for DAO relevance
       const { transactions } = await this.getAllRecentTransactionsPaginated({
         limit: limit * 3,
         offset: 0
       });
-      
-      
+
+
       for (const tx of transactions) {
         if (tx.type === 'user_transaction') {
           const relevantActivities = await this.parseTransactionForDAOContext(tx, daoAddress);
@@ -196,46 +196,46 @@ export class ActivityTracker {
           activities.push(...relevantActivities);
         }
       }
-      
+
       // Filter activities to ensure they belong to this DAO context
       const contextFilteredActivities = activities.filter(activity => {
         // Keep activities explicitly for this DAO
         if (activity.dao === daoAddress) return true;
-        
+
         // Reject activities explicitly for other DAOs
         if (activity.dao && activity.dao !== daoAddress && activity.dao !== 'unknown') {
           return false;
         }
-        
+
         // For unknown DAO activities, assign to current DAO
         if (!activity.dao || activity.dao === 'unknown') {
           activity.dao = daoAddress;
           return true;
         }
-        
+
         return true;
       });
-      
+
       // Remove duplicates
-      const uniqueActivities = contextFilteredActivities.filter((activity, index, arr) => 
-        arr.findIndex(a => 
-          a.transactionHash === activity.transactionHash && 
-          a.type === activity.type && 
+      const uniqueActivities = contextFilteredActivities.filter((activity, index, arr) =>
+        arr.findIndex(a =>
+          a.transactionHash === activity.transactionHash &&
+          a.type === activity.type &&
           a.user === activity.user
         ) === index
       );
 
       // Sort by timestamp descending
       uniqueActivities.sort((a, b) => b.timestamp - a.timestamp);
-      
+
       // Take only the requested limit
       const paginatedActivities = uniqueActivities.slice(0, limit);
-      
-      
+
+
       // Strategy 3: If no activities found, create demo/sample activities to show functionality
       if (paginatedActivities.length === 0) {
         const sampleActivities = await this.createSampleActivities(daoAddress, Math.min(limit, 5));
-        
+
         return {
           activities: sampleActivities,
           pagination: {
@@ -248,7 +248,7 @@ export class ActivityTracker {
           }
         };
       }
-      
+
       return {
         activities: paginatedActivities,
         pagination: {
@@ -280,12 +280,12 @@ export class ActivityTracker {
    * Fetch activities for a specific user with pagination
    */
   private static async fetchUserActivitiesPaginated(
-    userAddress: string, 
+    userAddress: string,
     options: PaginationOptions
   ): Promise<PaginatedActivities> {
     const { page = 1, limit = 50, offset = 0, startVersion } = options;
     const activities: Activity[] = [];
-    
+
     try {
       // Get user's paginated transaction history
       const { transactions, pagination } = await this.getUserTransactionsPaginated(userAddress, {
@@ -293,7 +293,7 @@ export class ActivityTracker {
         offset,
         startVersion
       });
-      
+
       for (const tx of transactions) {
         if (tx.type === 'user_transaction' && tx.events) {
           const parsedActivities = await this.parseTransactionEvents(tx);
@@ -303,7 +303,7 @@ export class ActivityTracker {
 
       activities.sort((a, b) => b.timestamp - a.timestamp);
       const paginatedActivities = activities.slice(0, limit);
-      
+
       return {
         activities: paginatedActivities,
         pagination: {
@@ -341,12 +341,12 @@ export class ActivityTracker {
   ): Promise<PaginatedActivities> {
     const { page = 1, limit = 100 } = options;
     const activities: Activity[] = [];
-    
+
     try {
-      
+
       // First, get all existing DAOs
       const daos = await this.getAllDAOs();
-      
+
       if (daos.length === 0) {
         return await this.fetchGeneralActivitiesPaginated(options);
       }
@@ -354,22 +354,22 @@ export class ActivityTracker {
       // Get DAO members and activities from all DAOs
       const allActivitiesPromises = daos.map(async (dao) => {
         try {
-          
+
           // Get DAO members
           const members = await this.getDAOMembers(dao.id);
-          
+
           // Get activities from DAO transactions
           const daoActivities = await this.fetchDAOSpecificActivities(dao.id, {
             limit: Math.ceil(limit / daos.length),
             offset: 0
           });
-          
+
           // Get activities from all members
           const memberActivities = await this.fetchMemberActivities(members, dao.id, {
             limit: Math.ceil(limit / daos.length),
             offset: 0
           });
-          
+
           return [...daoActivities, ...memberActivities];
         } catch (error) {
           console.warn(`Failed to fetch activities for DAO ${dao.id}:`, error);
@@ -378,7 +378,7 @@ export class ActivityTracker {
       });
 
       const allActivitiesArrays = await Promise.allSettled(allActivitiesPromises);
-      
+
       // Combine all activities
       allActivitiesArrays.forEach(result => {
         if (result.status === 'fulfilled') {
@@ -387,14 +387,14 @@ export class ActivityTracker {
       });
 
       // Remove duplicates based on transaction hash + activity type
-      const uniqueActivities = activities.filter((activity, index, arr) => 
+      const uniqueActivities = activities.filter((activity, index, arr) =>
         arr.findIndex(a => a.transactionHash === activity.transactionHash && a.type === activity.type) === index
       );
 
       uniqueActivities.sort((a, b) => b.timestamp - a.timestamp);
       const paginatedActivities = uniqueActivities.slice(0, limit);
-      
-      
+
+
       return {
         activities: paginatedActivities,
         pagination: {
@@ -416,9 +416,15 @@ export class ActivityTracker {
   /**
    * Parse transaction for activities (enhanced version)
    */
-  private static async parseTransactionForActivities(tx: any, filterDaoAddress?: string): Promise<Activity[]> {
+  private static async parseTransactionForActivities(tx: {
+    timestamp: string;
+    hash: string;
+    sender: string;
+    events?: Array<{ type: string; data: Record<string, unknown>; sequence_number: string }>;
+    payload?: { function?: string };
+  }, filterDaoAddress?: string): Promise<Activity[]> {
     const activities: Activity[] = [];
-    
+
     try {
       const timestamp = parseInt(tx.timestamp);
       const hash = tx.hash;
@@ -471,21 +477,27 @@ export class ActivityTracker {
   /**
    * Parse transaction events into activity objects (legacy method)
    */
-  private static async parseTransactionEvents(tx: any, filterDaoAddress?: string): Promise<Activity[]> {
+  private static async parseTransactionEvents(tx: {
+    timestamp: string;
+    hash: string;
+    sender: string;
+    events?: Array<{ type: string; data: Record<string, unknown>; sequence_number: string }>;
+    payload?: { function?: string };
+  }, filterDaoAddress?: string): Promise<Activity[]> {
     return this.parseTransactionForActivities(tx, filterDaoAddress);
   }
 
   /**
    * Parse individual event into activity
    */
-  private static async parseEvent(event: any, context: {
+  private static async parseEvent(event: { type: string; data: Record<string, unknown>; sequence_number: string }, context: {
     timestamp: number;
     hash: string;
     sender: string;
     filterDaoAddress?: string;
   }): Promise<Activity | null> {
     const { timestamp, hash, sender, filterDaoAddress } = context;
-    
+
     try {
       const eventType = event.type.split('::').pop();
       const data = event.data;
@@ -501,10 +513,10 @@ export class ActivityTracker {
             id: `${hash}_stake_${event.sequence_number}`,
             type: 'stake',
             title: 'Tokens Staked',
-            description: `Staked ${BalanceService.octasToCedra(data.amount).toFixed(2)} CEDRA`,
-            amount: BalanceService.octasToCedra(data.amount),
+            description: `Staked ${BalanceService.octasToCedra(Number(data.amount || 0)).toFixed(2)} CEDRA`,
+            amount: BalanceService.octasToCedra(Number(data.amount || 0)),
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success'
@@ -515,10 +527,10 @@ export class ActivityTracker {
             id: `${hash}_unstake_${event.sequence_number}`,
             type: 'unstake',
             title: 'Tokens Unstaked',
-            description: `Unstaked ${BalanceService.octasToCedra(data.amount).toFixed(2)} CEDRA`,
-            amount: BalanceService.octasToCedra(data.amount),
+            description: `Unstaked ${BalanceService.octasToCedra(Number(data.amount || 0)).toFixed(2)} CEDRA`,
+            amount: BalanceService.octasToCedra(Number(data.amount || 0)),
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success'
@@ -531,7 +543,7 @@ export class ActivityTracker {
             title: 'Joined DAO',
             description: 'Became a DAO member',
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success'
@@ -544,13 +556,13 @@ export class ActivityTracker {
             title: 'Voted on Proposal',
             description: `Voted ${data.choice ? 'Yes' : 'No'} on proposal`,
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success',
             metadata: {
-              proposalId: data.proposal_id,
-              voteChoice: data.choice
+              proposalId: Number(data.proposal_id || 0),
+              voteChoice: Boolean(data.choice)
             }
           };
 
@@ -559,14 +571,14 @@ export class ActivityTracker {
             id: `${hash}_proposal_${event.sequence_number}`,
             type: 'proposal_created',
             title: 'Proposal Created',
-            description: data.title || 'New proposal submitted',
+            description: String(data.title || 'New proposal submitted'),
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success',
             metadata: {
-              proposalId: data.proposal_id
+              proposalId: Number(data.proposal_id || 0)
             }
           };
 
@@ -575,10 +587,10 @@ export class ActivityTracker {
             id: `${hash}_deposit_${event.sequence_number}`,
             type: 'treasury_deposit',
             title: 'Treasury Deposit',
-            description: `Deposited ${BalanceService.octasToCedra(data.amount).toFixed(2)} CEDRA to treasury`,
-            amount: BalanceService.octasToCedra(data.amount),
+            description: `Deposited ${BalanceService.octasToCedra(Number(data.amount || 0)).toFixed(2)} CEDRA to treasury`,
+            amount: BalanceService.octasToCedra(Number(data.amount || 0)),
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success'
@@ -589,10 +601,10 @@ export class ActivityTracker {
             id: `${hash}_withdrawal_${event.sequence_number}`,
             type: 'treasury_withdrawal',
             title: 'Treasury Withdrawal',
-            description: `Withdrew ${BalanceService.octasToCedra(data.amount).toFixed(2)} CEDRA from treasury`,
-            amount: BalanceService.octasToCedra(data.amount),
+            description: `Withdrew ${BalanceService.octasToCedra(Number(data.amount || 0)).toFixed(2)} CEDRA from treasury`,
+            amount: BalanceService.octasToCedra(Number(data.amount || 0)),
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success'
@@ -603,10 +615,10 @@ export class ActivityTracker {
             id: `${hash}_reward_${event.sequence_number}`,
             type: 'reward_claimed',
             title: 'Rewards Claimed',
-            description: `Claimed ${BalanceService.octasToCedra(data.amount).toFixed(2)} CEDRA in rewards`,
-            amount: BalanceService.octasToCedra(data.amount),
+            description: `Claimed ${BalanceService.octasToCedra(Number(data.amount || 0)).toFixed(2)} CEDRA in rewards`,
+            amount: BalanceService.octasToCedra(Number(data.amount || 0)),
             user: sender,
-            dao: data.dao_address || filterDaoAddress || '',
+            dao: String(data.dao_address || filterDaoAddress || ''),
             timestamp,
             transactionHash: hash,
             status: 'success'
@@ -625,11 +637,11 @@ export class ActivityTracker {
    * Get recent transactions for a DAO with pagination
    */
   private static async getRecentTransactionsPaginated(
-    address: string, 
+    address: string,
     options: PaginationOptions
   ): Promise<{ transactions: any[]; pagination: any }> {
     const { limit = 50, offset = 0, startVersion } = options;
-    
+
     try {
       const queryOptions: any = {
         limit,
@@ -650,10 +662,10 @@ export class ActivityTracker {
       });
 
       const transactionArray = Array.isArray(transactions) ? transactions : [];
-      
+
       // Calculate next cursor based on last transaction version
-      const nextCursor = transactionArray.length > 0 
-        ? (transactionArray[transactionArray.length - 1] as any).version 
+      const nextCursor = transactionArray.length > 0
+        ? (transactionArray[transactionArray.length - 1] as any).version
         : undefined;
 
       return {
@@ -679,11 +691,11 @@ export class ActivityTracker {
    * Get transactions for a specific user with pagination
    */
   private static async getUserTransactionsPaginated(
-    userAddress: string, 
+    userAddress: string,
     options: PaginationOptions
   ): Promise<{ transactions: any[]; pagination: any }> {
     const { limit = 50, offset = 0, startVersion } = options;
-    
+
     try {
       const queryOptions: any = {
         limit,
@@ -704,9 +716,9 @@ export class ActivityTracker {
       });
 
       const transactionArray = Array.isArray(transactions) ? transactions : [];
-      
-      const nextCursor = transactionArray.length > 0 
-        ? (transactionArray[transactionArray.length - 1] as any).version 
+
+      const nextCursor = transactionArray.length > 0
+        ? (transactionArray[transactionArray.length - 1] as any).version
         : undefined;
 
       return {
@@ -735,7 +747,7 @@ export class ActivityTracker {
     options: PaginationOptions
   ): Promise<{ transactions: any[]; pagination: any }> {
     const { limit = 100, offset = 0, startVersion } = options;
-    
+
     try {
       const queryOptions: any = {
         limit,
@@ -755,9 +767,9 @@ export class ActivityTracker {
       });
 
       const allTransactions = Array.isArray(response) ? response : [];
-      
-      const nextCursor = allTransactions.length > 0 
-        ? (allTransactions[allTransactions.length - 1] as any).version 
+
+      const nextCursor = allTransactions.length > 0
+        ? (allTransactions[allTransactions.length - 1] as any).version
         : undefined;
 
       return {
@@ -797,7 +809,7 @@ export class ActivityTracker {
    */
   static clearCache(): void {
     try {
-      const keys = Object.keys(localStorage).filter(key => 
+      const keys = Object.keys(localStorage).filter(key =>
         key.startsWith(this.ACTIVITY_CACHE_KEY)
       );
       keys.forEach(key => localStorage.removeItem(key));
@@ -846,7 +858,7 @@ export class ActivityTracker {
    */
   static formatTimeAgo(timestamp: number): string {
     const now = Date.now();
-    
+
     // Convert timestamp to milliseconds based on its format
     let timestampMs: number;
     if (timestamp > 1e12) {
@@ -859,7 +871,7 @@ export class ActivityTracker {
       // Seconds
       timestampMs = timestamp * 1000;
     }
-    
+
     const diffMs = now - timestampMs;
     const diffMinutes = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
@@ -883,12 +895,12 @@ export class ActivityTracker {
       const functionName = tx.payload.function;
 
       // Skip if not a DAO-related function
-      if (!functionName.includes('stake') && 
-          !functionName.includes('vote') && 
-          !functionName.includes('join') &&
-          !functionName.includes('proposal') &&
-          !functionName.includes('treasury') &&
-          !functionName.includes('reward')) {
+      if (!functionName.includes('stake') &&
+        !functionName.includes('vote') &&
+        !functionName.includes('join') &&
+        !functionName.includes('proposal') &&
+        !functionName.includes('treasury') &&
+        !functionName.includes('reward')) {
         return null;
       }
 
@@ -955,7 +967,7 @@ export class ActivityTracker {
    */
   private static async parseGenericDAOActivities(tx: any, filterDaoAddress?: string): Promise<Activity[]> {
     const activities: Activity[] = [];
-    
+
     try {
       const timestamp = parseInt(tx.timestamp);
       const hash = tx.hash;
@@ -964,7 +976,7 @@ export class ActivityTracker {
       // Look for common DAO transaction patterns in events
       for (const event of tx.events || []) {
         const eventType = event.type;
-        
+
         // Look for transfer events that might indicate staking or treasury activities
         if (eventType.includes('CoinStore') && eventType.includes('WithdrawEvent')) {
           activities.push({
@@ -1021,9 +1033,9 @@ export class ActivityTracker {
   /**
    * Get all DAOs from the network
    */
-  private static async getAllDAOs(): Promise<Array<{id: string, name: string}>> {
+  private static async getAllDAOs(): Promise<Array<{ id: string, name: string }>> {
     try {
-      
+
       // Get DAO creation events
       const events = await cedraClient.getModuleEventsByEventType({
         eventType: `${MODULE_ADDRESS}::dao_core_file::DAOCreated`,
@@ -1031,7 +1043,7 @@ export class ActivityTracker {
       }).catch(() => []);
 
       const daos = [];
-      
+
       for (const event of events) {
         try {
           const eventData = event.data as any;
@@ -1078,7 +1090,7 @@ export class ActivityTracker {
       }).catch(() => [0]);
 
       const totalMembers = Number(totalMembersRes[0] || 0);
-      
+
       if (totalMembers === 0) {
         return [];
       }
@@ -1086,7 +1098,7 @@ export class ActivityTracker {
       // Get member addresses (assuming there's a function to get members by index)
       const members: string[] = [];
       const batchSize = 10;
-      
+
       for (let i = 0; i < Math.min(totalMembers, 50); i += batchSize) { // Limit to 50 members for performance
         const batch = [];
         for (let j = i; j < Math.min(i + batchSize, totalMembers, 50); j++) {
@@ -1129,7 +1141,7 @@ export class ActivityTracker {
       });
 
       const activities: Activity[] = [];
-      
+
       for (const tx of transactions) {
         if (tx.type === 'user_transaction') {
           const parsedActivities = await this.parseTransactionForActivities(tx, daoAddress);
@@ -1151,13 +1163,13 @@ export class ActivityTracker {
     try {
       const activities: Activity[] = [];
       const memberBatchSize = 5; // Process members in batches to avoid overwhelming the RPC
-      
+
       // Limit members to avoid too many requests
       const limitedMembers = members.slice(0, 20);
-      
+
       for (let i = 0; i < limitedMembers.length; i += memberBatchSize) {
         const memberBatch = limitedMembers.slice(i, i + memberBatchSize);
-        
+
         const memberActivitiesPromises = memberBatch.map(async (memberAddress) => {
           try {
             const { transactions } = await this.getUserTransactionsPaginated(memberAddress, {
@@ -1166,39 +1178,39 @@ export class ActivityTracker {
             });
 
             const memberActivities: Activity[] = [];
-            
+
             for (const tx of transactions) {
               if (tx.type === 'user_transaction') {
                 const parsedActivities = await this.parseTransactionForActivities(tx, daoAddress);
-                
+
                 // Filter to only include activities specifically related to this DAO
                 const daoSpecificActivities = parsedActivities.filter(activity => {
                   // STRICT: Only include if it's explicitly for this DAO
                   if (activity.dao === daoAddress) return true;
-                  
+
                   // For activities without DAO address, check if transaction directly involves this DAO
                   if (activity.dao === 'unknown' || activity.dao === 'network') {
                     // Check if the transaction function explicitly involves this DAO
                     if (tx.payload?.function?.includes(daoAddress)) return true;
-                    
+
                     // Check if any event data contains this DAO address
                     if (tx.events?.some((event: any) => {
                       const eventData = event.data || {};
                       return eventData.dao_address === daoAddress ||
-                             JSON.stringify(eventData).includes(daoAddress);
+                        JSON.stringify(eventData).includes(daoAddress);
                     })) return true;
                   }
-                  
+
                   // REJECT all other activities - they belong to other DAOs
                   return false;
                 });
-                
+
                 // Set the DAO address for activities that don't have it
                 const updatedActivities = daoSpecificActivities.map(activity => ({
                   ...activity,
                   dao: activity.dao === 'unknown' || activity.dao === 'network' ? daoAddress : activity.dao
                 }));
-                
+
                 memberActivities.push(...updatedActivities);
               }
             }
@@ -1231,7 +1243,7 @@ export class ActivityTracker {
   private static async fetchGeneralActivitiesPaginated(options: PaginationOptions): Promise<PaginatedActivities> {
     const { page = 1, limit = 100, offset = 0, startVersion } = options;
     const activities: Activity[] = [];
-    
+
     try {
       // Get recent transactions from the network with broader search
       const { transactions, pagination } = await this.getAllRecentTransactionsPaginated({
@@ -1239,8 +1251,8 @@ export class ActivityTracker {
         offset,
         startVersion
       });
-      
-      
+
+
       for (const tx of transactions) {
         if (tx.type === 'user_transaction') {
           const parsedActivities = await this.parseTransactionForActivities(tx);
@@ -1250,7 +1262,7 @@ export class ActivityTracker {
 
       activities.sort((a, b) => b.timestamp - a.timestamp);
       const paginatedActivities = activities.slice(0, limit);
-      
+
       return {
         activities: paginatedActivities,
         pagination: {
@@ -1285,9 +1297,9 @@ export class ActivityTracker {
    */
   private static async searchNetworkForDAOActivities(daoAddress: string, limit: number): Promise<Activity[]> {
     const activities: Activity[] = [];
-    
+
     try {
-      
+
       // Search recent transactions for any mention of this DAO
       const { transactions } = await this.getAllRecentTransactionsPaginated({
         limit: limit * 3,
@@ -1298,10 +1310,10 @@ export class ActivityTracker {
       let foundCount = 0;
       for (const tx of transactions) {
         if (tx.type === 'user_transaction' && foundCount < limit) {
-          
+
           // Check if this transaction mentions our DAO
           let mentionsDAO = false;
-          
+
           // Check function arguments
           if (tx.payload?.functionArguments) {
             const argsString = JSON.stringify(tx.payload.functionArguments);
@@ -1309,13 +1321,13 @@ export class ActivityTracker {
             if (mentionsDAO) {
             }
           }
-          
+
           // Check events for DAO reference
           if (!mentionsDAO && tx.events) {
             mentionsDAO = tx.events.some((event: any) => {
               const eventData = event.data || {};
-              const hasDAORef = eventData.dao_address === daoAddress || 
-                     JSON.stringify(eventData).includes(daoAddress);
+              const hasDAORef = eventData.dao_address === daoAddress ||
+                JSON.stringify(eventData).includes(daoAddress);
               if (hasDAORef) {
               }
               return hasDAORef;
@@ -1325,10 +1337,10 @@ export class ActivityTracker {
           if (mentionsDAO) {
             const parsedActivities = await this.parseTransactionEvents(tx, daoAddress);
             // Only keep activities for this DAO or unknown ones
-            const relevantActivities = parsedActivities.filter(activity => 
+            const relevantActivities = parsedActivities.filter(activity =>
               !activity.dao || activity.dao === 'unknown' || activity.dao === daoAddress
             );
-            
+
             activities.push(...relevantActivities);
             foundCount += relevantActivities.length;
           }
@@ -1348,18 +1360,18 @@ export class ActivityTracker {
    */
   private static async parseTransactionForDAOContext(tx: any, contextDAO: string): Promise<Activity[]> {
     const activities: Activity[] = [];
-    
+
     try {
       // Parse using existing methods but filter for relevance
       const allActivities = await this.parseTransactionForActivities(tx);
-      
+
       // Filter for activities relevant to this DAO context
       const relevantActivities = allActivities.filter(activity => {
         // Skip activities that are explicitly for other DAOs
         if (activity.dao && activity.dao !== contextDAO && activity.dao !== 'unknown') {
           return false;
         }
-        
+
         return true;
       });
 
@@ -1385,13 +1397,13 @@ export class ActivityTracker {
   private static async createSampleActivities(daoAddress: string, count: number): Promise<Activity[]> {
     const now = Date.now();
     const activities: Activity[] = [];
-    
+
     const sampleUsers = [
       '0x1234567890abcdef1234567890abcdef12345678',
       '0xabcdef1234567890abcdef1234567890abcdef12',
       '0x9876543210fedcba9876543210fedcba98765432'
     ];
-    
+
     const activityTemplates = [
       {
         type: 'join_dao' as const,
@@ -1424,13 +1436,13 @@ export class ActivityTracker {
         amount: 500 + Math.random() * 1500
       }
     ];
-    
+
     for (let i = 0; i < count; i++) {
       const template = activityTemplates[i % activityTemplates.length];
       const user = sampleUsers[i % sampleUsers.length];
       const hoursAgo = i * 2 + Math.random() * 4;
       const timestamp = now - (hoursAgo * 60 * 60 * 1000);
-      
+
       activities.push({
         id: `sample_${daoAddress}_${i}_${Date.now()}`,
         type: template.type,
@@ -1445,7 +1457,7 @@ export class ActivityTracker {
         metadata: {}
       });
     }
-    
+
     return activities;
   }
 

@@ -17,21 +17,7 @@ interface VaultData {
   iconUrl?: string;
 }
 
-interface VaultBalance {
-  totalAssets: number;
-  idleAssets: number;
-  strategicAssets: number;
-}
-
-interface VaultTransaction {
-  type: 'deposit' | 'withdrawal';
-  amount: number;
-  from?: string;
-  to?: string;
-  timestamp: string;
-  txHash: string;
-  tokenSymbol?: string;
-}
+// (VaultBalance and VaultTransaction interfaces removed as they were unused)
 
 export const useVault = (daoId: string, treasuryObject?: string) => {
   const { account, signAndSubmitTransaction } = useWallet();
@@ -147,7 +133,7 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
       // Extract the treasury address like other working functions
       const treasuryAddress = typeof treasuryObject === 'string'
         ? treasuryObject
-        : (treasuryObject as any).inner || (treasuryObject as any).value || treasuryObject;
+        : (treasuryObject as { inner?: string; value?: string }).inner || (treasuryObject as { inner?: string; value?: string }).value || String(treasuryObject);
 
       let vaultAddresses;
       try {
@@ -155,17 +141,18 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
           function: `${MODULE_ADDRESS}::treasury::get_dao_vaults`,
           functionArguments: [treasuryAddress]
         }, `dao_vaults_${daoId}`);
-      } catch (registryError: any) {
+      } catch (registryError: unknown) {
+        const regErr = registryError as Error;
         // If DAOVaultRegistry doesn't exist yet, it means no vaults have been created
-        if (registryError.message?.includes('MISSING_DATA') &&
-            registryError.message?.includes('DAOVaultRegistry')) {
+        if (regErr.message?.includes('MISSING_DATA') &&
+          regErr.message?.includes('DAOVaultRegistry')) {
           console.log('DAOVaultRegistry not found - no vaults created yet');
           setVaults([]);
           setIsLoading(false);
           return;
         }
         // Re-throw other errors
-        throw registryError;
+        throw regErr;
       }
 
       if (!Array.isArray(vaultAddresses) || vaultAddresses.length === 0) {
@@ -193,27 +180,40 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
           try {
             console.log('Fetching vault details (treasury ABI) for address:', addressString);
 
-            const [symbolRes, nameRes, decimalsRes, balanceRes, metadataRes, iconHelperRes, projectHelperRes] = await Promise.all([
+            const [symbolRes, nameRes, decimalsRes, balanceRes, metadataRes, iconHelperRes, projectHelperRes] = await Promise.allSettled([
               cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_asset_symbol`, functionArguments: [addressString] } }),
               cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_asset_name`, functionArguments: [addressString] } }),
               cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_asset_decimals`, functionArguments: [addressString] } }),
               cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_balance`, functionArguments: [addressString] } }),
               cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_metadata`, functionArguments: [addressString] } }),
               // Optional icon URI helper in treasury module, if available
-              cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_asset_icon_uri`, functionArguments: [addressString] } }).catch(() => undefined),
+              cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_asset_icon_uri`, functionArguments: [addressString] } }),
               // Optional project URI helper in treasury module
-              cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_asset_project_uri`, functionArguments: [addressString] } }).catch(() => undefined),
+              cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::treasury::get_vault_asset_project_uri`, functionArguments: [addressString] } }),
             ]);
 
-            const symbol = (symbolRes?.[0] as string) || 'UNKNOWN';
-            const name = (nameRes?.[0] as string) || symbol;
-            const decimals = Number(decimalsRes?.[0] ?? 6);
-            const balanceRaw = Number(balanceRes?.[0] ?? 0);
-            const metadataAddress = typeof metadataRes?.[0] === 'string'
-              ? (metadataRes as any)[0]
-              : (metadataRes as any)?.[0]?.inner || (metadataRes as any)?.[0]?.value;
-            let iconUrl: string | undefined = Array.isArray(iconHelperRes) ? (iconHelperRes as any)?.[0] : (iconHelperRes as any);
-            const projectUri: string | undefined = Array.isArray(projectHelperRes) ? (projectHelperRes as any)?.[0] : (projectHelperRes as any);
+            const symbol = (symbolRes.status === 'fulfilled' ? (symbolRes.value?.[0] as string) : null) || 'UNKNOWN';
+            const name = (nameRes.status === 'fulfilled' ? (nameRes.value?.[0] as string) : null) || symbol;
+            const decimals = (decimalsRes.status === 'fulfilled' ? Number(decimalsRes.value?.[0] ?? 6) : 6);
+            const balanceRaw = (balanceRes.status === 'fulfilled' ? Number(balanceRes.value?.[0] ?? 0) : 0);
+
+            interface MetadataInner { inner?: string; value?: string; }
+            const metadataRaw = (metadataRes.status === 'fulfilled' ? (metadataRes.value?.[0] as string | MetadataInner) : null);
+            const metadataAddress = typeof metadataRaw === 'string'
+              ? metadataRaw
+              : (metadataRaw as MetadataInner)?.inner || (metadataRaw as MetadataInner)?.value;
+
+            let iconUrl: string | undefined = undefined;
+            if (iconHelperRes && iconHelperRes.status === 'fulfilled') {
+              const resVal = (iconHelperRes.value as unknown[]);
+              iconUrl = Array.isArray(resVal) ? String(resVal[0]) : String(resVal);
+            }
+
+            let projectUri: string | undefined = undefined;
+            if (projectHelperRes && projectHelperRes.status === 'fulfilled') {
+              const resVal = (projectHelperRes.value as unknown[]);
+              projectUri = Array.isArray(resVal) ? String(resVal[0]) : String(resVal);
+            }
             if (typeof iconUrl === 'string') iconUrl = iconUrl.trim();
             if (iconUrl === '') iconUrl = undefined;
 
@@ -228,14 +228,14 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
                 const faIcon = await cedraClient.view({ payload: { function: `0x1::fungible_asset::icon_uri`, functionArguments: [metadataAddress] } });
                 const resolved = (faIcon?.[0] as string) || '';
                 iconUrl = resolved.trim() || undefined;
-              } catch {}
+              } catch { }
               // Try alternate function name if icon_uri missing
               if (!iconUrl) {
                 try {
                   const faIconAlt = await cedraClient.view({ payload: { function: `0x1::fungible_asset::icon`, functionArguments: [metadataAddress] } });
                   const resolvedAlt = (faIconAlt?.[0] as string) || '';
                   iconUrl = resolvedAlt.trim() || undefined;
-                } catch {}
+                } catch { }
               }
             }
 
@@ -270,13 +270,14 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
       const validVaults = vaultDetails.filter(vault => vault !== null) as VaultData[];
       setVaults(validVaults);
 
-    } catch (error: any) {
-      console.error('Failed to fetch DAO vaults:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Failed to fetch DAO vaults:', err);
       // Don't display circuit breaker errors to users, just log them
-      if (error.message?.includes('Circuit breaker is OPEN')) {
+      if (err.message?.includes('Circuit breaker is OPEN')) {
         setError('Network temporarily unavailable. Please try again later.');
       } else {
-        setError(error.message || 'Failed to fetch vault data');
+        setError(err.message || 'Failed to fetch vault data');
       }
       setVaults([]);
     } finally {
@@ -298,7 +299,7 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
       // Extract the treasury object address like other working treasury functions do
       const treasuryAddress = typeof treasuryObject === 'string'
         ? treasuryObject
-        : (treasuryObject as any).inner || (treasuryObject as any).value || treasuryObject;
+        : (treasuryObject as { inner?: string; value?: string }).inner || (treasuryObject as { inner?: string; value?: string }).value || String(treasuryObject);
 
       console.log('Creating vault with treasury address:', treasuryAddress);
       console.log('Creating vault with metadata address:', metadataAddress);
@@ -310,10 +311,10 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
         functionArguments: [daoId, treasuryAddress, metadataAddress],
       };
 
-      const tx = await signAndSubmitTransaction({ payload } as any);
-      if (tx && (tx as any).hash) {
+      const tx = await signAndSubmitTransaction({ payload } as never);
+      if (tx && (tx as { hash: string }).hash) {
         await cedraClient.waitForTransaction({
-          transactionHash: (tx as any).hash,
+          transactionHash: (tx as { hash: string }).hash,
           options: { checkSuccess: true }
         });
       }
@@ -322,15 +323,16 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
       await fetchDAOVaults();
       return true;
 
-    } catch (error: any) {
-      console.error('Create vault failed:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Create vault failed:', err);
 
-      if (error.message?.includes('User rejected')) {
+      if (err.message?.includes('User rejected')) {
         throw new Error('Transaction cancelled by user');
-      } else if (error.message?.includes('not_admin')) {
+      } else if (err.message?.includes('not_admin')) {
         throw new Error('Only DAO admins can create vaults');
       } else {
-        throw new Error(error.message || 'Failed to create vault');
+        throw new Error(err.message || 'Failed to create vault');
       }
     }
   }, [account, signAndSubmitTransaction, treasuryObject, isAdmin, fetchDAOVaults]);
@@ -364,10 +366,10 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
         functionArguments: [daoId, vaultAddress, amountRaw.toString()],
       };
 
-      const tx = await signAndSubmitTransaction({ payload } as any);
-      if (tx && (tx as any).hash) {
+      const tx = await signAndSubmitTransaction({ payload } as never);
+      if (tx && (tx as { hash: string }).hash) {
         await cedraClient.waitForTransaction({
-          transactionHash: (tx as any).hash,
+          transactionHash: (tx as { hash: string }).hash,
           options: { checkSuccess: true }
         });
       }
@@ -382,15 +384,16 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
       await fetchDAOVaults();
       return true;
 
-    } catch (error: any) {
-      console.error('Vault deposit failed:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Vault deposit failed:', err);
 
-      if (error.message?.includes('User rejected')) {
+      if (err.message?.includes('User rejected')) {
         throw new Error('Transaction cancelled by user');
-      } else if (error.message?.includes('insufficient')) {
+      } else if (err.message?.includes('insufficient')) {
         throw new Error('Insufficient token balance');
       } else {
-        throw new Error(error.message || 'Deposit failed');
+        throw new Error(err.message || 'Deposit failed');
       }
     }
   }, [account, signAndSubmitTransaction, fetchDAOVaults]);
@@ -424,7 +427,7 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
       // Extract the treasury address like other working functions
       const treasuryAddress = typeof treasuryObject === 'string'
         ? treasuryObject
-        : (treasuryObject as any).inner || (treasuryObject as any).value || treasuryObject;
+        : (treasuryObject as { inner?: string; value?: string }).inner || (treasuryObject as { inner?: string; value?: string }).value || String(treasuryObject);
 
       console.log('Withdrawing from vault with treasury address:', treasuryAddress);
 
@@ -434,10 +437,10 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
         functionArguments: [daoId, vaultAddress, amountRaw.toString(), account.address],
       };
 
-      const tx = await signAndSubmitTransaction({ payload } as any);
-      if (tx && (tx as any).hash) {
+      const tx = await signAndSubmitTransaction({ payload } as never);
+      if (tx && (tx as { hash: string }).hash) {
         await cedraClient.waitForTransaction({
-          transactionHash: (tx as any).hash,
+          transactionHash: (tx as { hash: string }).hash,
           options: { checkSuccess: true }
         });
       }
@@ -446,17 +449,18 @@ export const useVault = (daoId: string, treasuryObject?: string) => {
       await fetchDAOVaults();
       return true;
 
-    } catch (error: any) {
-      console.error('Vault withdrawal failed:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Vault withdrawal failed:', err);
 
-      if (error.message?.includes('User rejected')) {
+      if (err.message?.includes('User rejected')) {
         throw new Error('Transaction cancelled by user');
-      } else if (error.message?.includes('not_admin')) {
+      } else if (err.message?.includes('not_admin')) {
         throw new Error('Only DAO admins can withdraw from vaults');
-      } else if (error.message?.includes('insufficient')) {
+      } else if (err.message?.includes('insufficient')) {
         throw new Error('Insufficient vault balance');
       } else {
-        throw new Error(error.message || 'Withdrawal failed');
+        throw new Error(err.message || 'Withdrawal failed');
       }
     }
   }, [account, signAndSubmitTransaction, treasuryObject, isAdmin, fetchDAOVaults]);

@@ -13,12 +13,12 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Wallet, X, ChevronDown, ArrowLeft, User } from 'lucide-react';
+import { Wallet, X, ChevronDown, ArrowLeft } from 'lucide-react';
 import ReactDOM from 'react-dom';
+import Avatar from 'boring-avatars';
 import { useWallet } from '../contexts/CedraWalletProvider';
 import type { CedraWallet } from '@cedra-labs/wallet-standard';
 import { useAlert } from './alert/AlertContext';
-import { truncateAddress } from '../utils/addressUtils';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -27,7 +27,7 @@ import { truncateAddress } from '../utils/addressUtils';
 interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onWalletSelected: (wallet: CedraWallet) => void;
+  onWalletSelected: (_wallet: CedraWallet) => void;
   wallets: CedraWallet[];
 }
 
@@ -111,7 +111,8 @@ const WalletModal: React.FC<WalletModalProps> = ({
 
       setTimeoutRef(timeoutId);
 
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const err = e as Error;
       console.error('Wallet connection error:', e);
 
       // Clear timeout on error
@@ -121,11 +122,11 @@ const WalletModal: React.FC<WalletModalProps> = ({
       }
 
       // Handle user rejection silently, show alert for other errors
-      if (e?.message?.includes('User rejected') || e?.message?.includes('rejected')) {
+      if (err?.message?.includes('User rejected') || err?.message?.includes('rejected')) {
         setIsConnecting(false);
         setError(null);
       } else {
-        showAlert('Connection failed: ' + (e?.message || 'Unknown error'), 'error');
+        showAlert('Connection failed: ' + (err?.message || 'Unknown error'), 'error');
         setError('Connection failed');
         setIsConnecting(false);
       }
@@ -197,8 +198,8 @@ const WalletModal: React.FC<WalletModalProps> = ({
           background: isDarkTheme ? '#0f0f11' : '#ffffff',
           color: isDarkTheme ? '#f5f5f5' : '#111827',
           borderRadius: 20,
-          minWidth: 360,
-          maxWidth: 400,
+          minWidth: 320,
+          maxWidth: 380,
           boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
           padding: '24px 20px',
           display: 'flex',
@@ -390,8 +391,8 @@ const WalletModal: React.FC<WalletModalProps> = ({
         background: isDarkTheme ? '#0f0f11' : '#ffffff',
         color: isDarkTheme ? '#f5f5f5' : '#111827',
         borderRadius: 20,
-        minWidth: 360,
-        maxWidth: 420,
+        minWidth: 320,
+        maxWidth: 380,
         boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
         padding: '24px 20px',
         display: 'flex',
@@ -518,8 +519,7 @@ const WalletModal: React.FC<WalletModalProps> = ({
                     fontWeight: 600,
                     background: 'transparent',
                     color: '#e1fd6a',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    textTransform: 'none',
                   }}>
                     Connect
                   </div>
@@ -559,7 +559,7 @@ const WalletModal: React.FC<WalletModalProps> = ({
               margin: 0,
               lineHeight: 1.4
             }}>
-              Powered by Movement Network
+              Powered by Cedra Network
             </p>
           </div>
         </div>
@@ -576,7 +576,7 @@ const WalletModal: React.FC<WalletModalProps> = ({
  * Main wallet connect button component
  * Shows in header and provides wallet connection/disconnect functionality
  */
-const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClick }) => {
+const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClick: _onProfileClick }) => {
   // ========== State Management ==========
   const { connect, disconnect, wallets, account, wallet, connected } = useWallet();
   const [showModal, setShowModal] = useState(false);
@@ -586,23 +586,21 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClic
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { showAlert } = useAlert();
-  const isDarkTheme = true;
+
 
   // ========== Styles ==========
   const buttonStyle = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    padding: '8px 16px',
+    padding: '6px 12px',
     border: 'none',
-    background: '#e1fd6a',
-    borderRadius: '12px',
+    borderRadius: '10px',
     height: 'auto',
-    minWidth: 120,
+    minWidth: 'auto',
     cursor: 'pointer',
     fontWeight: 600,
-    fontSize: 14,
-    color: '#000000',
+    fontSize: 12,
     overflow: 'hidden',
     transition: 'all 0.2s ease',
   };
@@ -623,17 +621,7 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClic
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ========== Helper Functions ==========
 
-  /**
-   * Get wallet icon or fallback
-   */
-  const getWalletIcon = () => {
-    if (wallet && wallet.icon) {
-      return <img src={wallet.icon} alt={wallet.name} width={18} height={18} style={{ borderRadius: 4, background: 'none' }} />;
-    }
-    return <span style={{ fontSize: 16 }}>🔮</span>;
-  };
 
   // ========== Event Handlers ==========
 
@@ -665,7 +653,7 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClic
       await disconnect();
       setModalKey((k) => k + 1);
       showAlert('Wallet disconnected', 'info');
-    } catch (e) {
+    } catch (_e) {
       showAlert('Network error on disconnect', 'error');
     }
   };
@@ -695,34 +683,60 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClic
     <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
       <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
 
-        {/* Main Button */}
         <button
           className="header-wallet-btn"
-          style={buttonStyle}
+          style={{
+            ...buttonStyle,
+            background: connected && account ? 'transparent' : '#e1fd6a',
+            color: connected && account ? '#ffffff' : '#000000',
+            padding: connected && account ? '4px' : '6px 12px',
+          }}
           onClick={handleButtonClick}
           tabIndex={0}
         >
           {connected && account ? (
             <>
-              {getWalletIcon()}
-              <span style={{
-                fontFamily: 'monospace',
-                fontSize: 13,
-                color: '#000000',
-                fontWeight: 600,
-                letterSpacing: 1,
-                minWidth: 0,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}>
-                {truncateAddress(account.address)}
-              </span>
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <div style={{ borderRadius: '50%', overflow: 'hidden' }}>
+                  <Avatar
+                    name={account.address}
+                    variant="beam"
+                    size={32}
+                    colors={["#e1fd6a", "#a3e635", "#84cc16", "#65a30d", "#4d7c0f"]}
+                  />
+                </div>
+                {wallet && wallet.icon && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: -2,
+                    right: -2,
+                    width: 16,
+                    height: 16,
+                    backgroundColor: '#ffffff',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid #0a0a0b',
+                    overflow: 'hidden'
+                  }}>
+                    <img
+                      src={wallet.icon}
+                      alt={wallet.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
               <ChevronDown
                 size={16}
                 style={{
                   marginLeft: 4,
-                  color: '#000000',
+                  color: '#ffffff',
                   transition: 'transform 0.2s',
                   transform: showDropdown ? 'rotate(180deg)' : 'rotate(0deg)'
                 }}
@@ -757,45 +771,16 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClic
               top: '100%',
               right: 0,
               marginTop: 4,
-              background: isDarkTheme ? '#252527' : '#ffffff',
-              border: isDarkTheme ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.08)',
-              borderRadius: 12,
-              padding: 8,
-              minWidth: 160,
-              boxShadow: isDarkTheme ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(0,0,0,0.08)',
+              background: '#1a1a1e',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '12px',
+              padding: '6px',
+              minWidth: '130px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
               zIndex: 1001
             }}
           >
-            {/* Profile Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onProfileClick) {
-                  onProfileClick();
-                }
-                setShowDropdown(false);
-              }}
-              onMouseEnter={() => setHoveredItem('profile')}
-              onMouseLeave={() => setHoveredItem(null)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                background: hoveredItem === 'profile' ? (isDarkTheme ? '#2f3033' : '#f3f4f6') : (isDarkTheme ? '#252527' : '#ffffff'),
-                border: 'none',
-                color: isDarkTheme ? '#f5f5f5' : '#111827',
-                fontSize: 14,
-                cursor: 'pointer',
-                borderRadius: 12,
-                transition: 'background 0.2s',
-                textAlign: 'left',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <User size={16} />
-              Profile
-            </button>
+            {/* Disconnect Button */}
 
             {/* Disconnect Button */}
             <button
@@ -808,13 +793,13 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({ onProfileClic
               onMouseLeave={() => setHoveredItem(null)}
               style={{
                 width: '100%',
-                padding: '8px 12px',
-                background: hoveredItem === 'disconnect' ? (isDarkTheme ? '#2f3033' : '#f3f4f6') : (isDarkTheme ? '#252527' : '#ffffff'),
+                padding: '6px 10px',
+                background: hoveredItem === 'disconnect' ? 'rgba(255,255,255,0.05)' : 'transparent',
                 border: 'none',
-                color: isDarkTheme ? '#f5f5f5' : '#111827',
-                fontSize: 14,
+                color: '#f5f5f5',
+                fontSize: 12,
                 cursor: 'pointer',
-                borderRadius: 12,
+                borderRadius: '8px',
                 transition: 'background 0.2s',
                 textAlign: 'left',
                 display: 'flex',

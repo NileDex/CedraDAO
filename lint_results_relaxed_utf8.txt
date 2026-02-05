@@ -1,0 +1,757 @@
+﻿
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\App.tsx
+  73:13  warning  Empty block statement  no-empty
+  83:13  warning  Empty block statement  no-empty
+  89:13  warning  Empty block statement  no-empty
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\CreateDAO.tsx
+   83:14  warning  'error' is defined but never used         no-unused-vars
+   83:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  157:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  157:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  164:14  warning  'err' is defined but never used           no-unused-vars
+  164:14  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\DAODetail.tsx
+  20:24  warning  'tabId' is defined but never used      no-unused-vars
+  20:39  warning  'activeTab' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\FeaturedDAOs.tsx
+  9:17  warning  'dao' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\Filter.tsx
+   9:17  warning  'dao' is defined but never used                                                                                       no-unused-vars
+  64:8   warning  React Hook useCallback has a missing dependency: 'handleSelectDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\GlobalActivityFeed.tsx
+   2:10  warning  'Activity' is defined but never used                   no-unused-vars
+   2:10  warning  'Activity' is defined but never used                   @typescript-eslint/no-unused-vars
+  18:3   warning  'paginationType' is assigned a value but never used    no-unused-vars
+  18:3   warning  'paginationType' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  19:3   warning  'enablePagination' is assigned a value but never used  no-unused-vars
+  19:3   warning  'enablePagination' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  25:5   warning  'pagination' is assigned a value but never used        no-unused-vars
+  25:5   warning  'pagination' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\Header.tsx
+  10:18  warning  'view' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\MainDashboard.tsx
+  7:17  warning  'dao' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\Pagination.tsx
+  11:18  warning  'page' is defined but never used   no-unused-vars
+  12:20  warning  'limit' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\PlatformGrowthCharts.tsx
+  2:10  warning  'LineChart' is defined but never used             no-unused-vars
+  2:10  warning  'LineChart' is defined but never used             @typescript-eslint/no-unused-vars
+  2:21  warning  'Line' is defined but never used                  no-unused-vars
+  2:21  warning  'Line' is defined but never used                  @typescript-eslint/no-unused-vars
+  2:44  warning  'BarChart' is defined but never used              no-unused-vars
+  2:44  warning  'BarChart' is defined but never used              @typescript-eslint/no-unused-vars
+  2:54  warning  'Bar' is defined but never used                   no-unused-vars
+  2:54  warning  'Bar' is defined but never used                   @typescript-eslint/no-unused-vars
+  2:59  warning  'XAxis' is defined but never used                 no-unused-vars
+  2:59  warning  'XAxis' is defined but never used                 @typescript-eslint/no-unused-vars
+  2:66  warning  'YAxis' is defined but never used                 no-unused-vars
+  2:66  warning  'YAxis' is defined but never used                 @typescript-eslint/no-unused-vars
+  7:36  warning  'lastUpdated' is assigned a value but never used  no-unused-vars
+  7:36  warning  'lastUpdated' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  7:49  warning  'refresh' is assigned a value but never used      no-unused-vars
+  7:49  warning  'refresh' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\Sidebar.tsx
+    7:18   warning  'view' is defined but never used               no-unused-vars
+   10:23   warning  'isCollapsed' is defined but never used        no-unused-vars
+   14:31   warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   18:18   warning  'tabId' is defined but never used              no-unused-vars
+   22:114  warning  'daoTabs' is defined but never used            no-unused-vars
+   22:114  warning  'daoTabs' is defined but never used            @typescript-eslint/no-unused-vars
+   22:123  warning  'activeTab' is defined but never used          no-unused-vars
+   22:123  warning  'activeTab' is defined but never used          @typescript-eslint/no-unused-vars
+   22:134  warning  'onTabChange' is defined but never used        no-unused-vars
+   22:134  warning  'onTabChange' is defined but never used        @typescript-eslint/no-unused-vars
+   27:13   warning  Empty block statement                          no-empty
+   35:80   warning  Empty block statement                          no-empty
+  192:19   warning  'isActive' is assigned a value but never used  no-unused-vars
+  192:19   warning  'isActive' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\VaultManager.tsx
+   27:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   46:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\WalletConnect.tsx
+   22:10  warning  'truncateAddress' is defined but never used       no-unused-vars
+   22:10  warning  'truncateAddress' is defined but never used       @typescript-eslint/no-unused-vars
+   31:22  warning  'wallet' is defined but never used                no-unused-vars
+  115:17  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  579:68  warning  'onProfileClick' is defined but never used        no-unused-vars
+  579:68  warning  'onProfileClick' is defined but never used        @typescript-eslint/no-unused-vars
+  589:9   warning  'isDarkTheme' is assigned a value but never used  no-unused-vars
+  589:9   warning  'isDarkTheme' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  656:14  warning  'e' is defined but never used                     no-unused-vars
+  656:14  warning  'e' is defined but never used                     @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\alert\AlertContext.tsx
+  10:15  warning  'message' is defined but never used                                                                                             no-unused-vars
+  10:32  warning  'type' is defined but never used                                                                                                no-unused-vars
+  14:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\common\SectionLoader.tsx
+   2:10  warning  'RefreshCw' is defined but never used             no-unused-vars
+   2:10  warning  'RefreshCw' is defined but never used             @typescript-eslint/no-unused-vars
+  21:3   warning  'loadingText' is assigned a value but never used  no-unused-vars
+  21:3   warning  'loadingText' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOAdmin.tsx
+    2:25   warning  'Clock' is defined but never used                                                                                                                               no-unused-vars
+    2:25   warning  'Clock' is defined but never used                                                                                                                               @typescript-eslint/no-unused-vars
+    2:46   warning  'Settings' is defined but never used                                                                                                                            no-unused-vars
+    2:46   warning  'Settings' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+    2:56   warning  'AlertTriangle' is defined but never used                                                                                                                       no-unused-vars
+    2:56   warning  'AlertTriangle' is defined but never used                                                                                                                       @typescript-eslint/no-unused-vars
+    2:71   warning  'XCircle' is defined but never used                                                                                                                             no-unused-vars
+    2:71   warning  'XCircle' is defined but never used                                                                                                                             @typescript-eslint/no-unused-vars
+    2:80   warning  'UserCheck' is defined but never used                                                                                                                           no-unused-vars
+    2:80   warning  'UserCheck' is defined but never used                                                                                                                           @typescript-eslint/no-unused-vars
+    2:91   warning  'DollarSign' is defined but never used                                                                                                                          no-unused-vars
+    2:91   warning  'DollarSign' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+    2:120  warning  'Layers' is defined but never used                                                                                                                              no-unused-vars
+    2:120  warning  'Layers' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:128  warning  'TrendingUp' is defined but never used                                                                                                                          no-unused-vars
+    2:128  warning  'TrendingUp' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+    2:140  warning  'Filter' is defined but never used                                                                                                                              no-unused-vars
+    2:140  warning  'Filter' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:148  warning  'ArrowRight' is defined but never used                                                                                                                          no-unused-vars
+    2:148  warning  'ArrowRight' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+    2:160  warning  'Search' is defined but never used                                                                                                                              no-unused-vars
+    2:160  warning  'Search' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:168  warning  'Zap' is defined but never used                                                                                                                                 no-unused-vars
+    2:168  warning  'Zap' is defined but never used                                                                                                                                 @typescript-eslint/no-unused-vars
+    2:173  warning  'Home' is defined but never used                                                                                                                                no-unused-vars
+    2:173  warning  'Home' is defined but never used                                                                                                                                @typescript-eslint/no-unused-vars
+    2:185  warning  'Sparkles' is defined but never used                                                                                                                            no-unused-vars
+    2:185  warning  'Sparkles' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+    2:195  warning  'ChevronRight' is defined but never used                                                                                                                        no-unused-vars
+    2:195  warning  'ChevronRight' is defined but never used                                                                                                                        @typescript-eslint/no-unused-vars
+    2:209  warning  'ChevronLeft' is defined but never used                                                                                                                         no-unused-vars
+    2:209  warning  'ChevronLeft' is defined but never used                                                                                                                         @typescript-eslint/no-unused-vars
+    2:222  warning  'Wallet' is defined but never used                                                                                                                              no-unused-vars
+    2:222  warning  'Wallet' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:230  warning  'Calendar' is defined but never used                                                                                                                            no-unused-vars
+    2:230  warning  'Calendar' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+    4:10   warning  'FaCheckCircle' is defined but never used                                                                                                                       no-unused-vars
+    4:10   warning  'FaCheckCircle' is defined but never used                                                                                                                       @typescript-eslint/no-unused-vars
+   14:8    warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   26:10   warning  'activeSection' is assigned a value but never used                                                                                                              no-unused-vars
+   26:10   warning  'activeSection' is assigned a value but never used                                                                                                              @typescript-eslint/no-unused-vars
+   26:25   warning  'setActiveSection' is assigned a value but never used                                                                                                           no-unused-vars
+   26:25   warning  'setActiveSection' is assigned a value but never used                                                                                                           @typescript-eslint/no-unused-vars
+   41:10   warning  'newStakeForm' is assigned a value but never used                                                                                                               no-unused-vars
+   41:10   warning  'newStakeForm' is assigned a value but never used                                                                                                               @typescript-eslint/no-unused-vars
+   41:24   warning  'setNewStakeForm' is assigned a value but never used                                                                                                            no-unused-vars
+   41:24   warning  'setNewStakeForm' is assigned a value but never used                                                                                                            @typescript-eslint/no-unused-vars
+   47:10   warning  'errors' is assigned a value but never used                                                                                                                     no-unused-vars
+   47:10   warning  'errors' is assigned a value but never used                                                                                                                     @typescript-eslint/no-unused-vars
+   47:18   warning  'setErrors' is assigned a value but never used                                                                                                                  no-unused-vars
+   47:18   warning  'setErrors' is assigned a value but never used                                                                                                                  @typescript-eslint/no-unused-vars
+   51:17   warning  'profileData' is assigned a value but never used                                                                                                                no-unused-vars
+   51:17   warning  'profileData' is assigned a value but never used                                                                                                                @typescript-eslint/no-unused-vars
+   67:18   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   67:58   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   69:9    warning  'MAX_STALE_MS' is assigned a value but never used                                                                                                               no-unused-vars
+   69:9    warning  'MAX_STALE_MS' is assigned a value but never used                                                                                                               @typescript-eslint/no-unused-vars
+   81:9    warning  'shortAddr' is assigned a value but never used                                                                                                                  no-unused-vars
+   81:9    warning  'shortAddr' is assigned a value but never used                                                                                                                  @typescript-eslint/no-unused-vars
+   89:29   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   89:45   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  155:18   warning  'e' is defined but never used                                                                                                                                   no-unused-vars
+  155:18   warning  'e' is defined but never used                                                                                                                                   @typescript-eslint/no-unused-vars
+  188:6    warning  React Hook useEffect has missing dependencies: 'SESSION_TTL_MS', 'adminSessionCache', and 'fetchAdminData'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  219:64   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  225:17   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  238:64   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  243:17   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  264:14   warning  'e' is defined but never used                                                                                                                                   no-unused-vars
+  264:14   warning  'e' is defined but never used                                                                                                                                   @typescript-eslint/no-unused-vars
+  271:6    warning  React Hook useEffect has a missing dependency: 'fetchStakeSettings'. Either include it or remove the dependency array                                           react-hooks/exhaustive-deps
+  292:68   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  302:71   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  313:17   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  373:99   warning  Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOBoost.tsx
+  119:8   warning  React Hook useEffect has a missing dependency: 'fetchBadgeData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  145:70  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  147:30  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  150:45  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  156:25  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOHome.tsx
+   16:59  warning  'ref' is defined but never used                                                                                                                                    no-unused-vars
+   16:97  warning  'shortAddress' is defined but never used                                                                                                                           no-unused-vars
+   83:27  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   91:43  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   92:16  warning  'error' is defined but never used                                                                                                                                  no-unused-vars
+   92:16  warning  'error' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+  109:20  warning  'infoError' is defined but never used                                                                                                                              no-unused-vars
+  109:20  warning  'infoError' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+  109:31  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  117:22  warning  'balError' is defined but never used                                                                                                                               no-unused-vars
+  117:22  warning  'balError' is defined but never used                                                                                                                               @typescript-eslint/no-unused-vars
+  117:32  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  121:18  warning  'objError' is defined but never used                                                                                                                               no-unused-vars
+  121:18  warning  'objError' is defined but never used                                                                                                                               @typescript-eslint/no-unused-vars
+  121:28  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  137:18  warning  'legacyError' is defined but never used                                                                                                                            no-unused-vars
+  137:18  warning  'legacyError' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+  144:35  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  145:7   warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                @typescript-eslint/ban-ts-comment
+  146:35  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  146:53  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  146:89  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  152:14  warning  'error' is defined but never used                                                                                                                                  no-unused-vars
+  152:14  warning  'error' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+  152:21  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  162:5   warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                @typescript-eslint/ban-ts-comment
+  163:33  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  163:51  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  163:87  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  178:17  warning  Empty block statement                                                                                                                                              no-empty
+  204:43  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  231:33  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  257:23  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  266:6   warning  React Hook useEffect has missing dependencies: 'fetchTreasuryBalance', 'sectionLoader', and 'treasuryBalance'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  271:7   warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                @typescript-eslint/ban-ts-comment
+  272:35  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  272:53  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  272:89  warning  Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  281:19  warning  Empty block statement                                                                                                                                              no-empty
+  287:6   warning  React Hook useEffect has a missing dependency: 'fetchTreasuryBalance'. Either include it or remove the dependency array                                            react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOMembers.tsx
+   29:13   warning  'ref' is defined but never used                                                                                                                                                                                                        no-unused-vars
+   30:18   warning  'shortAddress' is defined but never used                                                                                                                                                                                               no-unused-vars
+   30:18   warning  'shortAddress' is defined but never used                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   31:17   warning  'profileData' is assigned a value but never used                                                                                                                                                                                       no-unused-vars
+   31:17   warning  'profileData' is assigned a value but never used                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   53:3    warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                    @typescript-eslint/ban-ts-comment
+   54:90   warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   54:125  warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   55:3    warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                    @typescript-eslint/ban-ts-comment
+   56:46   warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   56:85   warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   56:127  warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  107:33   warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  114:23   warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  115:25   warning  Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  147:20   warning  'e' is defined but never used                                                                                                                                                                                                          no-unused-vars
+  147:20   warning  'e' is defined but never used                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  282:17   warning  Empty block statement                                                                                                                                                                                                                  no-empty
+  295:6    warning  React Hook useEffect has missing dependencies: 'MAX_STALE_MS', 'SESSION_TTL_MS', 'fetchActualMembers', 'fetchMembershipData', 'membersCache', 'sectionLoader', and 'summaryCache'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  309:19   warning  Empty block statement                                                                                                                                                                                                                  no-empty
+  315:6    warning  React Hook useEffect has missing dependencies: 'MAX_STALE_MS', 'SESSION_TTL_MS', 'fetchActualMembers', 'fetchMembershipData', 'membersCache', and 'summaryCache'. Either include them or remove the dependency array                   react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOProposalDetails.tsx
+  24:13  warning  'voteType' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOProposals.tsx
+     5:3    warning  'AlertCircle' is defined but never used                                                                                                  no-unused-vars
+     5:3    warning  'AlertCircle' is defined but never used                                                                                                  @typescript-eslint/no-unused-vars
+     8:3    warning  'XCircle' is defined but never used                                                                                                      no-unused-vars
+     8:3    warning  'XCircle' is defined but never used                                                                                                      @typescript-eslint/no-unused-vars
+    63:3    warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                      @typescript-eslint/ban-ts-comment
+    64:96   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+    64:133  warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   169:15   warning  Empty block statement                                                                                                                    no-empty
+   173:6    warning  React Hook useEffect has a missing dependency: 'userStatus.isAdmin'. Either include it or remove the dependency array                    react-hooks/exhaustive-deps
+   236:13   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   239:28   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   244:29   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   318:71   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   374:15   warning  Empty block statement                                                                                                                    no-empty
+   401:68   warning  Empty block statement                                                                                                                    no-empty
+   424:30   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   428:32   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   447:43   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   485:48   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   497:56   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   565:21   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   585:6    warning  React Hook useEffect has missing dependencies: 'fetchProposals' and 'sectionLoader'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   592:6    warning  React Hook useEffect has a missing dependency: 'fetchProposals'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+   601:13   warning  Empty block statement                                                                                                                    no-empty
+   606:6    warning  React Hook useEffect has a missing dependency: 'checkProposalEligibility'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+   613:6    warning  React Hook useEffect has a missing dependency: 'autoActivateEligibleProposals'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+   624:6    warning  React Hook useEffect has a missing dependency: 'fetchProposals'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+   644:70   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   647:38   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   655:21   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   801:70   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   819:21   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   900:21   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   956:70   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   983:21   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+  1160:53   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+  1199:15   warning  Empty block statement                                                                                                                    no-empty
+  1202:21   warning  Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+  1252:92   warning  Empty block statement                                                                                                                    no-empty
+  1465:112  warning  Empty block statement                                                                                                                    no-empty
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOStaking.tsx
+    1:38  warning  'useCallback' is defined but never used                                                                                                               no-unused-vars
+    1:38  warning  'useCallback' is defined but never used                                                                                                               @typescript-eslint/no-unused-vars
+   30:24  warning  'setTotalStakers' is assigned a value but never used                                                                                                  no-unused-vars
+   30:24  warning  'setTotalStakers' is assigned a value but never used                                                                                                  @typescript-eslint/no-unused-vars
+   39:11  warning  'treasuryData' is assigned a value but never used                                                                                                     no-unused-vars
+   39:11  warning  'treasuryData' is assigned a value but never used                                                                                                     @typescript-eslint/no-unused-vars
+   56:14  warning  'error' is defined but never used                                                                                                                     no-unused-vars
+   56:14  warning  'error' is defined but never used                                                                                                                     @typescript-eslint/no-unused-vars
+   89:12  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+   91:24  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+   92:72  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+   97:21  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  119:12  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  121:24  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  122:72  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  127:21  warning  Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  180:6   warning  React Hook useEffect has missing dependencies: 'fetchMinStakeIndependently' and 'refreshOnChain'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  186:6   warning  React Hook useEffect has a missing dependency: 'daoStakingData.userVotingPower'. Either include it or remove the dependency array                     react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOTreasury.tsx
+   39:58  warning  Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   43:3   warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                              @typescript-eslint/ban-ts-comment
+   44:43  warning  Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   44:61  warning  Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   44:97  warning  Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   80:16  warning  'e' is defined but never used                                                                                                                                                    no-unused-vars
+   80:16  warning  'e' is defined but never used                                                                                                                                                    @typescript-eslint/no-unused-vars
+   86:6   warning  React Hook useEffect has missing dependencies: 'SESSION_TTL_MS', 'refreshData', 'sectionLoader', and 'treasurySessionCache'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  177:17  warning  Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+  193:17  warning  Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+  205:17  warning  Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\profile\UserProfile.tsx
+  68:6   warning  React Hook useEffect has a missing dependency: 'profileData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  89:19  warning  Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\constants\activityConstants.ts
+  20:3  warning  'DAO_CREATED' is defined but never used           no-unused-vars
+  21:3  warning  'MEMBER_JOINED' is defined but never used         no-unused-vars
+  22:3  warning  'MEMBER_LEFT' is defined but never used           no-unused-vars
+  23:3  warning  'PROPOSAL_CREATED' is defined but never used      no-unused-vars
+  24:3  warning  'PROPOSAL_VOTED' is defined but never used        no-unused-vars
+  25:3  warning  'PROPOSAL_EXECUTED' is defined but never used     no-unused-vars
+  26:3  warning  'STAKE' is defined but never used                 no-unused-vars
+  27:3  warning  'UNSTAKE' is defined but never used               no-unused-vars
+  28:3  warning  'TREASURY_DEPOSIT' is defined but never used      no-unused-vars
+  29:3  warning  'TREASURY_WITHDRAWAL' is defined but never used   no-unused-vars
+  30:3  warning  'REWARD_CLAIMED' is defined but never used        no-unused-vars
+  31:3  warning  'LAUNCHPAD_CREATED' is defined but never used     no-unused-vars
+  32:3  warning  'LAUNCHPAD_INVESTMENT' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\CedraWalletAdapterProvider.tsx
+    6:13  warning  'walletName' is defined but never used                                                                                          no-unused-vars
+   11:11  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   12:26  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   13:30  warning  'transaction' is defined but never used                                                                                         no-unused-vars
+   13:76  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   14:21  warning  'args' is defined but never used                                                                                                no-unused-vars
+   14:51  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   14:91  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   15:17  warning  'message' is defined but never used                                                                                             no-unused-vars
+   15:26  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   15:42  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   28:3   warning  'autoConnect' is assigned a value but never used                                                                                no-unused-vars
+   28:3   warning  'autoConnect' is assigned a value but never used                                                                                @typescript-eslint/no-unused-vars
+  131:76  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  143:51  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  175:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\CedraWalletProvider.tsx
+   23:13  warning  'wallet' is defined but never used                                                                                              no-unused-vars
+   25:30  warning  'transaction' is defined but never used                                                                                         no-unused-vars
+   25:43  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   25:59  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   26:21  warning  'transaction' is defined but never used                                                                                         no-unused-vars
+   26:34  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   26:50  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   27:17  warning  'message' is defined but never used                                                                                             no-unused-vars
+   27:26  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   27:42  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   39:3   warning  'autoConnect' is assigned a value but never used                                                                                no-unused-vars
+   39:3   warning  'autoConnect' is assigned a value but never used                                                                                @typescript-eslint/no-unused-vars
+  174:56  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  194:54  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  252:47  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  278:15  warning  Empty block statement                                                                                                           no-empty
+  293:21  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  303:39  warning  Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  347:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\DAOStateContext.tsx
+   20:12  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+   44:20  warning  'daoId' is defined but never used                                                                                                                                                  no-unused-vars
+   45:25  warning  'daoId' is defined but never used                                                                                                                                                  no-unused-vars
+   45:40  warning  'data' is defined but never used                                                                                                                                                   no-unused-vars
+   46:25  warning  'daoId' is defined but never used                                                                                                                                                  no-unused-vars
+   46:40  warning  'data' is defined but never used                                                                                                                                                   no-unused-vars
+   47:22  warning  'daoId' is defined but never used                                                                                                                                                  no-unused-vars
+   63:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                     react-refresh/only-export-components
+   77:9   warning  The 'toMOVE' function makes the dependencies of useCallback Hook (at line 313) change on every render. To fix this, wrap the definition of 'toMOVE' in its own useCallback() Hook  react-hooks/exhaustive-deps
+  133:65  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  133:80  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  153:65  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  153:96  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  157:23  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  190:14  warning  'error' is defined but never used                                                                                                                                                  no-unused-vars
+  190:14  warning  'error' is defined but never used                                                                                                                                                  @typescript-eslint/no-unused-vars
+  195:26  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  195:79  warning  Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  552:6   warning  React Hook useEffect has missing dependencies: 'fetchWalletBalance', 'loadFromStorage', and 'saveToStorage'. Either include them or remove the dependency array                    react-hooks/exhaustive-deps
+  576:6   warning  React Hook useEffect has a missing dependency: 'userState'. Either include it or remove the dependency array                                                                       react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\FilterContext.tsx
+  10:24  warning  'category' is defined but never used                                                                                            no-unused-vars
+  12:18  warning  'query' is defined but never used                                                                                               no-unused-vars
+  13:22  warning  'params' is defined but never used                                                                                              no-unused-vars
+  29:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useActivities.ts
+  145:6  warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  250:6  warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useDAOMembership.ts
+  13:22  warning  'updates' is defined but never used               no-unused-vars
+  28:9   warning  'userBalance' is assigned a value but never used  no-unused-vars
+  28:9   warning  'userBalance' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useRealGrowthData.ts
+   86:53  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   91:28  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  129:28  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  146:13  error    Unexpected lexical declaration in case block  no-case-declarations
+  216:21  warning  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useSectionLoader.ts
+  12:14  warning  'error' is defined but never used  no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useTreasury.ts
+   31:3    warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                       @typescript-eslint/ban-ts-comment
+   32:43   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   32:61   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   32:101  warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   94:22   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  101:17   warning  Empty block statement                                                                                                                                                                                     no-empty
+  104:28   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  104:58   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  113:17   warning  Empty block statement                                                                                                                                                                                     no-empty
+  124:17   warning  Empty block statement                                                                                                                                                                                     no-empty
+  136:6    warning  React Hook useCallback has missing dependencies: 'cacheUserKey' and 'treasurySessionCache'. Either include them or remove the dependency array                                                            react-hooks/exhaustive-deps
+  156:6    warning  React Hook useCallback has missing dependencies: 'cacheUserKey' and 'treasurySessionCache'. Either include them or remove the dependency array                                                            react-hooks/exhaustive-deps
+  190:42   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  212:18   warning  'err' is defined but never used                                                                                                                                                                           no-unused-vars
+  212:18   warning  'err' is defined but never used                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  226:6    warning  React Hook useCallback has missing dependencies: 'cacheBaseKey' and 'treasurySessionCache'. Either include them or remove the dependency array                                                            react-hooks/exhaustive-deps
+  241:27   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  249:54   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  262:77   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  263:47   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  263:61   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  283:18   warning  'error' is defined but never used                                                                                                                                                                         no-unused-vars
+  283:18   warning  'error' is defined but never used                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  283:25   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  290:9    warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                       @typescript-eslint/ban-ts-comment
+  291:52   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  316:14   warning  'error' is defined but never used                                                                                                                                                                         no-unused-vars
+  316:14   warning  'error' is defined but never used                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  316:21   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  329:6    warning  React Hook useCallback has missing dependencies: 'cacheBaseKey', 'treasuryData.balance', and 'treasurySessionCache'. Either include them or remove the dependency array                                   react-hooks/exhaustive-deps
+  356:16   warning  'e' is defined but never used                                                                                                                                                                             no-unused-vars
+  356:16   warning  'e' is defined but never used                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  371:45   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  385:32   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  385:65   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  402:64   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  403:26   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  406:24   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  408:35   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  416:21   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  438:6    warning  React Hook useCallback has missing dependencies: 'fetchTreasuryTransactions', 'treasuryData.allowsPublicDeposits', and 'treasuryData.treasuryObject'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  470:45   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  470:91   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  485:64   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  486:26   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  489:24   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  491:35   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  500:21   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  517:6    warning  React Hook useCallback has missing dependencies: 'fetchTreasuryTransactions' and 'treasuryData.treasuryObject'. Either include them or remove the dependency array                                        react-hooks/exhaustive-deps
+  579:45   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  583:18   warning  'error' is defined but never used                                                                                                                                                                         no-unused-vars
+  583:18   warning  'error' is defined but never used                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  594:30   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  594:63   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  602:64   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  603:24   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  605:35   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  614:21   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  644:43   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  644:89   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  652:64   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  653:24   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  655:35   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  662:21   warning  Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useVault.ts
+   20:11   warning  'VaultBalance' is defined but never used                                                                                   no-unused-vars
+   20:11   warning  'VaultBalance' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   26:11   warning  'VaultTransaction' is defined but never used                                                                               no-unused-vars
+   26:11   warning  'VaultTransaction' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+  130:6    warning  React Hook useCallback has a missing dependency: 'KNOWN_TOKENS'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+  150:30   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  150:63   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  158:31   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  213:33   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  214:33   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  214:69   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  215:96   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  215:126  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  216:107  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  216:140  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  231:23   warning  Empty block statement                                                                                                      no-empty
+  238:25   warning  Empty block statement                                                                                                      no-empty
+  273:21   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  285:6    warning  React Hook useCallback has an unnecessary dependency: 'getTokenInfo'. Either exclude it or remove the dependency array     react-hooks/exhaustive-deps
+  301:30   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  301:63   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  313:64   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  314:24   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  316:35   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  325:21   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  336:6    warning  React Hook useCallback has a missing dependency: 'daoId'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  367:64   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  368:24   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  370:35   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  385:21   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  396:6    warning  React Hook useCallback has missing dependencies: 'daoId' and 'vaults'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  427:30   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  427:63   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  437:64   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  438:24   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  440:35   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  449:21   warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  462:6    warning  React Hook useCallback has missing dependencies: 'daoId' and 'vaults'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useWalletBalance.ts
+  4:10  warning  'cedraClient' is defined but never used  no-unused-vars
+  4:10  warning  'cedraClient' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\services\apiRequestManager.ts
+    8:26  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+    9:13  warning  'value' is defined but never used                no-unused-vars
+    9:20  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   10:12  warning  'error' is defined but never used                no-unused-vars
+   10:19  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   16:9   warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   92:27  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  147:21  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  187:30  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  211:39  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  241:38  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  254:39  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  339:10  warning  'resetCircuitBreaker' is defined but never used  no-unused-vars
+  339:10  warning  'resetCircuitBreaker' is defined but never used  @typescript-eslint/no-unused-vars
+  346:10  warning  'getAPIStatus' is defined but never used         no-unused-vars
+  346:10  warning  'getAPIStatus' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useActivityTracker.ts
+   194:46  warning  Empty block statement                     no-empty
+   419:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   474:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   481:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   630:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   630:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   634:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   656:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   684:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   684:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   688:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   709:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   736:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   736:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   740:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   760:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   878:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   956:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1037:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1185:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1309:30  warning  Empty block statement                     no-empty
+  1315:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1319:30  warning  Empty block statement                     no-empty
+  1349:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useBalance.ts
+   90:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  143:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  147:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  147:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  152:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  153:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  174:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useContractActivity.ts
+   54:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:7   error    Unnecessary try/catch wrapper             no-useless-catch
+   78:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   79:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  109:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  277:16  warning  'activities' is defined but never used    no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useDAOCore.ts
+  216:30  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  239:25  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  239:52  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  252:18  warning  'waitError' is defined but never used                                                                              no-unused-vars
+  252:18  warning  'waitError' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  264:16  warning  'verifyError' is defined but never used                                                                            no-unused-vars
+  264:16  warning  'verifyError' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+  270:19  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  341:12  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  343:29  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  343:50  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  353:18  warning  'waitError' is defined but never used                                                                              no-unused-vars
+  353:18  warning  'waitError' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  360:19  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  399:68  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  449:68  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  555:6   warning  React Hook useEffect has a missing dependency: 'fetchDAOInfo'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+  640:6   warning  React Hook useEffect has a missing dependency: 'fetchProposals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  674:68  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  712:68  warning  Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  760:6   warning  React Hook useEffect has a missing dependency: 'checkRegistry'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useFetchDAOs.ts
+   29:13  warning  Empty block statement                                                                                                                                            no-empty
+   53:21  warning  Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  139:13  warning  Empty block statement                                                                                                                                            no-empty
+  198:35  warning  Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  204:36  warning  Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  215:28  warning  Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  230:50  warning  Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  233:29  warning  Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  299:6   warning  React Hook useCallback has missing dependencies: 'FRESH_TTL_MS', 'STALE_TTL_MS', and 'processDAOsInBatches'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  348:17  warning  Empty block statement                                                                                                                                            no-empty
+  385:42  warning  Empty block statement                                                                                                                                            no-empty
+  388:14  warning  Empty block statement                                                                                                                                            no-empty
+  436:14  warning  Empty block statement                                                                                                                                            no-empty
+  604:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  739:68  warning  Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useFilter.ts
+   72:37  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+   97:40  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  127:42  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  137:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  149:42  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  156:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  173:42  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  183:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  202:42  warning  Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  209:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useOptimizedActivityTracker.ts
+  218:51  warning  Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  219:23  warning  Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  220:20  warning  Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  411:43  warning  Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  457:38  warning  Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  576:6   warning  React Hook useCallback has a missing dependency: 'options'. Either include it or remove the dependency array                                react-hooks/exhaustive-deps
+  576:19  warning  React Hook useCallback has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+  622:6   warning  React Hook useCallback has a missing dependency: 'options'. Either include it or remove the dependency array                                react-hooks/exhaustive-deps
+  622:7   warning  React Hook useCallback has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\usePlatformStats.ts
+   51:48  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+   85:25  warning  '_totalProposals' is assigned a value but never used   no-unused-vars
+   85:25  warning  '_totalProposals' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  116:38  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  162:21  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  220:28  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  220:47  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  241:32  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  249:16  warning  'registryError' is defined but never used              no-unused-vars
+  249:16  warning  'registryError' is defined but never used              @typescript-eslint/no-unused-vars
+  249:31  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  277:34  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  285:16  warning  'countError' is defined but never used                 no-unused-vars
+  285:16  warning  'countError' is defined but never used                 @typescript-eslint/no-unused-vars
+  285:28  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  313:42  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  332:29  warning  '_totalProposals' is assigned a value but never used   no-unused-vars
+  332:29  warning  '_totalProposals' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  362:13  error    'totalVotes' is never reassigned. Use 'const' instead  prefer-const
+  526:43  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  526:62  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useProfile.ts
+   36:54  warning  '_avatarUrl' is assigned a value but never used  no-unused-vars
+   36:54  warning  '_avatarUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   48:54  warning  '_avatarUrl' is assigned a value but never used  no-unused-vars
+   48:54  warning  '_avatarUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   53:36  warning  '_displayName' is defined but never used         no-unused-vars
+   53:36  warning  '_displayName' is defined but never used         @typescript-eslint/no-unused-vars
+   58:34  warning  '_avatarUrl' is defined but never used           no-unused-vars
+   58:34  warning  '_avatarUrl' is defined but never used           @typescript-eslint/no-unused-vars
+  137:34  warning  '_userAddress' is defined but never used         no-unused-vars
+  137:34  warning  '_userAddress' is defined but never used         @typescript-eslint/no-unused-vars
+  149:36  warning  '_userAddress' is defined but never used         no-unused-vars
+  149:36  warning  '_userAddress' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useTradePortKeys.ts
+  47:70  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useUserDAOs.ts
+  122:33  warning  Empty block statement                     no-empty
+  206:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  245:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\userStatus.ts
+  58:9  warning  'powerStr' is assigned a value but never used  no-unused-vars
+  58:9  warning  'powerStr' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\utils\rpcUtils.ts
+   6:48  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  16:41  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  16:74  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  26:19  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  37:54  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  37:87  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  49:62  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  49:95  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  61:47  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  61:99  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  72:58  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  72:64  warning  '_maxRetries' is assigned a value but never used  no-unused-vars
+  72:64  warning  '_maxRetries' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  72:90  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\utils\walletAdapter.ts
+  24:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  35:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 651 problems (3 errors, 648 warnings)
+  1 error and 1 warning potentially fixable with the `--fix` option.
+

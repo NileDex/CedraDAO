@@ -190,7 +190,7 @@ export const DAOStateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (error) {
       console.log('View function method failed, trying alternatives...');
       
-      // Fallback 1: Scan resources for any CoinStore with non-zero value (robust on Movement)
+      // Fallback 1: Scan resources for any CoinStore with non-zero value (robust on Cedra)
       try {
         const resources: any[] = await retryWithBackoff(() => (cedraClient as any).getAccountResources?.({ accountAddress: walletAddress }));
         if (Array.isArray(resources)) {

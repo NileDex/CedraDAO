@@ -25,3 +25,4 @@ MoveDAO_v2_
 *.sln
 *.sw?
 .env
+.env

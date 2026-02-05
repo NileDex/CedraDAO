@@ -1,97 +1,114 @@
-import React from 'react';
-import { Search, Star, TrendingUp, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Plus, RefreshCw, Star } from 'lucide-react';
 import DAOCard from './DAOCard';
 import { DAO } from '../types/dao';
 import { useFetchCreatedDAOs } from '../useServices/useFetchDAOs';
+import { useFilter } from '../contexts/FilterContext';
 
 interface FeaturedDAOsProps {
-  onDAOSelect: (dao: DAO) => void;
+  onDAOSelect: (_dao: DAO) => void;
   onCreateDAO?: () => void;
   sidebarCollapsed?: boolean;
 }
 
-const FeaturedDAOs: React.FC<FeaturedDAOsProps> = ({ onDAOSelect, onCreateDAO, sidebarCollapsed = false }) => {
-  const { daos, isLoading, error, refetch } = useFetchCreatedDAOs();
+const FeaturedDAOs: React.FC<FeaturedDAOsProps> = ({ onDAOSelect, onCreateDAO }) => {
+  const { daos, isLoading: isLoadingAll, error, refetch } = useFetchCreatedDAOs();
+  const {
+    categories,
+    filterByCategory,
+    filteredDAOs,
+    isFiltering,
+    fetchFeaturedDAOs
+  } = useFilter();
 
-  // Only show skeleton if loading AND no cached data
-  if (isLoading && daos.length === 0) {
-    return (
-      <div className="mb-12 w-full">
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <h2 className="text-2xl font-bold text-white">All DAOs</h2>
-        </div>
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
-        <div className={`dao-grid grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-sm sm:max-w-none mx-auto ${
-          sidebarCollapsed ? 'xl:grid-cols-3' : 'xl:grid-cols-3'
-        }`}>
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="professional-card rounded-xl p-4 animate-pulse"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 bg-gray-600 rounded-xl"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-600 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-700 rounded w-3/4"></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-3 bg-gray-700 rounded"></div>
-                <div className="h-3 bg-gray-700 rounded w-5/6"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  const handleCategoryClick = (cat: string) => {
+    setSelectedCategory(cat);
+    if (cat === 'Featured') {
+      fetchFeaturedDAOs();
+    } else {
+      filterByCategory(cat);
+    }
+  };
+
+  const displayDAOs = selectedCategory === 'All' ? daos : filteredDAOs;
+  const isLoading = isLoadingAll || isFiltering;
+
+  // Add 'Featured' to categories if not already there, usually it's better as a separate button or special cat
+  const allCategories = categories.includes('Featured') ? categories : ['All', 'Featured', ...categories.filter(c => c !== 'All')];
 
   return (
     <div className="mb-12 w-full">
-      {/* Explore Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold text-white">Explore</h1>
+      <div className="flex flex-col gap-5 mb-10 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold tracking-tighter text-white flex items-center gap-3">
+              Explore Ecosystem
+              {selectedCategory === 'Featured' && <Star size={20} className="text-[#e1fd6a] fill-[#e1fd6a]" />}
+            </h2>
+            <p className="text-xs font-medium text-white/30">Curated Organizations</p>
+          </div>
           <button
             onClick={() => {
-              refetch()
+              refetch();
+              if (selectedCategory !== 'All') handleCategoryClick(selectedCategory);
             }}
             disabled={isLoading}
-            className="px-3 py-2 text-[#e1fd6a] hover:text-[#e1fd6a]/80 transition-all disabled:opacity-50"
+            className="text-white/20 hover:text-white transition-colors p-2 bg-white/[0.02] border border-white/5 rounded-xl"
             title="Refresh DAO list"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
         </div>
+
+        <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+          {allCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => handleCategoryClick(cat)}
+              className={`text-[11px] font-semibold transition-all whitespace-nowrap pb-2 border-b-2 ${selectedCategory === cat
+                ? 'text-[#e1fd6a] border-[#e1fd6a]'
+                : 'text-white/30 border-transparent hover:text-white'
+                }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-          <div className="text-red-300 text-sm">
-            <span className="text-red-400"></span> {error}
+      {isLoading && displayDAOs.length === 0 ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-[#e1fd6a]/20 border-t-[#e1fd6a] rounded-full animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="mb-8 p-6 bg-red-400/10 border border-red-400/20 rounded-2xl">
+          <div className="text-red-400 text-xs font-medium flex items-center gap-2">
+            {error}
           </div>
         </div>
-      )}
-
-      {daos.length === 0 && !error ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-500/20 rounded-full flex items-center justify-center">
-            <Search className="w-8 h-8 text-gray-400" />
+      ) : displayDAOs.length === 0 ? (
+        <div className="text-center py-20 rounded-2xl">
+          <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center">
+            <Search className="w-8 h-8 text-white/20" />
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">No DAOs Found</h3>
-          <p className="text-gray-400">Be the first to create a DAO on Movement Network!</p>
+          <h3 className="text-xl font-semibold text-white mb-2">Void Detected</h3>
+          <p className="text-white/40 text-xs font-medium mb-8 text-center">No organizations found in {selectedCategory === 'All' ? 'the ecosystem' : `the ${selectedCategory} sector`}.</p>
+          {onCreateDAO && (
+            <button onClick={onCreateDAO} className="nb-button">
+              <Plus className="w-4 h-4" />
+              <span>Create First DAO</span>
+            </button>
+          )}
         </div>
       ) : (
-        <div className={`dao-grid grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mx-auto place-items-center ${
-          sidebarCollapsed ? 'xl:grid-cols-3 2xl:grid-cols-4' : 'xl:grid-cols-2 2xl:grid-cols-3'
-        }`}>
-          {daos.map((dao) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {displayDAOs.map((dao) => (
             <DAOCard
               key={dao.id}
               dao={dao}
               onClick={() => onDAOSelect(dao)}
-              sidebarCollapsed={sidebarCollapsed}
             />
           ))}
         </div>

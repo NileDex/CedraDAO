@@ -1,10 +1,11 @@
 [package]
-name = "daooncedra"
+name = "anchor_addrx"
 version = "1.0.0"
 authors = []
+upgrade_policy = "compatible"
 
 [addresses]
-movedao_addrx = "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8"
+anchor_addrx = "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07"
 
 
 [dev-addresses]

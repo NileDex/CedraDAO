@@ -51,7 +51,7 @@ export class PlatformStatsService {
   static async initializePlatform(adminSigner: any): Promise<boolean> {
     try {
       console.log('🔧 Initializing platform statistics system...');
-      
+
       const payload = {
         function: `${MODULE_ADDRESS}::platform_stats::initialize_platform`,
         typeArguments: [],
@@ -74,7 +74,7 @@ export class PlatformStatsService {
   static async getPlatformOverview(): Promise<PlatformOverview> {
     try {
       console.log('🔍 Fetching platform overview from latest contract...');
-      
+
       const result = await cedraClient.view({
         payload: {
           function: `${MODULE_ADDRESS}::platform_stats::get_platform_overview`,
@@ -104,7 +104,7 @@ export class PlatformStatsService {
   static async getPlatformStats(): Promise<RealtimePlatformStats> {
     try {
       console.log('🔍 Fetching platform stats from new contract function...');
-      
+
       const result = await cedraClient.view({
         payload: {
           function: `${MODULE_ADDRESS}::platform_stats::get_platform_stats`,
@@ -114,7 +114,7 @@ export class PlatformStatsService {
 
       // Result is a PlatformStatsData struct
       const statsData = result[0] as any;
-      
+
       return {
         totalDAOs: Number(statsData.total_daos),
         activeProposals: Number(statsData.active_proposals),
@@ -218,7 +218,7 @@ export class PlatformStatsService {
 
       // The result should be an array of DAOStats structs
       return (result[0] as any[]).map((stats: any) => ({
-        dao_address: stats.movedao_addrx, // Updated field name in contract
+        dao_address: stats.anchor_addrx, // Updated field name in contract
         active_proposals: Number(stats.active_proposals),
         total_proposals: Number(stats.total_proposals),
         total_members: Number(stats.total_members),
@@ -236,7 +236,7 @@ export class PlatformStatsService {
   static async getPlatformStatsWithFallback(): Promise<PlatformStats> {
     try {
       console.log('🔍 Fetching platform stats with optimized discovery...');
-      
+
       // First check if registry is initialized with error handling
       let registryInitialized: any;
       try {
@@ -258,12 +258,12 @@ export class PlatformStatsService {
           lastUpdated: Date.now()
         };
       }
-      
+
       if (!registryInitialized[0]) {
         console.log(' DAO registry not initialized - using event-based discovery');
         const daoAddresses = await this.getDAOAddressesFromEvents();
         const totalDAOs = daoAddresses.length;
-        
+
         return {
           totalDAOs,
           activeProposals: 0,
@@ -294,14 +294,14 @@ export class PlatformStatsService {
           lastUpdated: Date.now()
         };
       }
-      
+
       const registryDAOCount = Number(totalDAOsFromRegistry[0]);
       console.log(' DAOs in registry:', registryDAOCount);
-      
+
       if (registryDAOCount > 0) {
         // Registry has DAOs, use contract stats functions
         console.log(' Using registry-based platform stats...');
-        
+
         try {
           const result = await cedraClient.view({
             payload: {
@@ -311,7 +311,7 @@ export class PlatformStatsService {
           });
 
           const statsData = result[0] as any;
-          
+
           return {
             totalDAOs: Number(statsData.total_daos),
             activeProposals: Number(statsData.active_proposals),
@@ -321,7 +321,7 @@ export class PlatformStatsService {
           };
         } catch (contractError) {
           console.warn('Contract stats failed, trying tuple function:', contractError);
-          
+
           const result = await cedraClient.view({
             payload: {
               function: `${MODULE_ADDRESS}::platform_stats::get_platform_overview`,
@@ -342,10 +342,10 @@ export class PlatformStatsService {
       } else {
         // Registry is empty, use event-based discovery (same as useFetchDAOs pattern)
         console.log('Registry empty, using event-based DAO discovery...');
-        
+
         const daoAddresses = await this.getDAOAddressesFromEvents();
         const totalDAOs = daoAddresses.length;
-        
+
         if (totalDAOs === 0) {
           return {
             totalDAOs: 0,
@@ -355,14 +355,14 @@ export class PlatformStatsService {
             lastUpdated: Date.now()
           };
         }
-        
+
         // Aggregate stats from discovered DAOs
         let totalMembers = 0;
         let activeProposals = 0;
         let totalVotes = 0;
-        
+
         console.log(` Aggregating stats from ${totalDAOs} discovered DAOs...`);
-        
+
         for (const daoAddress of daoAddresses) {
           try {
             // Check if DAO exists and get member count
@@ -373,7 +373,7 @@ export class PlatformStatsService {
               }
             });
             totalMembers += Number(memberCount[0]);
-            
+
             // Get proposal count if proposals exist
             try {
               const proposalCount = await cedraClient.view({
@@ -392,7 +392,7 @@ export class PlatformStatsService {
             console.warn(`Failed to get stats for DAO ${daoAddress}:`, error);
           }
         }
-        
+
         return {
           totalDAOs,
           activeProposals,
@@ -403,7 +403,7 @@ export class PlatformStatsService {
       }
     } catch (error) {
       console.error('All platform stats methods failed:', error);
-      
+
       // Return zeros but indicate system is available
       return {
         totalDAOs: 0,
@@ -514,7 +514,7 @@ export const useAllDAOStats = () => {
     try {
       setError(null);
       setIsLoading(true);
-      
+
       const result = await cedraClient.view({
         payload: {
           function: `${MODULE_ADDRESS}::platform_stats::get_all_dao_stats`,
@@ -524,13 +524,13 @@ export const useAllDAOStats = () => {
 
       // Result is an array of DAOStats structs
       const daoStatsArray = (result[0] as any[]).map((stats: any) => ({
-        dao_address: stats.movedao_addrx,
+        dao_address: stats.anchor_addrx,
         active_proposals: Number(stats.active_proposals),
         total_proposals: Number(stats.total_proposals),
         total_members: Number(stats.total_members),
         total_votes: Number(stats.total_votes)
       }));
-      
+
       setStats(daoStatsArray);
     } catch (err) {
       console.error('Error fetching all DAO stats:', err);

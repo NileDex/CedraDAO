@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Globe, RefreshCw } from 'lucide-react';
+import { Globe, RefreshCw } from 'lucide-react';
 import { useGlobalActivities } from '../useServices/useOptimizedActivityTracker';
 import OptimizedActivityTable from './OptimizedActivityTable';
 
@@ -15,14 +15,14 @@ const GlobalActivityFeed: React.FC<GlobalActivityFeedProps> = ({
   maxRows = 20,
   showHeader = true,
   className = '',
-  paginationType = 'loadMore',
-  enablePagination = true
+  paginationType: _paginationType = 'loadMore',
+  enablePagination: _enablePagination = true
 }) => {
-  const { 
-    activities, 
-    isLoading, 
-    error, 
-    pagination,
+  const {
+    activities,
+    isLoading,
+    error,
+    pagination: _pagination,
     refetch
   } = useGlobalActivities({
     limit: maxRows,

@@ -1,0 +1,589 @@
+﻿
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\App.tsx
+  73:13  error  Empty block statement  no-empty
+  83:13  error  Empty block statement  no-empty
+  89:13  error  Empty block statement  no-empty
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\CreateDAO.tsx
+   83:14  error  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  157:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  157:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  164:14  error  'err' is defined but never used           @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\Filter.tsx
+  64:8  warning  React Hook useCallback has a missing dependency: 'handleSelectDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\GlobalActivityFeed.tsx
+   2:10  error  'Activity' is defined but never used                   @typescript-eslint/no-unused-vars
+  18:3   error  'paginationType' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  19:3   error  'enablePagination' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  25:5   error  'pagination' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\PlatformGrowthCharts.tsx
+  2:10  error  'LineChart' is defined but never used             @typescript-eslint/no-unused-vars
+  2:21  error  'Line' is defined but never used                  @typescript-eslint/no-unused-vars
+  2:44  error  'BarChart' is defined but never used              @typescript-eslint/no-unused-vars
+  2:54  error  'Bar' is defined but never used                   @typescript-eslint/no-unused-vars
+  2:59  error  'XAxis' is defined but never used                 @typescript-eslint/no-unused-vars
+  2:66  error  'YAxis' is defined but never used                 @typescript-eslint/no-unused-vars
+  7:36  error  'lastUpdated' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  7:49  error  'refresh' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\Sidebar.tsx
+   14:31   error  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   22:114  error  'daoTabs' is defined but never used            @typescript-eslint/no-unused-vars
+   22:123  error  'activeTab' is defined but never used          @typescript-eslint/no-unused-vars
+   22:134  error  'onTabChange' is defined but never used        @typescript-eslint/no-unused-vars
+   27:13   error  Empty block statement                          no-empty
+   35:80   error  Empty block statement                          no-empty
+  192:19   error  'isActive' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\VaultManager.tsx
+   27:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   46:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\WalletConnect.tsx
+   22:10  error  'truncateAddress' is defined but never used       @typescript-eslint/no-unused-vars
+  115:17  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  579:68  error  'onProfileClick' is defined but never used        @typescript-eslint/no-unused-vars
+  589:9   error  'isDarkTheme' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  656:14  error  'e' is defined but never used                     @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\alert\AlertContext.tsx
+  14:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\common\SectionLoader.tsx
+   2:10  error  'RefreshCw' is defined but never used             @typescript-eslint/no-unused-vars
+  21:3   error  'loadingText' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOAdmin.tsx
+    2:25   error    'Clock' is defined but never used                                                                                                                               @typescript-eslint/no-unused-vars
+    2:46   error    'Settings' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+    2:56   error    'AlertTriangle' is defined but never used                                                                                                                       @typescript-eslint/no-unused-vars
+    2:71   error    'XCircle' is defined but never used                                                                                                                             @typescript-eslint/no-unused-vars
+    2:80   error    'UserCheck' is defined but never used                                                                                                                           @typescript-eslint/no-unused-vars
+    2:91   error    'DollarSign' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+    2:120  error    'Layers' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:128  error    'TrendingUp' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+    2:140  error    'Filter' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:148  error    'ArrowRight' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+    2:160  error    'Search' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:168  error    'Zap' is defined but never used                                                                                                                                 @typescript-eslint/no-unused-vars
+    2:173  error    'Home' is defined but never used                                                                                                                                @typescript-eslint/no-unused-vars
+    2:185  error    'Sparkles' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+    2:195  error    'ChevronRight' is defined but never used                                                                                                                        @typescript-eslint/no-unused-vars
+    2:209  error    'ChevronLeft' is defined but never used                                                                                                                         @typescript-eslint/no-unused-vars
+    2:222  error    'Wallet' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+    2:230  error    'Calendar' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+    4:10   error    'FaCheckCircle' is defined but never used                                                                                                                       @typescript-eslint/no-unused-vars
+   14:8    error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   26:10   error    'activeSection' is assigned a value but never used                                                                                                              @typescript-eslint/no-unused-vars
+   26:25   error    'setActiveSection' is assigned a value but never used                                                                                                           @typescript-eslint/no-unused-vars
+   41:10   error    'newStakeForm' is assigned a value but never used                                                                                                               @typescript-eslint/no-unused-vars
+   41:24   error    'setNewStakeForm' is assigned a value but never used                                                                                                            @typescript-eslint/no-unused-vars
+   47:10   error    'errors' is assigned a value but never used                                                                                                                     @typescript-eslint/no-unused-vars
+   47:18   error    'setErrors' is assigned a value but never used                                                                                                                  @typescript-eslint/no-unused-vars
+   51:17   error    'profileData' is assigned a value but never used                                                                                                                @typescript-eslint/no-unused-vars
+   67:18   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   67:58   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   69:9    error    'MAX_STALE_MS' is assigned a value but never used                                                                                                               @typescript-eslint/no-unused-vars
+   81:9    error    'shortAddr' is assigned a value but never used                                                                                                                  @typescript-eslint/no-unused-vars
+   89:29   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+   89:45   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  155:18   error    'e' is defined but never used                                                                                                                                   @typescript-eslint/no-unused-vars
+  188:6    warning  React Hook useEffect has missing dependencies: 'SESSION_TTL_MS', 'adminSessionCache', and 'fetchAdminData'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  219:64   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  225:17   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  238:64   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  243:17   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  264:14   error    'e' is defined but never used                                                                                                                                   @typescript-eslint/no-unused-vars
+  271:6    warning  React Hook useEffect has a missing dependency: 'fetchStakeSettings'. Either include it or remove the dependency array                                           react-hooks/exhaustive-deps
+  292:68   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  302:71   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  313:17   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+  373:99   error    Unexpected any. Specify a different type                                                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOBoost.tsx
+  119:8   warning  React Hook useEffect has a missing dependency: 'fetchBadgeData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  145:70  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  147:30  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  150:45  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  156:25  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOHome.tsx
+   83:27  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   91:43  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   92:16  error    'error' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+  109:20  error    'infoError' is defined but never used                                                                                                                              @typescript-eslint/no-unused-vars
+  109:31  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  117:22  error    'balError' is defined but never used                                                                                                                               @typescript-eslint/no-unused-vars
+  117:32  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  121:18  error    'objError' is defined but never used                                                                                                                               @typescript-eslint/no-unused-vars
+  121:28  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  137:18  error    'legacyError' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+  144:35  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  145:7   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                @typescript-eslint/ban-ts-comment
+  146:35  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  146:53  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  146:89  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  152:14  error    'error' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+  152:21  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  162:5   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                @typescript-eslint/ban-ts-comment
+  163:33  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  163:51  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  163:87  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  178:17  error    Empty block statement                                                                                                                                              no-empty
+  204:43  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  231:33  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  257:23  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  266:6   warning  React Hook useEffect has missing dependencies: 'fetchTreasuryBalance', 'sectionLoader', and 'treasuryBalance'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  271:7   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                @typescript-eslint/ban-ts-comment
+  272:35  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  272:53  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  272:89  error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  281:19  error    Empty block statement                                                                                                                                              no-empty
+  287:6   warning  React Hook useEffect has a missing dependency: 'fetchTreasuryBalance'. Either include it or remove the dependency array                                            react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOMembers.tsx
+   30:18   error    'shortAddress' is defined but never used                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   31:17   error    'profileData' is assigned a value but never used                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   53:3    error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                    @typescript-eslint/ban-ts-comment
+   54:90   error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   54:125  error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   55:3    error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                    @typescript-eslint/ban-ts-comment
+   56:46   error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   56:85   error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   56:127  error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  107:33   error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  114:23   error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  115:25   error    Unexpected any. Specify a different type                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+  147:20   error    'e' is defined but never used                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  282:17   error    Empty block statement                                                                                                                                                                                                                  no-empty
+  295:6    warning  React Hook useEffect has missing dependencies: 'MAX_STALE_MS', 'SESSION_TTL_MS', 'fetchActualMembers', 'fetchMembershipData', 'membersCache', 'sectionLoader', and 'summaryCache'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  309:19   error    Empty block statement                                                                                                                                                                                                                  no-empty
+  315:6    warning  React Hook useEffect has missing dependencies: 'MAX_STALE_MS', 'SESSION_TTL_MS', 'fetchActualMembers', 'fetchMembershipData', 'membersCache', and 'summaryCache'. Either include them or remove the dependency array                   react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOProposals.tsx
+     5:3    error    'AlertCircle' is defined but never used                                                                                                  @typescript-eslint/no-unused-vars
+     8:3    error    'XCircle' is defined but never used                                                                                                      @typescript-eslint/no-unused-vars
+    63:3    error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                      @typescript-eslint/ban-ts-comment
+    64:96   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+    64:133  error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   169:15   error    Empty block statement                                                                                                                    no-empty
+   173:6    warning  React Hook useEffect has a missing dependency: 'userStatus.isAdmin'. Either include it or remove the dependency array                    react-hooks/exhaustive-deps
+   236:13   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   239:28   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   244:29   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   318:71   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   374:15   error    Empty block statement                                                                                                                    no-empty
+   401:68   error    Empty block statement                                                                                                                    no-empty
+   424:30   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   428:32   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   447:43   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   485:48   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   497:56   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   565:21   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   585:6    warning  React Hook useEffect has missing dependencies: 'fetchProposals' and 'sectionLoader'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   592:6    warning  React Hook useEffect has a missing dependency: 'fetchProposals'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+   601:13   error    Empty block statement                                                                                                                    no-empty
+   606:6    warning  React Hook useEffect has a missing dependency: 'checkProposalEligibility'. Either include it or remove the dependency array              react-hooks/exhaustive-deps
+   613:6    warning  React Hook useEffect has a missing dependency: 'autoActivateEligibleProposals'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+   624:6    warning  React Hook useEffect has a missing dependency: 'fetchProposals'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+   644:70   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   647:38   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   655:21   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   801:70   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   819:21   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   900:21   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   956:70   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+   983:21   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+  1160:53   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+  1199:15   error    Empty block statement                                                                                                                    no-empty
+  1202:21   error    Unexpected any. Specify a different type                                                                                                 @typescript-eslint/no-explicit-any
+  1252:92   error    Empty block statement                                                                                                                    no-empty
+  1465:112  error    Empty block statement                                                                                                                    no-empty
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOStaking.tsx
+    1:38  error    'useCallback' is defined but never used                                                                                                               @typescript-eslint/no-unused-vars
+   30:24  error    'setTotalStakers' is assigned a value but never used                                                                                                  @typescript-eslint/no-unused-vars
+   39:11  error    'treasuryData' is assigned a value but never used                                                                                                     @typescript-eslint/no-unused-vars
+   56:14  error    'error' is defined but never used                                                                                                                     @typescript-eslint/no-unused-vars
+   89:12  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+   91:24  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+   92:72  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+   97:21  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  119:12  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  121:24  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  122:72  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  127:21  error    Unexpected any. Specify a different type                                                                                                              @typescript-eslint/no-explicit-any
+  180:6   warning  React Hook useEffect has missing dependencies: 'fetchMinStakeIndependently' and 'refreshOnChain'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  186:6   warning  React Hook useEffect has a missing dependency: 'daoStakingData.userVotingPower'. Either include it or remove the dependency array                     react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\dao\DAOTreasury.tsx
+   39:58  error    Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   43:3   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                              @typescript-eslint/ban-ts-comment
+   44:43  error    Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   44:61  error    Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   44:97  error    Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+   80:16  error    'e' is defined but never used                                                                                                                                                    @typescript-eslint/no-unused-vars
+   86:6   warning  React Hook useEffect has missing dependencies: 'SESSION_TTL_MS', 'refreshData', 'sectionLoader', and 'treasurySessionCache'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  177:17  error    Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+  193:17  error    Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+  205:17  error    Unexpected any. Specify a different type                                                                                                                                         @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\components\profile\UserProfile.tsx
+  68:6   warning  React Hook useEffect has a missing dependency: 'profileData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  89:19  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\CedraWalletAdapterProvider.tsx
+   11:11  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   12:26  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   13:76  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   14:51  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   14:91  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   15:26  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   15:42  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   28:3   error    'autoConnect' is assigned a value but never used                                                                                @typescript-eslint/no-unused-vars
+  131:76  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  143:51  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  175:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\CedraWalletProvider.tsx
+   25:43  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   25:59  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   26:34  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   26:50  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   27:26  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   27:42  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   39:3   error    'autoConnect' is assigned a value but never used                                                                                @typescript-eslint/no-unused-vars
+  174:56  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  194:54  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  252:47  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  278:15  error    Empty block statement                                                                                                           no-empty
+  293:21  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  303:39  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  347:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\DAOStateContext.tsx
+   20:12  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+   63:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                     react-refresh/only-export-components
+   77:9   warning  The 'toMOVE' function makes the dependencies of useCallback Hook (at line 313) change on every render. To fix this, wrap the definition of 'toMOVE' in its own useCallback() Hook  react-hooks/exhaustive-deps
+  133:65  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  133:80  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  153:65  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  153:96  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  157:23  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  190:14  error    'error' is defined but never used                                                                                                                                                  @typescript-eslint/no-unused-vars
+  195:26  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  195:79  error    Unexpected any. Specify a different type                                                                                                                                           @typescript-eslint/no-explicit-any
+  552:6   warning  React Hook useEffect has missing dependencies: 'fetchWalletBalance', 'loadFromStorage', and 'saveToStorage'. Either include them or remove the dependency array                    react-hooks/exhaustive-deps
+  576:6   warning  React Hook useEffect has a missing dependency: 'userState'. Either include it or remove the dependency array                                                                       react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\contexts\FilterContext.tsx
+  29:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useActivities.ts
+  145:6  warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  250:6  warning  React Hook useEffect has a missing dependency: 'currentPage'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useDAOMembership.ts
+  28:9  error  'userBalance' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useRealGrowthData.ts
+   86:53  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   91:28  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  129:28  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  146:13  error  Unexpected lexical declaration in case block  no-case-declarations
+  216:21  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useTreasury.ts
+   31:3    error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                       @typescript-eslint/ban-ts-comment
+   32:43   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   32:61   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   32:101  error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   94:22   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  101:17   error    Empty block statement                                                                                                                                                                                     no-empty
+  104:28   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  104:58   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  113:17   error    Empty block statement                                                                                                                                                                                     no-empty
+  124:17   error    Empty block statement                                                                                                                                                                                     no-empty
+  136:6    warning  React Hook useCallback has missing dependencies: 'cacheUserKey' and 'treasurySessionCache'. Either include them or remove the dependency array                                                            react-hooks/exhaustive-deps
+  156:6    warning  React Hook useCallback has missing dependencies: 'cacheUserKey' and 'treasurySessionCache'. Either include them or remove the dependency array                                                            react-hooks/exhaustive-deps
+  190:42   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  212:18   error    'err' is defined but never used                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  226:6    warning  React Hook useCallback has missing dependencies: 'cacheBaseKey' and 'treasurySessionCache'. Either include them or remove the dependency array                                                            react-hooks/exhaustive-deps
+  241:27   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  249:54   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  262:77   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  263:47   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  263:61   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  283:18   error    'error' is defined but never used                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  283:25   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  290:9    error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                       @typescript-eslint/ban-ts-comment
+  291:52   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  316:14   error    'error' is defined but never used                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  316:21   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  329:6    warning  React Hook useCallback has missing dependencies: 'cacheBaseKey', 'treasuryData.balance', and 'treasurySessionCache'. Either include them or remove the dependency array                                   react-hooks/exhaustive-deps
+  356:16   error    'e' is defined but never used                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  371:45   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  385:32   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  385:65   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  402:64   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  403:26   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  406:24   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  408:35   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  416:21   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  438:6    warning  React Hook useCallback has missing dependencies: 'fetchTreasuryTransactions', 'treasuryData.allowsPublicDeposits', and 'treasuryData.treasuryObject'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  470:45   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  470:91   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  485:64   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  486:26   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  489:24   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  491:35   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  500:21   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  517:6    warning  React Hook useCallback has missing dependencies: 'fetchTreasuryTransactions' and 'treasuryData.treasuryObject'. Either include them or remove the dependency array                                        react-hooks/exhaustive-deps
+  579:45   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  583:18   error    'error' is defined but never used                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  594:30   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  594:63   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  602:64   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  603:24   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  605:35   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  614:21   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  644:43   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  644:89   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  652:64   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  653:24   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  655:35   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  662:21   error    Unexpected any. Specify a different type                                                                                                                                                                  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useVault.ts
+   20:11   error    'VaultBalance' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   26:11   error    'VaultTransaction' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+  130:6    warning  React Hook useCallback has a missing dependency: 'KNOWN_TOKENS'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+  150:30   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  150:63   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  158:31   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  213:33   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  214:33   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  214:69   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  215:96   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  215:126  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  216:107  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  216:140  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  231:23   error    Empty block statement                                                                                                      no-empty
+  238:25   error    Empty block statement                                                                                                      no-empty
+  273:21   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  285:6    warning  React Hook useCallback has an unnecessary dependency: 'getTokenInfo'. Either exclude it or remove the dependency array     react-hooks/exhaustive-deps
+  301:30   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  301:63   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  313:64   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  314:24   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  316:35   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  325:21   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  336:6    warning  React Hook useCallback has a missing dependency: 'daoId'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  367:64   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  368:24   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  370:35   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  385:21   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  396:6    warning  React Hook useCallback has missing dependencies: 'daoId' and 'vaults'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  427:30   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  427:63   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  437:64   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  438:24   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  440:35   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  449:21   error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  462:6    warning  React Hook useCallback has missing dependencies: 'daoId' and 'vaults'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\hooks\useWalletBalance.ts
+  4:10  error  'cedraClient' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\services\apiRequestManager.ts
+    8:26  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+    9:20  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   10:19  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   16:9   error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   92:27  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  147:21  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  187:30  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  211:39  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  241:38  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  254:39  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  339:10  error  'resetCircuitBreaker' is defined but never used  @typescript-eslint/no-unused-vars
+  346:10  error  'getAPIStatus' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useActivityTracker.ts
+   194:46  error  Empty block statement                     no-empty
+   419:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   474:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   481:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   630:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   630:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   634:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   656:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   684:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   684:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   688:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   709:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   736:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   736:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   740:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   760:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   878:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   956:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1037:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1185:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1309:30  error  Empty block statement                     no-empty
+  1315:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1319:30  error  Empty block statement                     no-empty
+  1349:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useBalance.ts
+   90:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  143:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  147:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  147:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  152:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  153:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  174:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  191:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useContractActivity.ts
+   54:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:7   error  Unnecessary try/catch wrapper             no-useless-catch
+   78:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   79:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  109:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useDAOCore.ts
+  216:30  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  239:25  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  239:52  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  252:18  error    'waitError' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  264:16  error    'verifyError' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+  270:19  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  341:12  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  343:29  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  343:50  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  353:18  error    'waitError' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  360:19  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  399:68  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  449:68  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  555:6   warning  React Hook useEffect has a missing dependency: 'fetchDAOInfo'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+  640:6   warning  React Hook useEffect has a missing dependency: 'fetchProposals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  674:68  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  712:68  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  760:6   warning  React Hook useEffect has a missing dependency: 'checkRegistry'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useFetchDAOs.ts
+   29:13  error    Empty block statement                                                                                                                                            no-empty
+   53:21  error    Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  139:13  error    Empty block statement                                                                                                                                            no-empty
+  198:35  error    Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  204:36  error    Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  215:28  error    Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  230:50  error    Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  233:29  error    Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+  299:6   warning  React Hook useCallback has missing dependencies: 'FRESH_TTL_MS', 'STALE_TTL_MS', and 'processDAOsInBatches'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  348:17  error    Empty block statement                                                                                                                                            no-empty
+  385:42  error    Empty block statement                                                                                                                                            no-empty
+  388:14  error    Empty block statement                                                                                                                                            no-empty
+  436:14  error    Empty block statement                                                                                                                                            no-empty
+  604:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+  739:68  error    Unexpected any. Specify a different type                                                                                                                         @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useFilter.ts
+   72:37  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+   97:40  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  127:42  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  137:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  149:42  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  156:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  173:42  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  183:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  202:42  error    Unexpected any. Specify a different type                                                                                   @typescript-eslint/no-explicit-any
+  209:8   warning  React Hook useCallback has a missing dependency: 'mapSearchResultToDAO'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useOptimizedActivityTracker.ts
+  218:51  error    Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  219:23  error    Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  220:20  error    Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  411:43  error    Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  457:38  error    Unexpected any. Specify a different type                                                                                                    @typescript-eslint/no-explicit-any
+  576:6   warning  React Hook useCallback has a missing dependency: 'options'. Either include it or remove the dependency array                                react-hooks/exhaustive-deps
+  576:19  warning  React Hook useCallback has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+  622:6   warning  React Hook useCallback has a missing dependency: 'options'. Either include it or remove the dependency array                                react-hooks/exhaustive-deps
+  622:7   warning  React Hook useCallback has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\usePlatformStats.ts
+   51:48  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+   85:25  error  '_totalProposals' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  116:38  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  162:21  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  220:28  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  220:47  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  241:32  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  249:16  error  'registryError' is defined but never used              @typescript-eslint/no-unused-vars
+  249:31  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  277:34  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  285:16  error  'countError' is defined but never used                 @typescript-eslint/no-unused-vars
+  285:28  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  313:42  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  332:29  error  '_totalProposals' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  362:13  error  'totalVotes' is never reassigned. Use 'const' instead  prefer-const
+  526:43  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+  526:62  error  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useProfile.ts
+   36:54  error  '_avatarUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   48:54  error  '_avatarUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   53:36  error  '_displayName' is defined but never used         @typescript-eslint/no-unused-vars
+   58:34  error  '_avatarUrl' is defined but never used           @typescript-eslint/no-unused-vars
+  137:34  error  '_userAddress' is defined but never used         @typescript-eslint/no-unused-vars
+  149:36  error  '_userAddress' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useTradePortKeys.ts
+  47:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\useUserDAOs.ts
+  122:33  error  Empty block statement                     no-empty
+  206:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  245:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\useServices\userStatus.ts
+  58:9  error  'powerStr' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\utils\rpcUtils.ts
+   6:48  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  16:41  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  16:74  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  26:19  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  37:54  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  37:87  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  49:62  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  49:95  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  61:47  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  61:99  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  72:58  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  72:64  error  '_maxRetries' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  72:90  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\src\utils\walletAdapter.ts
+  24:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  35:8   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 499 problems (447 errors, 52 warnings)
+  1 error and 1 warning potentially fixable with the `--fix` option.
+

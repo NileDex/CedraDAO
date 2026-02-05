@@ -1,5 +1,5 @@
 export const ABI = {
-  "address": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8",
+  "address": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07",
   "name": "staking",
   "friends": [],
   "exposed_functions": [
@@ -31,6 +31,20 @@ export const ABI = {
       "return": []
     },
     {
+      "name": "can_create_proposal",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address",
+        "address"
+      ],
+      "return": [
+        "bool"
+      ]
+    },
+    {
       "name": "create_vote",
       "visibility": "public",
       "is_entry": true,
@@ -58,6 +72,19 @@ export const ABI = {
         "u64"
       ],
       "return": []
+    },
+    {
+      "name": "get_all_member_addresses",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address"
+      ],
+      "return": [
+        "vector<address>"
+      ]
     },
     {
       "name": "get_all_stakers",
@@ -88,13 +115,25 @@ export const ABI = {
       ]
     },
     {
-      "name": "get_dao_staked_balance",
+      "name": "get_min_proposal_stake",
       "visibility": "public",
       "is_entry": false,
       "is_view": true,
       "generic_type_params": [],
       "params": [
-        "address",
+        "address"
+      ],
+      "return": [
+        "u64"
+      ]
+    },
+    {
+      "name": "get_min_stake",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
         "address"
       ],
       "return": [
@@ -118,7 +157,7 @@ export const ABI = {
       "name": "get_staker_amount",
       "visibility": "public",
       "is_entry": false,
-      "is_view": false,
+      "is_view": true,
       "generic_type_params": [],
       "params": [
         "address",
@@ -135,6 +174,20 @@ export const ABI = {
       "is_view": false,
       "generic_type_params": [],
       "params": [
+        "address"
+      ],
+      "return": [
+        "u64"
+      ]
+    },
+    {
+      "name": "get_staker_registry_amount",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "address",
         "address"
       ],
       "return": [
@@ -170,7 +223,7 @@ export const ABI = {
     {
       "name": "init_staking",
       "visibility": "public",
-      "is_entry": true,
+      "is_entry": false,
       "is_view": false,
       "generic_type_params": [],
       "params": [
@@ -186,6 +239,33 @@ export const ABI = {
       "generic_type_params": [],
       "params": [
         "address",
+        "address"
+      ],
+      "return": [
+        "bool"
+      ]
+    },
+    {
+      "name": "is_member",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address",
+        "address"
+      ],
+      "return": [
+        "bool"
+      ]
+    },
+    {
+      "name": "is_membership_initialized",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
         "address"
       ],
       "return": [
@@ -233,6 +313,43 @@ export const ABI = {
       ]
     },
     {
+      "name": "join",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "address"
+      ],
+      "return": []
+    },
+    {
+      "name": "leave",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "address"
+      ],
+      "return": []
+    },
+    {
+      "name": "remove_inactive_member",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "address",
+        "address"
+      ],
+      "return": []
+    },
+    {
       "name": "repair_staker_sync",
       "visibility": "public",
       "is_entry": true,
@@ -246,7 +363,59 @@ export const ABI = {
       "return": []
     },
     {
+      "name": "setup_membership",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "u64",
+        "u64"
+      ],
+      "return": []
+    },
+    {
+      "name": "total_members",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address"
+      ],
+      "return": [
+        "u64"
+      ]
+    },
+    {
       "name": "unstake",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "address",
+        "u64"
+      ],
+      "return": []
+    },
+    {
+      "name": "update_min_proposal_stake",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "address",
+        "u64"
+      ],
+      "return": []
+    },
+    {
+      "name": "update_min_stake",
       "visibility": "public",
       "is_entry": true,
       "is_view": false,
@@ -317,7 +486,7 @@ export const ABI = {
         },
         {
           "name": "voters",
-          "type": "0x1::table::Table<address, 0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::staking::VoteRecord>"
+          "type": "0x1::table::Table<address, 0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::staking::VoteRecord>"
         }
       ]
     },
@@ -342,6 +511,117 @@ export const ABI = {
       ]
     },
     {
+      "name": "Member",
+      "is_native": false,
+      "is_event": false,
+      "abilities": [
+        "copy",
+        "drop",
+        "store"
+      ],
+      "generic_type_params": [],
+      "fields": [
+        {
+          "name": "joined_at",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "MemberJoined",
+      "is_native": false,
+      "is_event": true,
+      "abilities": [
+        "drop",
+        "store"
+      ],
+      "generic_type_params": [],
+      "fields": [
+        {
+          "name": "member",
+          "type": "address"
+        }
+      ]
+    },
+    {
+      "name": "MemberLeft",
+      "is_native": false,
+      "is_event": true,
+      "abilities": [
+        "drop",
+        "store"
+      ],
+      "generic_type_params": [],
+      "fields": [
+        {
+          "name": "member",
+          "type": "address"
+        }
+      ]
+    },
+    {
+      "name": "MemberList",
+      "is_native": false,
+      "is_event": false,
+      "abilities": [
+        "key"
+      ],
+      "generic_type_params": [],
+      "fields": [
+        {
+          "name": "members",
+          "type": "0x1::simple_map::SimpleMap<address, 0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::staking::Member>"
+        },
+        {
+          "name": "total_members",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "MembershipConfig",
+      "is_native": false,
+      "is_event": false,
+      "abilities": [
+        "key"
+      ],
+      "generic_type_params": [],
+      "fields": [
+        {
+          "name": "min_stake_to_join",
+          "type": "u64"
+        },
+        {
+          "name": "min_stake_to_propose",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "MinStakeUpdated",
+      "is_native": false,
+      "is_event": true,
+      "abilities": [
+        "drop",
+        "store"
+      ],
+      "generic_type_params": [],
+      "fields": [
+        {
+          "name": "old_min_stake",
+          "type": "u64"
+        },
+        {
+          "name": "new_min_stake",
+          "type": "u64"
+        },
+        {
+          "name": "updated_by",
+          "type": "address"
+        }
+      ]
+    },
+    {
       "name": "RewardClaimedEvent",
       "is_native": false,
       "is_event": true,
@@ -352,7 +632,7 @@ export const ABI = {
       "generic_type_params": [],
       "fields": [
         {
-          "name": "movedao_addrx",
+          "name": "anchor_addrx",
           "type": "address"
         },
         {
@@ -384,7 +664,7 @@ export const ABI = {
       "generic_type_params": [],
       "fields": [
         {
-          "name": "movedao_addrx",
+          "name": "anchor_addrx",
           "type": "address"
         },
         {
@@ -420,7 +700,7 @@ export const ABI = {
       "fields": [
         {
           "name": "dao_stakes",
-          "type": "0x1::table::Table<address, 0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::staking::DAOStakeInfo>"
+          "type": "0x1::table::Table<address, 0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::staking::DAOStakeInfo>"
         },
         {
           "name": "total_staked",
@@ -458,7 +738,7 @@ export const ABI = {
       "generic_type_params": [],
       "fields": [
         {
-          "name": "movedao_addrx",
+          "name": "anchor_addrx",
           "type": "address"
         },
         {
@@ -535,7 +815,7 @@ export const ABI = {
       "fields": [
         {
           "name": "votes",
-          "type": "vector<0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::staking::Vote>"
+          "type": "vector<0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::staking::Vote>"
         }
       ]
     }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Plus, Minus, Clock, AlertTriangle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTreasury } from '../../hooks/useTreasury';
 import { DAO } from '../../types/dao';
@@ -11,7 +11,14 @@ import { useWallet } from '../../contexts/CedraWalletProvider';
 import { useAlert } from '../alert/AlertContext';
 import VaultManager from '../VaultManager';
 import { useSectionLoader } from '../../hooks/useSectionLoader';
-// import SectionLoader from '../common/SectionLoader';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '../ui/table';
 
 interface DAOTreasuryProps {
   dao: DAO;
@@ -22,29 +29,30 @@ const DAOTreasury: React.FC<DAOTreasuryProps> = ({ dao }) => {
   const [showDepositForm, setShowDepositForm] = useState(false);
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [amount, setAmount] = useState('');
-  // Render both sections sequentially (no tabs)
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const { showAlert } = useAlert();
   const [isTogglingPublicDeposits, setIsTogglingPublicDeposits] = useState(false);
-  const [movePrice, setMovePrice] = useState<number | null>(null);
+  const [cedraPrice, setCedraPrice] = useState<number | null>(null);
   const [totalStaked, setTotalStaked] = useState<number>(0);
-  const [showDepositDetails, setShowDepositDetails] = useState<boolean>(false);
-  const [showWithdrawDetails, setShowWithdrawDetails] = useState<boolean>(false);
   const [transactionPage, setTransactionPage] = useState(1);
+  const [treasuryHistory, setTreasuryHistory] = useState<unknown[]>([]);
   const TRANSACTIONS_PER_PAGE = 10;
   const isWalletConnected = !!account?.address;
 
-  // Session cache for Treasury (instant tab switches)
-  // @ts-ignore
-  const treasurySessionCache: Map<string, any> = (window as any).__treasuryCache || ((window as any).__treasuryCache = new Map());
-  const SESSION_TTL_MS = 5 * 60 * 1000;
-  const MAX_STALE_MS = 10 * 60 * 1000;
+  // Session-based caching for API responses to avoid rate limits
+  const treasurySessionCache = useMemo(() => {
+    const win = window as unknown as { __treasuryCache?: Map<string, { cedraPrice?: number; totalStaked?: number; timestamp: number }> };
+    if (!win.__treasuryCache) {
+      win.__treasuryCache = new Map();
+    }
+    return win.__treasuryCache;
+  }, []);
 
-  // Section loader for Treasury tab
+  const SESSION_TTL_MS = 5 * 60 * 1000;
+
   const sectionLoader = useSectionLoader();
 
-  // Use the treasury hook
   const {
     treasuryData,
     transactions,
@@ -56,907 +64,468 @@ const DAOTreasury: React.FC<DAOTreasuryProps> = ({ dao }) => {
     refreshData
   } = useTreasury(dao.id);
 
-
-  // Initialize section loading
   useEffect(() => {
-    // Hydrate from session cache if present
     const cached = treasurySessionCache.get(dao.id);
     const now = Date.now();
     if (cached && (now - cached.timestamp) < SESSION_TTL_MS) {
-      if (typeof cached.movePrice === 'number') setMovePrice(cached.movePrice);
+      if (typeof cached.cedraPrice === 'number') setCedraPrice(cached.cedraPrice);
       if (typeof cached.totalStaked === 'number') setTotalStaked(cached.totalStaked);
-    } else if (cached && (now - cached.timestamp) < MAX_STALE_MS) {
-      if (typeof cached.movePrice === 'number') setMovePrice(cached.movePrice);
-      if (typeof cached.totalStaked === 'number') setTotalStaked(cached.totalStaked);
-      // Silent background refresh will run below
     }
+
     const loadTreasuryData = async () => {
       await refreshData();
-
-      // Also fetch MOVE price with CORS proxy
       try {
-        // Use CORS proxy to bypass CORS restrictions
         const corsProxy = 'https://api.allorigins.win/raw?url=';
         const apiUrl = encodeURIComponent('https://api.coingecko.com/api/v3/simple/price?ids=movement&vs_currencies=usd');
-
-        const response = await fetch(corsProxy + apiUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const response = await fetch(corsProxy + apiUrl);
+        const data = (await response.json()) as { movement?: { usd: number } };
         const price = data?.movement?.usd;
-
-        if (typeof price === 'number' && isFinite(price) && price > 0) {
-          setMovePrice(price);
-          treasurySessionCache.set(dao.id, { ...(treasurySessionCache.get(dao.id) || {}), movePrice: price, timestamp: Date.now() });
-        } else {
-          throw new Error('No valid price in response');
+        if (price) {
+          setCedraPrice(price);
+          const existing = treasurySessionCache.get(dao.id) || { timestamp: Date.now() };
+          treasurySessionCache.set(dao.id, { ...existing, cedraPrice: price, timestamp: Date.now() });
         }
-      } catch (error: any) {
-        // Silent fallback to recent MOVE price
-        setMovePrice(0.08566);
+      } catch (e) {
+        console.warn('Coingecko price fetch error (falling back):', e);
+        setCedraPrice(0.08566);
       }
     };
 
     sectionLoader.executeWithLoader(loadTreasuryData);
-  }, [dao.id, account?.address]);
+  }, [dao.id, account?.address, refreshData, sectionLoader, treasurySessionCache]);
 
-  const retryTreasuryData = () => {
-    const loadTreasuryData = async () => {
-      await refreshData();
-    };
-    sectionLoader.executeWithLoader(loadTreasuryData);
-  };
-
-  // Test function to create a small treasury deposit for testing
-  const testTreasuryDeposit = async () => {
-    if (!account?.address) {
-      showAlert('Please connect your wallet first', 'error');
-      return;
-    }
-
-    try {
-      await deposit(0.001); // Deposit 0.001 MOVE for testing
-      showAlert('Test deposit successful! Check treasury activities.', 'success');
-    } catch (error: any) {
-      console.error('Test deposit failed:', error);
-      showAlert(`Test deposit failed: ${error.message}`, 'error');
-    }
-  };
-
-  // Original MOVE price fetch logic (now part of loading)
-  const fetchMovePrice = async () => {
-    try {
-      const corsProxy = 'https://api.allorigins.win/raw?url=';
-      const apiUrl = encodeURIComponent('https://api.coingecko.com/api/v3/simple/price?ids=movement&vs_currencies=usd');
-
-      const response = await fetch(corsProxy + apiUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const price = data?.movement?.usd;
-      if (typeof price === 'number' && isFinite(price) && price > 0) {
-        setMovePrice(price);
-        treasurySessionCache.set(dao.id, {
-          ...(treasurySessionCache.get(dao.id) || {}),
-          movePrice: price,
-          totalStaked,
-          timestamp: Date.now(),
-        });
-      } else {
-        throw new Error('No valid price in response');
-      }
-    } catch (error) {
-      setMovePrice(0.08566); // Use recent MOVE price as fallback
-    }
-  };
-
-  // Old useEffect cleanup
   useEffect(() => {
-    // Refresh price every 5 minutes
-    const interval = setInterval(fetchMovePrice, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch total staked amount
-  React.useEffect(() => {
     const fetchTotalStaked = async () => {
       try {
-        const totalStakedRes = await cedraClient.view({ 
-          payload: { 
-            function: `${MODULE_ADDRESS}::staking::get_total_staked`, 
-            functionArguments: [dao.id] 
-          } 
+        const res = await cedraClient.view({
+          payload: {
+            function: `${MODULE_ADDRESS}::staking::get_total_staked`,
+            functionArguments: [dao.id]
+          }
         });
-        const totalStakedAmount = BalanceService.octasToCedra(Number(totalStakedRes?.[0] || 0));
-        setTotalStaked(totalStakedAmount);
-        treasurySessionCache.set(dao.id, {
-          ...(treasurySessionCache.get(dao.id) || {}),
-          totalStaked: totalStakedAmount,
-          movePrice,
-          timestamp: Date.now(),
-        });
-      } catch (error) {
-        console.warn('Failed to fetch total staked:', error);
-        setTotalStaked(0);
+        const staked = BalanceService.octasToCedra(Number(Array.isArray(res) ? res[0] : 0));
+        setTotalStaked(staked);
+      } catch (e) {
+        console.error('Error fetching total staked:', e);
       }
     };
-
     fetchTotalStaked();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchTotalStaked, 30 * 1000);
-    return () => clearInterval(interval);
   }, [dao.id]);
 
-  // Silent refresh on window focus if cache is stale
   useEffect(() => {
-    const onFocus = () => {
-      const cached = treasurySessionCache.get(dao.id);
-      const now = Date.now();
-      if (cached && (now - cached.timestamp) >= SESSION_TTL_MS && (now - cached.timestamp) < MAX_STALE_MS) {
-        refreshData();
-        fetchMovePrice();
+    const currentBalance = treasuryData.balance;
+    const days = [];
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      days.push({
+        date: d,
+        label: d.toLocaleDateString('en-US', { weekday: 'short' })
+      });
+    }
+
+    // Calculate historical balance by tracking cumulative changes
+    const history = days.map((dayObj, i) => {
+      const isToday = i === days.length - 1;
+
+      // Always use actual balance for today
+      if (isToday) {
+        return {
+          name: dayObj.label,
+          value: parseFloat(currentBalance.toFixed(2))
+        };
       }
-    };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, [dao.id]);
+
+      // For historical days, calculate balance at end of that day
+      if (transactions.length > 0) {
+        // Get all transactions up to and including this day
+        const txUpToDate = transactions.filter(tx => {
+          const txDate = new Date(tx.timestamp);
+          return txDate <= dayObj.date;
+        });
+
+        // Calculate balance at that point in time
+        let balanceAtDate = 0;
+        txUpToDate.forEach(tx => {
+          if (tx.type === 'deposit') {
+            balanceAtDate += tx.amount;
+          } else if (tx.type === 'withdrawal') {
+            balanceAtDate -= tx.amount;
+          }
+        });
+
+        return {
+          name: dayObj.label,
+          value: parseFloat(Math.max(0, balanceAtDate).toFixed(2))
+        };
+      } else {
+        // Fallback: smooth ramp up to current balance if no transaction history
+        const progress = i / 6;
+        const val = currentBalance > 0 ? (currentBalance * (0.3 + Math.pow(progress, 2) * 0.7)) : 0;
+        return {
+          name: dayObj.label,
+          value: parseFloat(val.toFixed(2))
+        };
+      }
+    });
+
+    setTreasuryHistory(history);
+  }, [transactions, treasuryData.balance]);
 
   const handleDeposit = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      showAlert('Please enter a valid amount', 'error');
-      return;
-    }
-
-    let mounted = true;
-
+    if (!amount || parseFloat(amount) <= 0) return showAlert('Valid amount required', 'error');
     try {
       setIsDepositing(true);
-
-      const depositAmount = parseFloat(amount);
-      await deposit(depositAmount);
-
-      if (mounted) {
-        showAlert(`Successfully deposited ${depositAmount.toFixed(3)} CEDRA to treasury`, 'success');
-        setShowDepositForm(false);
-        setAmount('');
-      }
-    } catch (error: any) {
-      console.error('Deposit failed:', error);
-      if (mounted) {
-        showAlert(error.message || 'Failed to deposit tokens', 'error');
-      }
+      await deposit(parseFloat(amount));
+      await refreshData(); // Refresh to update chart immediately
+      showAlert('Successfully deposited', 'success');
+      setShowDepositForm(false);
+      setAmount('');
+    } catch (e: any) {
+      showAlert(e.message || 'Deposit failed', 'error');
     } finally {
-      if (mounted) {
-        setIsDepositing(false);
-      }
+      setIsDepositing(false);
     }
-
-    return () => { mounted = false; };
   };
 
   const handleWithdraw = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      showAlert('Please enter a valid amount', 'error');
-      return;
-    }
-
-    let mounted = true;
-
+    if (!amount || parseFloat(amount) <= 0) return showAlert('Valid amount required', 'error');
     try {
       setIsWithdrawing(true);
-
-      const withdrawAmount = parseFloat(amount);
-      await withdraw(withdrawAmount);
-
-      if (mounted) {
-        showAlert(`Successfully withdrew ${withdrawAmount.toFixed(3)} CEDRA from treasury`, 'success');
-        setShowWithdrawForm(false);
-        setAmount('');
-      }
-    } catch (error: any) {
-      console.error('Withdrawal failed:', error);
-      if (mounted) {
-        showAlert(error.message || 'Failed to withdraw tokens', 'error');
-      }
+      await withdraw(parseFloat(amount));
+      await refreshData(); // Refresh to update chart immediately
+      showAlert('Successfully withdrawn', 'success');
+      setShowWithdrawForm(false);
+      setAmount('');
+    } catch (e: any) {
+      showAlert(e.message || 'Withdraw failed', 'error');
     } finally {
-      if (mounted) {
-        setIsWithdrawing(false);
-      }
+      setIsWithdrawing(false);
     }
-
-    return () => { mounted = false; };
   };
 
   const handleTogglePublicDeposits = async (allow: boolean) => {
     try {
       setIsTogglingPublicDeposits(true);
-      
       await togglePublicDeposits(allow);
-      
-      showAlert(
-        allow 
-          ? 'Public deposits enabled - anyone can now deposit to this treasury' 
-          : 'Public deposits disabled - only members and admins can deposit',
-        'success'
-      );
-    } catch (error: any) {
-      console.error('Toggle public deposits failed:', error);
-      showAlert(error.message || 'Failed to update public deposit settings', 'error');
+      showAlert(`Public deposits ${allow ? 'enabled' : 'disabled'}`, 'success');
+    } catch (e: any) {
+      showAlert(e.message || 'Toggle failed', 'error');
     } finally {
       setIsTogglingPublicDeposits(false);
     }
   };
 
-  // Tabs removed – show Overview and Transactions together
-
   const renderOverview = () => (
-    <div className="space-y-6">
-      {/* Main wrapper with border */}
-      <div className="border border-white/10 rounded-xl py-4 px-4 space-y-6" style={{ background: 'transparent' }}>
-        {/* Treasury value calculated from tokens */}
-        <div className="text-left">
-          <div className="text-5xl font-extrabold text-white">
-            {(() => {
-              const tokenMove = Math.max(0, treasuryData?.balance || 0);
-              const stakedMove = Math.max(0, totalStaked || 0);
-              const totalMove = tokenMove + stakedMove;
-              const price = movePrice ?? 0.08566;
-              return `$${(totalMove * price).toLocaleString(undefined,{ maximumFractionDigits: 2 })}`;
-            })()}
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-fade-in items-start">
+      {/* Main Content Area: Valuation & Chart */}
+      <div className="lg:col-span-3 space-y-10">
+        {/* Valuation Section */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-8 px-1">
+          <div className="space-y-1 text-center sm:text-left">
+            <p className="text-[11px] font-bold text-white/30 tracking-tight">Vault valuation</p>
+            <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4">
+              <div className="text-5xl sm:text-6xl font-semibold text-white tracking-tighter">
+                {`$${(treasuryData.balance * (cedraPrice || 0.08566)).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+              </div>
+              <div className="text-md sm:text-lg font-medium text-[#e1fd6a]/40 tracking-tight mb-1">
+                {treasuryData.balance.toFixed(0)} CEDRA
+              </div>
+            </div>
           </div>
-          <div className="text-lg font-bold text-gray-400">Treasury Value</div>
+          <div className="flex items-center justify-around sm:justify-end gap-6 bg-white/[0.03] px-6 py-4 rounded-3xl border border-white/5 backdrop-blur-md">
+            <div className="text-center sm:text-right">
+              <p className="text-[10px] text-white/20 mb-0.5 font-bold">Liquid</p>
+              <p className="text-sm font-bold text-white tracking-tight">{treasuryData.balance.toFixed(2)}</p>
+            </div>
+            <div className="w-px h-8 bg-white/10" />
+            <div className="text-center sm:text-right">
+              <p className="text-[10px] text-white/20 mb-0.5 font-bold">Staked</p>
+              <p className="text-sm font-bold text-white/40 tracking-tight">{totalStaked.toFixed(2)}</p>
+            </div>
+          </div>
         </div>
 
-        {/* Progress bars and chart side by side */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
-          {/* Assets left - compact list with progress */}
-          <div className="w-full lg:flex-1 space-y-2">
-            {(() => {
-              const tokenAmount = Math.max(0, treasuryData?.balance ?? 0);
-              const stakingAmount = Math.max(0, totalStaked);
-              const total = Math.max(0.000001, tokenAmount + stakingAmount);
-              const items = [
-                { id: 'tokens', label: 'Tokens', value: tokenAmount, pct: (tokenAmount / total) * 100, bar: '#22d3ee' },
-                { id: 'staking', label: 'Staking', value: stakingAmount, pct: (stakingAmount / total) * 100, bar: '#10b981' }
-              ];
-              return items.map((a) => (
-                <div key={a.id} className={`relative overflow-hidden rounded-xl p-4 bg-white/5 border border-white/10`}>
-                  {/* Progress fill using the card's gray tone */}
-                  <div className="absolute left-0 top-0 h-full bg-white/10" style={{ width: `${Math.min(Math.max(a.pct, 0), 100)}%` }} />
-                  <div className="relative z-10 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-white font-medium">{a.label}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-white font-semibold">
-                        {`$${(a.value * (movePrice ?? 0.08566)).toLocaleString(undefined,{maximumFractionDigits:2})}`}
-                      </div>
-                      <div className="text-sm text-gray-300 flex items-center justify-end space-x-1 mb-1">
-                        <span>{a.value.toLocaleString(undefined,{maximumFractionDigits:2})}</span>
-                        <img
-                          src="https://ipfs.io/ipfs/QmUv8RVdgo6cVQzh7kxerWLatDUt4rCEFoCTkCVLuMAa27"
-                          alt="MOVE"
-                          className="w-3 h-3 flex-shrink-0"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.classList.remove('hidden');
-                          }}
-                        />
-                        <span className="hidden">MOVE</span>
-                      </div>
-                      {/* Percentage removed per request */}
-                    </div>
-                  </div>
-                </div>
-              ));
-            })()}
+        <div className="w-full h-[320px] animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex items-center justify-between mb-6 px-2">
+            <div>
+              <h3 className="text-md font-semibold text-white">Asset growth</h3>
+              <p className="text-[10px] text-white/30 tracking-wide font-medium">Aggregate value of all treasury deployments</p>
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-bold text-[#e1fd6a]">${(treasuryData.balance * (cedraPrice || 0.08566)).toFixed(2)}</span>
+              <p className="text-[10px] text-white/20 font-medium">Live TVL</p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={treasuryHistory} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="treasuryGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" hide={true} />
+              <YAxis hide={true} domain={['dataMin - 10', 'auto']} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(12, 12, 12, 0.9)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                }}
+                itemStyle={{ color: '#e1fd6a', fontWeight: 'bold' }}
+                cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#e1fd6a"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#treasuryGradient)"
+                animationDuration={1500}
+                activeDot={{ r: 6, fill: '#e1fd6a', stroke: '#0c0c0c', strokeWidth: 2 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Right Column: Mini Control Card */}
+      <div className="lg:col-span-1 space-y-4">
+        <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 flex flex-col gap-8 lg:sticky lg:top-8 animate-in fade-in slide-in-from-right-4 duration-500">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${treasuryData.allowsPublicDeposits ? 'bg-[#e1fd6a] animate-pulse' : 'bg-red-500'}`} />
+              <h4 className="text-sm font-semibold text-white tracking-tight">
+                {treasuryData.allowsPublicDeposits ? 'Public access' : 'Restricted'}
+              </h4>
+            </div>
+            <p className="text-[11px] text-white/40 leading-relaxed font-medium">
+              {isAdmin
+                ? (treasuryData.allowsPublicDeposits ? 'Anyone can contribute liquidity' : 'Authenticated members only')
+                : 'Treasury permissions are managed by administrators.'
+              }
+            </p>
           </div>
 
-          {/* Donut chart right - Made responsive */}
-          <div className="w-full lg:w-auto lg:flex-shrink-0 flex flex-col items-center">
-            <div
-              className="w-full max-w-[280px] min-h-[224px]"
-              style={{ height: '224px' }}
-            >
-            <ResponsiveContainer width="100%" height={224} minWidth={280} minHeight={224}>
-              <PieChart>
-                <Pie
-                  dataKey="value"
-                  data={[
-                    { name: 'Tokens', value: Math.max(0.01, treasuryData?.balance ?? 0.01) },
-                    { name: 'Staking', value: Math.max(0.01, totalStaked || 0.01) }
-                  ]}
-                  innerRadius={70}
-                  outerRadius={110}
-                  paddingAngle={1}
-                  stroke="none"
-                  isAnimationActive={false}
-                  animationBegin={0}
-                  animationDuration={0}
-                  onClick={undefined}
-                  onMouseEnter={undefined}
-                  onMouseLeave={undefined}
+          <div className="space-y-3">
+            {isWalletConnected && (treasuryData.allowsPublicDeposits || isAdmin) && (
+              <button
+                onClick={() => setShowDepositForm(true)}
+                className="w-full py-4 bg-[#e1fd6a] hover:bg-[#d4f05a] text-black rounded-2xl font-bold text-sm transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+              >
+                <Plus size={18} />
+                <span>Initialize deposit</span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-3">
+              {isWalletConnected && isAdmin && (
+                <button
+                  onClick={() => setShowWithdrawForm(true)}
+                  className="flex-1 py-4 bg-white/5 hover:bg-red-500/10 text-red-400 border border-white/5 rounded-2xl transition-all flex items-center justify-center"
+                  title="Withdraw Funds"
                 >
-                  {["#e1fd6a", "#f59e0b"].map((c, idx) => (
-                    <Cell
-                      key={idx}
-                      fill={c}
-                      stroke="none"
-                    />
+                  <Minus size={18} />
+                </button>
+              )}
+
+              {isAdmin && (
+                <div className="flex-1 bg-black/40 p-1 rounded-2xl border border-white/5 flex">
+                  {[true, false].map(val => (
+                    <button
+                      key={String(val)}
+                      onClick={() => handleTogglePublicDeposits(val)}
+                      disabled={treasuryData.allowsPublicDeposits === val || isTogglingPublicDeposits}
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-tighter transition-all ${treasuryData.allowsPublicDeposits === val
+                        ? 'bg-white/10 text-white shadow-inner'
+                        : 'text-white/20 hover:text-white/40'
+                        }`}
+                    >
+                      {val ? 'Public' : 'Priv'}
+                    </button>
                   ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            </div>
-            <div className="text-center text-gray-300 mt-2 text-sm">Tokens breakdown</div>
-          </div>
-        </div>
-
-        {/* Public Deposits Toggle and Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* Admin-only section: Deposit status info and toggle */}
-        {isAdmin && (
-          <div>
-            <div className="text-white font-medium mb-1">
-              {treasuryData.allowsPublicDeposits ? 'Public Deposits Enabled' : 'Member-Only Deposits'}
-            </div>
-            <div className="text-sm text-gray-400">
-              {treasuryData.allowsPublicDeposits
-                ? 'Anyone can deposit tokens'
-                : 'Only members can deposit'}
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center space-x-2">
-          {/* Deposit Icon Button - Show if wallet connected AND (public deposits OR admin) */}
-          {isWalletConnected && (treasuryData.allowsPublicDeposits || isAdmin) && (
-            <button
-              onClick={() => setShowDepositForm(true)}
-              className="p-2 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/10 transition-all"
-              title="Deposit"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Withdraw Icon Button - Admin only */}
-          {isWalletConnected && isAdmin && (
-            <button
-              onClick={() => setShowWithdrawForm(true)}
-              className="p-2 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-all"
-              title="Withdraw"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Public/Members Toggle - Admin only */}
-          {isAdmin && (
-            <>
-              <button
-                onClick={() => handleTogglePublicDeposits(true)}
-                disabled={treasuryData.allowsPublicDeposits || isTogglingPublicDeposits}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-                style={{
-                  background: treasuryData.allowsPublicDeposits ? '#e1fd6a' : 'rgba(255, 255, 255, 0.1)',
-                  color: treasuryData.allowsPublicDeposits ? '#000000' : 'rgba(156, 163, 175, 1)'
-                }}
-              >
-                Public
-              </button>
-
-              <button
-                onClick={() => handleTogglePublicDeposits(false)}
-                disabled={!treasuryData.allowsPublicDeposits || isTogglingPublicDeposits}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-                style={{
-                  background: !treasuryData.allowsPublicDeposits ? '#e1fd6a' : 'rgba(255, 255, 255, 0.1)',
-                  color: !treasuryData.allowsPublicDeposits ? '#000000' : 'rgba(156, 163, 175, 1)'
-                }}
-              >
-                Members
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      </div>
-
-      {/* Deposit Modal */}
-      {showDepositForm && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ backgroundColor: 'transparent' }} onClick={() => setShowDepositForm(false)}>
-          <div className={`border-white/10 rounded-xl p-5 w-full max-w-md border shadow-2xl`} style={{ backgroundColor: '#101010' }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-lg font-semibold text-white`}>Deposit Tokens</h3>
-              <button onClick={() => setShowDepositForm(false)} className={`text-gray-400 hover:text-white`}>
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium mb-2 text-gray-400`}>Amount</label>
-                <input
-                  type="text"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/5 border border-white/10 text-white placeholder-gray-500`}
-                  placeholder="0.000"
-                />
-                <p className={`text-xs mt-1 text-gray-500`}>Available: {userBalance.toFixed(3)} CEDRA</p>
-              </div>
-
-              {(() => {
-                const amt = parseFloat(amount || '0');
-                const octas = Number.isFinite(amt) && amt > 0 ? Math.floor(amt * 1e8) : 0;
-                const objectAddress = (() => {
-                  const obj = (treasuryData?.treasuryObject as any);
-                  if (!obj) return undefined;
-                  return typeof obj === 'string' ? obj : (obj?.inner || obj?.value || obj);
-                })();
-                const payloadPreview = objectAddress ? {
-                  function: `${MODULE_ADDRESS}::treasury::deposit_to_object_typed`,
-                  type_arguments: ['0x1::cedra_coin::CedraCoin'],
-                  typeArguments: ['0x1::cedra_coin::CedraCoin'],
-                  functionArguments: [objectAddress, String(octas)],
-                  arguments: [objectAddress, String(octas)],
-                } : {
-                  function: `${MODULE_ADDRESS}::treasury::deposit`,
-                  typeArguments: [],
-                  functionArguments: [dao.id, String(octas)],
-                };
-                return (
-                  <div className={`bg-white/5 border-white/10 border rounded-lg p-3 space-y-2`}>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className={`text-gray-300`}>From Wallet</span>
-                      <span className="font-semibold text-red-400">-{Number.isFinite(amt) ? amt.toFixed(3) : '0.000'} CEDRA</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className={`text-gray-300`}>To Treasury</span>
-                      <span className="font-semibold text-green-400">+{Number.isFinite(amt) ? amt.toFixed(3) : '0.000'} CEDRA</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowDepositDetails(v => !v)}
-                      className={`mt-1 text-xs text-gray-400 hover:text-white`}
-                    >
-                      {showDepositDetails ? 'Hide' : 'Show'} payload
-                    </button>
-                    {showDepositDetails && (
-                      <pre className={`text-xs overflow-x-auto p-2 rounded bg-black/40 text-gray-300`}>
-{JSON.stringify(payloadPreview, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                );
-              })()}
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleDeposit}
-                  disabled={!amount || parseFloat(amount) <= 0 || isDepositing}
-                  className="flex-1 h-11 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    background: '#e1fd6a',
-                    color: '#000000'
-                  }}
-                >
-                  {isDepositing ? 'Depositing…' : 'Confirm Deposit'}
-                </button>
-                {/* Cancel button removed per request */}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Withdraw Modal */}
-      {showWithdrawForm && isAdmin && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ backgroundColor: 'transparent' }} onClick={() => setShowWithdrawForm(false)}>
-          <div className={`border-white/10 rounded-xl p-5 w-full max-w-md border shadow-2xl`} style={{ backgroundColor: '#101010' }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-lg font-semibold text-white`}>Withdraw Tokens</h3>
-              <button onClick={() => setShowWithdrawForm(false)} className={`text-gray-400 hover:text-white`}>
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium mb-2 text-gray-400`}>Amount</label>
-                <input
-                  type="text"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white/5 border border-white/10 text-white placeholder-gray-500`}
-                  placeholder="0.000"
-                />
-                <div className={`text-xs mt-1 space-y-1 text-gray-500`}>
-                  <p>Treasury balance: {treasuryData.balance.toFixed(3)} CEDRA</p>
-                  <p>Daily limit remaining: {treasuryData.remainingDaily.toFixed(3)} CEDRA</p>
-                  <p>Max withdrawal: {Math.min(treasuryData.remainingDaily, treasuryData.balance).toFixed(3)} CEDRA</p>
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
 
-              {(() => {
-                const amt = parseFloat(amount || '0');
-                const octas = Number.isFinite(amt) && amt > 0 ? Math.floor(amt * 1e8) : 0;
-                const objectAddress = (() => {
-                  const obj = (treasuryData?.treasuryObject as any);
-                  if (!obj) return undefined;
-                  return typeof obj === 'string' ? obj : (obj?.inner || obj?.value || obj);
-                })();
-                const payloadPreview = objectAddress ? {
-                  function: `${MODULE_ADDRESS}::treasury::withdraw_from_object`,
-                  typeArguments: [],
-                  functionArguments: [dao.id, objectAddress, String(octas)],
-                } : {
-                  function: `${MODULE_ADDRESS}::treasury::withdraw`,
-                  typeArguments: [],
-                  functionArguments: [dao.id, String(octas)],
-                };
-                return (
-                  <div className={`bg-white/5 border-white/10 border rounded-lg p-3 space-y-2`}>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className={`text-gray-300`}>From Treasury</span>
-                      <span className="font-semibold text-red-400">-{Number.isFinite(amt) ? amt.toFixed(3) : '0.000'} CEDRA</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className={`text-gray-300`}>To Wallet</span>
-                      <span className="font-semibold text-green-400">+{Number.isFinite(amt) ? amt.toFixed(3) : '0.000'} CEDRA</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowWithdrawDetails(v => !v)}
-                      className={`mt-1 text-xs text-gray-400 hover:text-white`}
-                    >
-                      {showWithdrawDetails ? 'Hide' : 'Show'} payload
-                    </button>
-                    {showWithdrawDetails && (
-                      <pre className={`text-xs overflow-x-auto p-2 rounded bg-black/40 text-gray-300`}>
-{JSON.stringify(payloadPreview, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                );
-              })()}
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleWithdraw}
-                  disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > Math.min(treasuryData.remainingDaily, treasuryData.balance) || isWithdrawing}
-                  className="flex-1 h-11 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-slate-900"
-                  style={{ backgroundColor: '#e1ff62' }}
-                >
-                  {isWithdrawing ? 'Withdrawing…' : 'Confirm Withdraw'}
-                </button>
-                {/* Cancel button removed per request */}
-              </div>
+          {/* Micro Stats in Card */}
+          <div className="pt-4 border-t border-white/5 space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] text-white/20 font-medium">Asset</span>
+              <span className="text-[10px] text-white/40 font-mono">Cedra Coin</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] text-white/20 font-medium">Network</span>
+              <span className="text-[10px] text-white/40 font-mono">Movement Network</span>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Treasury Info removed per request */}
+      </div>
     </div>
   );
 
   const renderTransactions = () => {
-    // Use the utility function for consistent address truncation
     const startIndex = (transactionPage - 1) * TRANSACTIONS_PER_PAGE;
-    const endIndex = startIndex + TRANSACTIONS_PER_PAGE;
-    const paginatedTransactions = transactions.slice(startIndex, endIndex);
+    const paginatedTransactions = transactions.slice(startIndex, startIndex + TRANSACTIONS_PER_PAGE);
     const totalPages = Math.ceil(transactions.length / TRANSACTIONS_PER_PAGE);
-    const hasNextPage = transactionPage < totalPages;
-    const hasPrevPage = transactionPage > 1;
 
     return (
-      <div className="bg-white/3 border border-white/5 rounded-t-xl rounded-b-none p-3 sm:p-4 w-full max-w-full overflow-x-hidden">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span className="truncate">Recent Transactions</span>
-            </h3>
+      <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-6 sm:p-8 w-full animate-slide-up">
+        <div className="flex items-center justify-between mb-8 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-[#e1fd6a]/10 text-[#e1fd6a] rounded-xl border border-[#e1fd6a]/20">
+              <Clock size={20} />
+            </div>
+            <div className="flex flex-col">
+              <h3 className="text-xl font-semibold text-white tracking-tighter leading-none mb-1">Recent Transactions</h3>
+              <p className="text-[10px] font-medium text-white/30">Protocol level liquidity</p>
+            </div>
           </div>
-
-          {/* Pagination Controls */}
           {transactions.length > TRANSACTIONS_PER_PAGE && (
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setTransactionPage(p => Math.max(1, p - 1))}
-                disabled={!hasPrevPage}
-                className="px-3 py-1.5 text-xs sm:text-sm rounded-lg border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 whitespace-nowrap inline-flex items-center gap-1"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Previous</span>
-                <span className="sm:hidden">Prev</span>
-              </button>
-              <span className="text-xs text-gray-400">
-                Page {transactionPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setTransactionPage(p => p + 1)}
-                disabled={!hasNextPage}
-                className="px-3 py-1.5 text-xs sm:text-sm rounded-lg border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 whitespace-nowrap inline-flex items-center gap-1"
-                aria-label="Next page"
-              >
-                <span className="hidden sm:inline">Next</span>
-                <span className="sm:hidden">Next</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <button onClick={() => setTransactionPage(p => Math.max(1, p - 1))} disabled={transactionPage === 1} className="p-2 rounded-lg border border-white/10 text-white disabled:opacity-30"><ChevronLeft size={16} /></button>
+              <span className="text-xs text-gray-400">Page {transactionPage} of {totalPages}</span>
+              <button onClick={() => setTransactionPage(p => p + 1)} disabled={transactionPage >= totalPages} className="p-2 rounded-lg border border-white/10 text-white disabled:opacity-30"><ChevronRight size={16} /></button>
             </div>
           )}
         </div>
-
-        {/* Desktop Table View */}
-        <div className="hidden sm:block overflow-x-auto w-full max-w-full">
-          <table className="w-full text-sm table-auto">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-3 font-medium text-gray-300">Transaction</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-300">Type</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-300">Amount</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-300">Address</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-300">Time</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-white/[0.02]">
+              <TableRow className="hover:bg-transparent border-white/5">
+                <TableHead className="py-5 px-8 text-[10px] font-bold text-white/30 tracking-tight">Type</TableHead>
+                <TableHead className="py-5 text-right text-[10px] font-bold text-white/30 tracking-tight">Amount</TableHead>
+                <TableHead className="py-5 text-right text-[10px] font-bold text-white/30 tracking-tight">Address</TableHead>
+                <TableHead className="py-5 text-right pr-8 text-[10px] font-bold text-white/30 tracking-tight">Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {transactions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 px-4 text-center">
-                    <Clock className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-400 text-sm">No transactions yet</p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      Treasury transactions will appear here
-                    </p>
-                  </td>
-                </tr>
+                <TableRow><TableCell colSpan={4} className="h-40 text-center text-white/20">No transactions recorded</TableCell></TableRow>
               ) : (
-                paginatedTransactions.map((tx, index) => (
-                  <tr key={index} className="border-b border-white/5 hover:bg-white/5 transition-all">
-                    {/* Transaction */}
-                    <td className="py-3 px-3">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          tx.type === 'deposit' ? 'bg-green-500/20' : 'bg-red-500/20'
-                        }`}>
-                          {tx.type === 'deposit' ? (
-                            <ArrowDownRight className="w-4 h-4 text-green-400" />
-                          ) : (
-                            <ArrowUpRight className="w-4 h-4 text-red-400" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-white font-medium text-sm leading-tight capitalize">{tx.type}</h4>
-                          <p className="text-gray-400 text-xs leading-tight">Treasury {tx.type}</p>
-                        </div>
-                      </div>
-                    </td>
-                    
-                    {/* Type */}
-                    <td className="py-3 px-3">
-                      <span className={`px-2 py-1 rounded-full text-xs border whitespace-nowrap ${
-                        tx.type === 'deposit' 
-                          ? 'text-green-400 border-green-500/30 bg-green-500/10' 
-                          : 'text-red-400 border-red-500/30 bg-red-500/10'
-                      }`}>
-                        {tx.type === 'deposit' ? 'Deposit' : 'Withdraw'}
+                paginatedTransactions.map((tx, i) => (
+                  <TableRow key={i}>
+                    <TableCell><div className="flex items-center gap-3"><div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>{tx.type === 'deposit' ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}</div><span className="capitalize text-xs font-medium text-white">{tx.type}</span></div></TableCell>
+                    <TableCell className="text-right">
+                      <span className={`text-xs font-bold ${tx.type === 'deposit' ? 'text-green-400' : 'text-red-400'}`}>
+                        {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toFixed(2)}
                       </span>
-                    </td>
-                    
-                    {/* Amount */}
-                    <td className="py-3 px-3">
-                      <div className={`text-sm font-medium ${tx.type === 'deposit' ? 'text-green-400' : 'text-red-400'}`}>
-                        {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toFixed(3)} CEDRA
-                      </div>
-                    </td>
-                    
-                    {/* Address */}
-                    <td className="py-3 px-3">
-                      <span className="text-sm text-gray-300 font-mono">
-                        {tx.type === 'deposit' 
-                          ? truncateAddress(tx.from || '')
-                          : truncateAddress(tx.to || '')
-                        }
-                      </span>
-                    </td>
-                    
-                    {/* Time */}
-                    <td className="py-3 px-3">
-                      <div className="flex items-center space-x-1 text-gray-400">
-                        <Clock className="w-3 h-3" />
-                        <span className="text-xs">{new Date(tx.timestamp).toLocaleDateString()}</span>
-                      </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-[11px] font-mono text-white/30">{truncateAddress(tx.type === 'deposit' ? tx.from || '' : tx.to || '')}</span>
+                    </TableCell>
+                    <TableCell className="text-right pr-8">
+                      <span className="text-[11px] text-white/20 font-mono tracking-tighter">{new Date(tx.timestamp).toLocaleDateString()}</span>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Card View */}
-        <div className="sm:hidden">
-          {paginatedTransactions.length === 0 ? (
-            <div className="text-center py-8">
-              <Clock className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-              <p className="text-gray-400 text-sm">No transactions yet</p>
-              <p className="text-gray-500 text-xs mt-1">
-                Treasury transactions will appear here
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {paginatedTransactions.map((tx, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg p-2.5 hover:bg-white/5 transition-all border-b border-white/5 last:border-b-0"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        tx.type === 'deposit' ? 'bg-green-500/20' : 'bg-red-500/20'
-                      }`}>
-                        {tx.type === 'deposit' ? (
-                          <ArrowDownRight className="w-4 h-4 text-green-400" />
-                        ) : (
-                          <ArrowUpRight className="w-4 h-4 text-red-400" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="text-white font-medium text-sm leading-tight capitalize">{tx.type}</h4>
-                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] border flex-shrink-0 ${
-                            tx.type === 'deposit' 
-                              ? 'text-green-400 border-green-500/30 bg-green-500/10' 
-                              : 'text-red-400 border-red-500/30 bg-red-500/10'
-                          }`}>
-                            {tx.type === 'deposit' ? 'Deposit' : 'Withdraw'}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-3 text-xs text-gray-400">
-                          <span className="font-mono">
-                            {tx.type === 'deposit' 
-                              ? truncateAddress(tx.from || '')
-                              : truncateAddress(tx.to || '')
-                            }
-                          </span>
-                          <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className={`text-sm font-medium ${tx.type === 'deposit' ? 'text-green-400' : 'text-red-400'}`}>
-                        {tx.type === 'deposit' ? '+' : '-'}{tx.amount.toFixed(3)} CEDRA
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            </TableBody>
+          </Table>
         </div>
       </div>
     );
   };
 
-
-
   return (
-    <div className="w-full max-w-full px-4 sm:px-6 space-y-4 overflow-hidden">
-      {/* Main wrapper with border - same as Overview and Proposals */}
-      <div className="border border-white/10 rounded-xl py-4 px-2 space-y-6 overflow-hidden max-w-full" style={{ background: 'transparent' }}>
+    <div className="w-full max-w-full space-y-12 animate-fade-in px-1">
+      {renderOverview()}
+      <VaultManager daoId={dao.id} treasuryObject={treasuryData.treasuryObject ?? undefined} />
+      {renderTransactions()}
 
-      {/* Top-right status - only show if there's content */}
-       {/* Removed previous status block to avoid duplicate */}
+      {/* Reverted Deposit Modal Style */}
+      {showDepositForm && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowDepositForm(false)}>
+          <div
+            className="w-full max-w-md bg-[#101010] border border-white/10 rounded-xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">Deposit tokens</h3>
+              <XCircle className="text-white/20 cursor-pointer hover:text-white" onClick={() => setShowDepositForm(false)} />
+            </div>
 
-      {treasuryData.error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start space-x-3">
-          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-red-300 font-medium mb-1">Treasury Error</h3>
-            <p className="text-red-200 text-sm">{treasuryData.error}</p>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex justify-between text-[11px] font-medium">
+                  <span className="text-white/30">Amount to deposit</span>
+                  <span className="text-[#e1fd6a] cursor-pointer" onClick={() => setAmount(userBalance.toString())}>Max: {userBalance.toLocaleString()}</span>
+                </div>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-lg font-medium outline-none focus:border-[#e1fd6a]/50"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <button
+                onClick={handleDeposit}
+                disabled={!amount || parseFloat(amount) <= 0 || isDepositing}
+                className="w-full bg-[#e1fd6a] text-black font-bold py-4 rounded-xl disabled:opacity-30 transition-all active:scale-[0.98]"
+              >
+                {isDepositing ? 'Processing...' : 'Confirm deposit'}
+              </button>
+            </div>
           </div>
-          {/* Refresh icon removed per request */}
         </div>
       )}
-      
-      {/* Header - Made responsive */}
-      <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-        {/* Inline status aligned to the right on the same line as title */}
-        {sectionLoader.error && (
-          <div className="absolute right-4 sm:right-8 top-0 text-right">
-            {sectionLoader.error && (
-              <div className="text-xs text-red-300 cursor-pointer" onClick={retryTreasuryData}>
-                Error - Click to retry
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Treasury header wrapper */}
-        <div className="border border-white/10 rounded-xl py-2 px-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 w-full" style={{ background: 'transparent' }}>
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl font-bold text-white">Treasury</h1>
-          </div>
-
-          {/* Mobile KPIs - Show as compact cards */}
-          <div className="lg:hidden w-full grid grid-cols-2 gap-2 text-xs">
-            {isWalletConnected && (
-              <div className="bg-white/5 rounded-lg p-1.5 text-center">
-                <div className="text-gray-400 mb-0.5 text-[10px]">Balance</div>
-                <div className="font-semibold text-white text-xs">{userBalance.toFixed(3)}</div>
-              </div>
-            )}
-            <div className="bg-white/5 rounded-lg p-1.5 text-center">
-              <div className="text-gray-400 mb-0.5 text-[10px]">Used</div>
-              <div className="font-semibold text-white text-xs">{treasuryData.dailyWithdrawn.toFixed(3)}</div>
-            </div>
-          </div>
-
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
-            {/* Desktop KPIs - Show as cards */}
-            <div className={`hidden lg:grid gap-1.5 text-xs ${isWalletConnected ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {isWalletConnected && (
-                <div className="bg-white/5 rounded-lg p-1 text-center w-20 h-9 flex flex-col items-center justify-center">
-                  <div className="text-gray-400 mb-0.5 text-[9px]">Balance</div>
-                  <div className="font-semibold text-white text-[11px]">{userBalance.toFixed(3)}</div>
-                </div>
-              )}
-              <div className="bg-white/5 rounded-lg p-1 text-center w-20 h-9 flex flex-col items-center justify-center">
-                <div className="text-gray-400 mb-0.5 text-[9px]">Used</div>
-                <div className="font-semibold text-white text-[11px]">{treasuryData.dailyWithdrawn.toFixed(3)}</div>
-              </div>
+      {/* Reverted Withdraw Modal Style */}
+      {showWithdrawForm && isAdmin && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowWithdrawForm(false)}>
+          <div
+            className="w-full max-w-md bg-[#101010] border border-white/10 rounded-xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">Withdraw assets</h3>
+              <XCircle className="text-white/20 cursor-pointer hover:text-white" onClick={() => setShowWithdrawForm(false)} />
             </div>
 
-            {/* Status indicators + refresh */}
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              {!isWalletConnected && (
-                <div className="bg-gray-500/20 text-gray-300 rounded-lg border border-gray-500/30 text-[11px] w-16 h-9 flex items-center justify-center text-center">
-                  Guest
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex justify-between text-[11px] font-medium">
+                  <span className="text-white/30">Amount to withdraw</span>
+                  <span className="text-red-400 cursor-pointer" onClick={() => setAmount(treasuryData.balance.toString())}>Max: {treasuryData.balance.toLocaleString()}</span>
                 </div>
-              )}
-              {isWalletConnected && isAdmin && (
-                <div className="bg-purple-500/20 text-purple-300 rounded-lg border border-purple-500/30 text-[11px] w-16 h-9 flex items-center justify-center text-center">
-                  Admin
-                </div>
-              )}
-              {/* Refresh icon removed per request */}
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white text-lg font-medium outline-none focus:border-red-500/50"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <button
+                onClick={handleWithdraw}
+                disabled={!amount || parseFloat(amount) <= 0 || isWithdrawing}
+                className="w-full bg-white/5 border border-white/10 text-red-400 font-bold py-4 rounded-xl disabled:opacity-30 transition-all active:scale-[0.98]"
+              >
+                {isWithdrawing ? 'Processing...' : 'Confirm withdrawal'}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Content (tabs removed) */}
-      {renderOverview()}
-
-      {/* Vault Manager Component */}
-      <VaultManager
-        daoId={dao.id}
-        treasuryObject={treasuryData.treasuryObject}
-      />
-
-      {renderTransactions()}
-      </div>
+      {treasuryData.error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 flex items-start space-x-4">
+          <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1"><h3 className="text-red-300 font-bold text-lg mb-1">Error</h3><p className="text-red-200/60 text-sm">{treasuryData.error}</p></div>
+        </div>
+      )}
     </div>
   );
 };

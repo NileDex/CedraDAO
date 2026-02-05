@@ -1,9 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Activity, OptimizedActivityTracker } from '../useServices/useOptimizedActivityTracker';
-import { Clock, ExternalLink, RefreshCw, AlertCircle, Activity as ActivityIcon, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getActivityColor } from '../constants/activityConstants';
+import { ExternalLink, RefreshCw, AlertCircle, Activity as ActivityIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGetProfile } from '../useServices/useProfile';
 import { truncateAddress } from '../utils/addressUtils';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from './ui/table';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 interface OptimizedActivityTableProps {
   activities: Activity[];
@@ -14,7 +22,7 @@ interface OptimizedActivityTableProps {
   onPrevPage?: () => void;
   hasNextPage?: boolean;
   hasPrevPage?: boolean;
-  showingCountText?: string; // optional custom text like "Showing 10 of 12 activities"
+  showingCountText?: string;
   showUserColumn?: boolean;
   showDAOColumn?: boolean;
   showAmountColumn?: boolean;
@@ -24,16 +32,14 @@ interface OptimizedActivityTableProps {
   title?: string;
 }
 
-// User display without profile pictures (as requested)
 const UserDisplay: React.FC<{ address: string; isCompact?: boolean }> = ({ address }) => {
   const { data: profileData, isLoading } = useGetProfile(address || null);
   const label = profileData?.displayName && !isLoading ? profileData.displayName : truncateAddress(address);
   return (
-    <span className="text-xs sm:text-sm font-mono text-white truncate">{label}</span>
+    <span className="text-[10px] font-medium text-[#e1fd6a] bg-[#e1fd6a]/5 px-2.5 py-1 rounded-lg border border-[#e1fd6a]/20 truncate">{label}</span>
   );
 };
 
-// Global flag to track if activities have ever been loaded (persists across component unmounts)
 const hasLoadedActivitiesOnce = (() => {
   let loaded = false;
   return {
@@ -60,11 +66,9 @@ const OptimizedActivityTable: React.FC<OptimizedActivityTableProps> = ({
   className = '',
   title = 'Recent Activity'
 }) => {
-  // Keep track of cached activities to show while loading
   const [cachedActivities, setCachedActivities] = useState<Activity[]>(activities);
   const hasEverLoaded = useRef(hasLoadedActivitiesOnce.get());
 
-  // Update cached activities when new data arrives
   useEffect(() => {
     if (activities.length > 0) {
       setCachedActivities(activities);
@@ -73,23 +77,11 @@ const OptimizedActivityTable: React.FC<OptimizedActivityTableProps> = ({
     }
   }, [activities]);
 
-  // Use cached activities while loading (after first load)
   const displayActivities = maxRows
     ? (isLoading && hasEverLoaded.current ? cachedActivities : activities).slice(0, maxRows)
     : (isLoading && hasEverLoaded.current ? cachedActivities : activities);
 
-  // Use the utility function instead of local implementation
 
-  const formatAmount = (amount?: number) => {
-    if (!amount) return null;
-
-    // Remove trailing zeros and unnecessary decimal points
-    const formattedNumber = amount % 1 === 0 ? amount.toString() : parseFloat(amount.toFixed(4)).toString();
-
-    return (
-      <span>{formattedNumber} CEDRA</span>
-    );
-  };
 
   const getExplorerUrl = (activity: Activity) => {
     return `https://cedrascan.com/txn/${activity.transactionHash}`;
@@ -97,294 +89,199 @@ const OptimizedActivityTable: React.FC<OptimizedActivityTableProps> = ({
 
   if (error) {
     return (
-      <div className={`bg-red-500/10 border border-red-500/30 rounded-xl p-6 ${className}`}>
-        <div className="flex items-center space-x-3">
-          <AlertCircle className="w-5 h-5 text-red-400" />
-          <div>
-            <p className="text-red-300 font-medium">Error Loading Activities</p>
-            <p className="text-red-200 text-sm">{error}</p>
-            {onRefresh && (
-              <button
-                onClick={onRefresh}
-                className="mt-2 px-3 py-1 bg-red-600/20 text-red-300 rounded text-sm hover:bg-red-600/30 transition-colors"
-              >
-                Try Again
-              </button>
-            )}
+      <Card className={`border-red-500/30 bg-red-500/10 ${className}`}>
+        <CardContent className="pt-6">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-400" />
+            <div>
+              <p className="text-red-300 font-medium">Error Loading Activities</p>
+              <p className="text-red-200 text-sm">{error}</p>
+              {onRefresh && (
+                <button
+                  onClick={onRefresh}
+                  className="mt-2 px-3 py-1 bg-red-600/20 text-red-300 rounded text-sm hover:bg-red-600/30 transition-colors"
+                >
+                  Try Again
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  // Remove skeleton: show minimal container while loading first time
   if (isLoading && !hasEverLoaded.current && cachedActivities.length === 0) {
     return (
-      <div className={`p-4 ${className}`}>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white flex items-center gap-2">
-            <ActivityIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="truncate">{title}</span>
-          </h3>
-          <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-blue-400"></div>
-        </div>
-      </div>
+      <Card className={className}>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm border-none bg-transparent">
+            <div className="flex items-center gap-2">
+              <ActivityIcon className="w-4 h-4" />
+              <span>{title}</span>
+            </div>
+          </CardTitle>
+          <RefreshCw className="w-4 h-4 animate-spin text-white/40" />
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <div className={`border border-white/5 rounded-xl p-4 w-full max-w-full overflow-hidden ${className}`} style={{ maxWidth: '100vw' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm sm:text-base md:text-lg font-semibold flex items-center gap-2 text-white">
-            <ActivityIcon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-white" />
-            <span className="truncate">{title}</span>
-          </h3>
+    <Card className={`!bg-[#1a1b1e] border-white/5 !p-0 rounded-3xl overflow-hidden ${className}`}>
+      <CardHeader className="!flex-row !items-center !justify-between !space-y-0 p-8 pb-4">
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 bg-[#e1fd6a]/10 text-[#e1fd6a] rounded-xl border border-[#e1fd6a]/20">
+            <ActivityIcon size={20} />
+          </div>
+          <div className="flex flex-col">
+            <h3 className="text-xl font-semibold text-white tracking-tighter leading-none mb-1">
+              {title}
+            </h3>
+            <p className="text-[10px] font-medium text-white/40">Real-time data feed</p>
+          </div>
         </div>
-        <div className="flex items-center space-x-1 sm:space-x-2">
-          {isLoading && (
-            <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-blue-400"></div>
-          )}
+        <div className="flex items-center gap-2">
           {onRefresh && (
             <button
               onClick={onRefresh}
               disabled={isLoading}
-              className="p-1 sm:p-2 text-[#e1fd6a] hover:text-[#e1fd6a]/80 transition-colors disabled:opacity-50 rounded-lg hover:bg-white/5"
-              title="Refresh Activities"
+              className="p-2.5 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl transition-all border border-white/10 disabled:opacity-50"
+              title="Refresh Feed"
             >
-              <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
             </button>
           )}
         </div>
-      </div>
+      </CardHeader>
 
-      {/* Desktop Table View */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-sm text-white">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="text-left py-4 px-4 font-medium text-white">Activity</th>
-              <th className="text-right py-4 px-4 font-medium text-white">Type</th>
-              {showUserColumn && (
-                <th className="text-right py-4 px-4 font-medium text-white">User</th>
-              )}
-              {showAmountColumn && (
-                <th className="text-right py-4 px-4 font-medium text-white">Amount</th>
-              )}
-              <th className="text-right py-4 px-4 font-medium text-white">Time</th>
-              {showDAOColumn && (
-                <th className="text-left py-4 px-4 font-medium text-white hidden md:table-cell">DAO</th>
-              )}
-              {showActionColumn && (
-                <th className="text-right py-4 px-4 font-medium text-white">Action</th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader className="bg-white/[0.02]">
+            <TableRow className="hover:bg-transparent border-white/5">
+              <TableHead className="py-5 px-4 sm:px-8 text-[10px] font-bold text-white/30 tracking-wider">Activity</TableHead>
+              <TableHead className="text-right text-[10px] font-bold text-white/30 tracking-wider">Type</TableHead>
+              {showUserColumn && <TableHead className="text-right text-[10px] font-bold text-white/30 tracking-wider">User</TableHead>}
+              {showAmountColumn && <TableHead className="text-right text-[10px] font-bold text-white/30 tracking-wider">Value</TableHead>}
+              <TableHead className="text-right text-[10px] font-bold text-white/30 tracking-wider">Time</TableHead>
+              {showDAOColumn && <TableHead className="hidden md:table-cell text-left text-[10px] font-bold text-white/30 tracking-wider">DAO</TableHead>}
+              {showActionColumn && <TableHead className="text-right pr-4 sm:pr-8 text-[10px] font-bold text-white/30 tracking-wider">TX</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {displayActivities.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-8 px-4 text-center">
-                  <ActivityIcon className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-                  <p className="text-gray-400 text-sm">No recent activities found</p>
-                  <p className="text-gray-500 text-xs mt-1">
-                    Activities will appear here as users interact with the DAO
-                  </p>
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={7} className="h-60 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <ActivityIcon size={48} className="mb-4 text-white/10" />
+                    <p className="font-semibold text-white/40 text-xs">No Activity Yet</p>
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : (
               displayActivities.map((activity, index) => {
                 const display = OptimizedActivityTracker.getActivityDisplay(activity);
-                
                 return (
-                  <tr key={activity.id || index} className="border-b border-white/5 hover:bg-white/5 transition-all">
-                    {/* Activity */}
-                    <td className="py-4 px-4">
-                      <div className="min-w-0">
-                        <h4 className="font-medium text-sm leading-tight truncate text-white">{activity.title}</h4>
-                        <p className="text-xs leading-tight truncate text-gray-400">{activity.description}</p>
+                  <TableRow key={activity.id || index} className="group transition-colors border-white/5">
+                    <TableCell className="pl-4 sm:pl-8">
+                      <div className="space-y-1">
+                        <h4 className="font-medium text-sm tracking-tight text-white leading-none group-hover:text-[#e1fd6a] transition-colors">{activity.title}</h4>
+                        <p className="text-[11px] font-medium text-white/40 leading-none truncate max-w-[200px]">{activity.description}</p>
                       </div>
-                    </td>
-
-                    {/* Type */}
-                    <td className="py-4 px-4 text-right">
-                      <span className="text-sm text-white">
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-[10px] font-medium px-2.5 py-1 rounded-md bg-white/5 text-slate-300 border border-white/10">
                         {display.displayType}
                       </span>
-                    </td>
-
-                    {/* User */}
+                    </TableCell>
                     {showUserColumn && (
-                      <td className="py-4 px-4 text-right">
-                        <div className="flex justify-end">
-                          <UserDisplay address={activity.user} />
-                        </div>
-                      </td>
+                      <TableCell className="text-right">
+                        <UserDisplay address={activity.user} />
+                      </TableCell>
                     )}
-
-                    {/* Amount */}
                     {showAmountColumn && (
-                      <td className="py-4 px-4">
-                        <div className="flex justify-end">
-                          {activity.amount ? (
-                            <span className="text-sm font-medium text-white">{formatAmount(activity.amount)}</span>
-                          ) : (
-                            <span className="text-sm text-gray-500">-</span>
-                          )}
-                        </div>
-                      </td>
+                      <TableCell className="text-right">
+                        {activity.amount ? (
+                          <div className="flex flex-col items-end">
+                            <span className="font-medium text-sm text-white">{activity.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="text-[9px] font-medium text-[#e1fd6a]">CEDRA</span>
+                          </div>
+                        ) : (
+                          <span className="text-white/20">-</span>
+                        )}
+                      </TableCell>
                     )}
-
-                    {/* Time */}
-                    <td className="py-4 px-4 text-right">
-                      <div className="flex items-center justify-end space-x-1 text-white">
-                        <Clock className="w-3 h-3" />
-                        <span className="text-xs">{OptimizedActivityTracker.formatTimeAgo(activity.timestamp)}</span>
-                      </div>
-                    </td>
-
-                    {/* DAO */}
+                    <TableCell className="text-right">
+                      <span className="text-[10px] font-medium text-white/40 whitespace-nowrap tracking-tighter">
+                        {OptimizedActivityTracker.formatTimeAgo(activity.timestamp)}
+                      </span>
+                    </TableCell>
                     {showDAOColumn && (
-                      <td className="py-4 px-4 hidden md:table-cell">
-                        <span className="text-sm font-mono text-white">{truncateAddress(activity.dao)}</span>
-                      </td>
+                      <TableCell className="hidden md:table-cell text-left">
+                        <span className="text-[10px] font-mono font-medium text-white/40">{truncateAddress(activity.dao)}</span>
+                      </TableCell>
                     )}
-
-                    {/* Action */}
                     {showActionColumn && (
-                      <td className="py-4 px-4 text-right">
+                      <TableCell className="text-right pr-4 sm:pr-8">
                         {activity.transactionHash && activity.transactionHash !== '0x' ? (
                           <a
                             href={getExplorerUrl(activity)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex p-2 rounded-lg transition-all text-white hover:text-white hover:bg-white/5"
-                            title="View on Explorer"
+                            className="inline-flex p-2 bg-white/5 text-white/40 hover:text-[#e1fd6a] hover:bg-[#e1fd6a]/10 rounded-lg transition-all border border-white/10"
                           >
-                            <ExternalLink className="w-4 h-4" />
+                            <ExternalLink size={14} />
                           </a>
                         ) : (
-                          <span className="text-xs text-gray-500">-</span>
+                          <span className="text-white/20">-</span>
                         )}
-                      </td>
+                      </TableCell>
                     )}
-                  </tr>
+                  </TableRow>
                 );
               })
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
 
-      {/* Mobile Card View */}
-      <div className="sm:hidden">
-        {displayActivities.length === 0 ? (
-          <div className="text-center py-8">
-            <ActivityIcon className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-            <p className="text-white text-sm">No recent activities found</p>
-            <p className="text-gray-500 text-xs mt-1">
-              Activities will appear here as users interact with the DAO
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-1.5">
-            {displayActivities.map((activity, index) => {
-              const display = OptimizedActivityTracker.getActivityDisplay(activity);
 
-              return (
-                <div
-                  key={activity.id || index}
-                  className="p-2.5 transition-all border-b last:border-b-0 hover:bg-white/5 border-white/5"
-                >
-                  <div className="flex items-center justify-between">
-                    {/* Left Side */}
-                    <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-1">
-                          <h4 className="font-medium text-sm leading-tight truncate text-white">{activity.title}</h4>
-                        </div>
-                        <div className="flex items-center space-x-3 text-xs">
-                          {showUserColumn && (
-                            <UserDisplay address={activity.user} isCompact={true} />
-                          )}
-                          {showAmountColumn && activity.amount && (
-                            <div className="font-medium text-white">{formatAmount(activity.amount)}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+        {/* Custom Pagination Style matching the image provided */}
+        {(hasNextPage || hasPrevPage) && (
+          <div className="p-8 pt-4 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-white/5 bg-black/20">
+            <div className="text-[10px] font-bold text-white/20 tracking-wider italic">
+              {showingCountText || (maxRows && activities.length > maxRows ? `Limited to ${maxRows} records` : 'Live activity stream')}
+            </div>
 
-                    {/* Right Side */}
-                    <div className="flex flex-col items-end space-y-1 flex-shrink-0">
-                      <span className="text-xs text-white">
-                        {display.displayType}
-                      </span>
-                      <div className="flex items-center space-x-1 text-white">
-                        <Clock className="w-3 h-3" />
-                        <span className="text-xs">{OptimizedActivityTracker.formatTimeAgo(activity.timestamp)}</span>
-                      </div>
-                      {showActionColumn && activity.transactionHash && activity.transactionHash !== '0x' && (
-                        <a
-                          href={getExplorerUrl(activity)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-shrink-0 p-1 text-white hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                          title="View on Explorer"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+            <div className="flex items-center gap-3">
+              {/* Number block */}
+              <div className="flex border border-white/10 rounded-2xl overflow-hidden bg-black/40">
+                <button className="px-4 py-2 text-xs font-bold text-[#e1fd6a] bg-white/5 border-r border-white/10">1</button>
+                <button className="px-4 py-2 text-xs font-bold text-white/40 border-r border-white/10 hover:bg-white/5 transition-colors">2</button>
+                <button className="px-4 py-2 text-xs font-bold text-white/40 hover:bg-white/5 transition-colors">3</button>
+              </div>
 
-      {/* Footer: count and pagination */}
-      {(showingCountText || hasNextPage || hasPrevPage || (maxRows && activities.length > maxRows)) && (
-        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="text-xs sm:text-sm text-white text-center sm:text-left">
-            {showingCountText
-              ? showingCountText
-              : maxRows && activities.length > maxRows
-                ? `Showing ${maxRows} of ${activities.length} activities`
-                : null}
-          </div>
-
-          {(onPrevPage || onNextPage) && (
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
-              {onPrevPage && (
+              {/* Arrow block */}
+              <div className="flex border border-white/10 rounded-2xl overflow-hidden bg-black/40">
                 <button
                   onClick={onPrevPage}
-                  disabled={isLoading || !hasPrevPage}
-                  className="px-3 py-1.5 text-xs sm:text-sm rounded-lg border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 whitespace-nowrap inline-flex items-center gap-1"
-                  aria-label="Previous page"
+                  disabled={!hasPrevPage}
+                  className="px-4 py-2 text-white/40 hover:bg-white/5 border-r border-white/10 transition-colors disabled:opacity-20"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Previous page</span>
-                  <span className="sm:hidden">Prev</span>
+                  <ChevronLeft size={16} />
                 </button>
-              )}
-              {onNextPage && (
                 <button
                   onClick={onNextPage}
-                  disabled={isLoading || !hasNextPage}
-                  className="px-3 py-1.5 text-xs sm:text-sm rounded-lg border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 whitespace-nowrap inline-flex items-center gap-1"
-                  aria-label="Next page"
+                  disabled={!hasNextPage}
+                  className="px-4 py-2 text-white/40 hover:bg-white/5 transition-colors disabled:opacity-20"
                 >
-                  <span className="hidden sm:inline">Next page</span>
-                  <span className="sm:hidden">Next</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight size={16} />
                 </button>
-              )}
+              </div>
             </div>
-          )}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -74,26 +74,26 @@ export const fetchDAOCreationEvents = async (
   eventType?: string
 ): Promise<string[]> => {
   // If specific event type provided, use it; otherwise fetch all DAO creation event types
-  const eventTypes = eventType 
+  const eventTypes = eventType
     ? [eventType]
     : ['DAOCreated', 'CouncilDAOCreated', 'DAORegistered'];
-  
+
   // Build event type patterns - try both with and without full module path
   const eventPatterns = eventTypes.flatMap(et => [
     `%${moduleAddress}::dao_core_file::${et}%`,  // Full path
     `%${et}%`                                     // Just event name
   ]);
-  
+
   // Build GraphQL query with multiple event type patterns
-  const orConditions = eventPatterns.map((_, index) => 
+  const orConditions = eventPatterns.map((_, index) =>
     `{ type: { _like: $eventType${index + 1} } }`
   ).join(', ');
-  
+
   const variables: Record<string, string> = {};
   eventPatterns.forEach((pattern, index) => {
     variables[`eventType${index + 1}`] = pattern;
   });
-  
+
   const query = `
     query GetDAOCreationEvents(${eventPatterns.map((_, i) => `$eventType${i + 1}: String!`).join(', ')}) {
       events(
@@ -113,12 +113,12 @@ export const fetchDAOCreationEvents = async (
   `;
 
   try {
-    console.log('🔍 Fetching DAO creation events from GraphQL...', { 
-      moduleAddress, 
+    console.log('🔍 Fetching DAO creation events from GraphQL...', {
+      moduleAddress,
       eventTypes,
-      eventPatterns 
+      eventPatterns
     });
-    
+
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -146,61 +146,69 @@ export const fetchDAOCreationEvents = async (
       console.warn('⚠️ No events found in GraphQL response');
       return [];
     }
-    
+
     console.log(`📊 Found ${result.data.events.length} events from GraphQL`);
 
     // Extract DAO addresses from event data
-    // The event data structure contains movedao_addrxess field (note the double 's')
+    // The event data structure contains anchor_addrxess field (note the double 's')
     // Try multiple field name variations for compatibility
     const daoAddresses: string[] = [];
-    
+
     for (let i = 0; i < result.data.events.length; i++) {
       const event = result.data.events[i];
       const eventData = event.data || {};
-      
+
       // Log the event structure for debugging
       console.log(`🔍 Event ${i + 1}/${result.data.events.length}:`, {
         type: event.type,
         dataKeys: Object.keys(eventData),
         data: eventData
       });
-      
+
       // Try different field name variations based on event type
       let daoAddress: string | undefined;
-      
+
       // Check event type to determine which field to use
       if (event.type?.includes('DAORegistered')) {
         // DAORegistered event uses dao_address (standard naming)
-        daoAddress = 
+        daoAddress =
+          eventData.anchor_address ||
           eventData.dao_address ||
           eventData.address ||
-          eventData.movedao_addrxess ||
-          eventData.movedao_addrx ||
-          eventData.movedao_address;
+          eventData.anchor_addrxess ||
+          eventData.anchor_addrx ||
+          eventData.anchor_address ||
+          eventData.dao_address ||
+          eventData.address ||
+          eventData.anchor_addrxess ||
+          eventData.anchor_addrx ||
+          eventData.anchor_address;
       } else if (event.type?.includes('DAOCreated') || event.type?.includes('CouncilDAOCreated')) {
-        // DAOCreated and CouncilDAOCreated events use movedao_addrxess (typo with double 's')
-        daoAddress = 
-          eventData.movedao_addrxess ||  // Correct field name from ABI (typo with double 's')
-          eventData.movedao_addrx ||     // Alternative spelling
-          eventData.movedao_address ||   // Alternative spelling
+        // DAOCreated and CouncilDAOCreated events use anchor_addrxess (typo with double 's')
+        daoAddress =
+          eventData.anchor_address ||   // Preferred rebranded field
+          eventData.anchor_addrxess ||  // Correct field name from ABI (typo with double 's')
+          eventData.anchor_addrx ||     // Alternative spelling
+          eventData.anchor_address ||   // Alternative spelling
           eventData.dao_address ||       // Generic fallback
           eventData.address;             // Generic fallback
       } else {
         // Try all variations for unknown event types
-        daoAddress = 
-          eventData.movedao_addrxess ||
-          eventData.movedao_addrx ||
-          eventData.movedao_address ||
+        daoAddress =
+          eventData.anchor_address ||
+          eventData.anchor_addrxess ||
+          eventData.anchor_addrx ||
+          eventData.anchor_address ||
           eventData.dao_address ||
           eventData.address;
       }
-      
+
       if (daoAddress && typeof daoAddress === 'string' && daoAddress.trim() !== '') {
         // Ensure it's a valid address format (starts with 0x)
-        const normalizedAddress = daoAddress.startsWith('0x') 
+        const normalizedAddress = daoAddress.startsWith('0x')
           ? daoAddress.toLowerCase().trim()
           : `0x${daoAddress.toLowerCase().trim()}`;
-        
+
         // Validate it looks like an address (hex string of appropriate length)
         if (normalizedAddress.length >= 42 && /^0x[0-9a-f]+$/i.test(normalizedAddress)) {
           if (!daoAddresses.includes(normalizedAddress)) {
@@ -216,7 +224,7 @@ export const fetchDAOCreationEvents = async (
         console.warn(`⚠️ Could not extract DAO address from event ${i + 1}. Event data:`, JSON.stringify(eventData, null, 2));
       }
     }
-    
+
     console.log(`📊 Found ${daoAddresses.length} unique DAOs from ${result.data.events.length} GraphQL events`);
     return daoAddresses;
 

@@ -1,9 +1,9 @@
 // Time security - prevents timestamp manipulation attacks and ensures secure time-based operations
-module movedao_addrx::time_security {
+module anchor_addrx::time_security {
     use std::vector;
     use cedra_framework::timestamp;
-    use movedao_addrx::errors;
-    use movedao_addrx::safe_math;
+    use anchor_addrx::errors;
+    use anchor_addrx::safe_math;
 
     // Time constants for validation
     const MIN_VOTING_PERIOD: u64 = 3600;      // 1 hour minimum
@@ -101,7 +101,7 @@ module movedao_addrx::time_security {
     }
 
     #[test]
-    #[expected_failure(abort_code = 5, location = movedao_addrx::time_security)]
+    #[expected_failure(abort_code = 5, location = anchor_addrx::time_security)]
     public fun test_invalid_voting_period_too_short() {
         use cedra_framework::account;
         use cedra_framework::timestamp;

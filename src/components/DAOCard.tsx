@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar } from 'lucide-react';
 import { DAO } from '../types/dao';
+import { Users, FileText, ChevronRight, Star } from 'lucide-react';
 
 interface DAOCardProps {
   dao: DAO;
@@ -8,201 +8,82 @@ interface DAOCardProps {
   sidebarCollapsed?: boolean;
 }
 
-const DAOCard: React.FC<DAOCardProps> = ({ dao, onClick, sidebarCollapsed = true }) => {
+const DAOCard: React.FC<DAOCardProps> = ({ dao, onClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
-  const [backgroundError, setBackgroundError] = useState(false);
-  const backgroundRetryRef = React.useRef(0);
 
-
-  // Debug logging for subname (reduced verbosity)
-  React.useEffect(() => {
-    if (dao.subname) {
-    }
-  }, [dao.name, dao.subname]);
-
-  // Optimized image preloading - keep images stable once loaded
+  // Optimized image preloading
   React.useEffect(() => {
     if (dao.image) {
       const img = new Image();
-      img.decoding = 'async' as any;
       img.onload = () => setImageLoaded(true);
       img.onerror = () => setImageError(true);
-      img.loading = 'eager';
-      img.fetchPriority = 'high';
       img.src = dao.image;
     } else {
       setImageError(true);
     }
   }, [dao.image]);
 
-  React.useEffect(() => {
-    // Reset retry count when background changes
-    backgroundRetryRef.current = 0;
-
-    if (dao.background && dao.background.trim()) {
-
-      // Validate background URL before attempting to load
-      const isValidUrl = (url: string) => {
-        try {
-          // Check if it's a data URL
-          if (url.startsWith('data:')) {
-            return url.includes('image/');
-          }
-          // Check if it's a valid HTTP/HTTPS URL
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            new URL(url);
-            return true;
-          }
-          return false;
-        } catch {
-          return false;
-        }
-      };
-
-      if (!isValidUrl(dao.background)) {
-        console.warn(` Invalid background URL for ${dao.name}:`, dao.background);
-        setBackgroundError(true);
-        return;
-      }
-
-      setBackgroundLoaded(false);
-      setBackgroundError(false);
-
-      const bgImg = new Image();
-      bgImg.decoding = 'async' as any;
-      bgImg.crossOrigin = 'anonymous'; // Add CORS support
-      bgImg.loading = 'eager';
-      bgImg.fetchPriority = 'high';
-
-      // Add a timeout to detect hanging requests
-      const timeoutId = setTimeout(() => {
-        console.warn(`⏰ Background loading timeout for ${dao.name} after 5 seconds`);
-        setBackgroundError(true);
-      }, 5000); // Reduced timeout
-
-      bgImg.onload = () => {
-        clearTimeout(timeoutId);
-        setBackgroundLoaded(true);
-      };
-
-      bgImg.onerror = () => {
-        clearTimeout(timeoutId);
-        setBackgroundError(true);
-      };
-
-      bgImg.src = dao.background;
-    } else {
-      setBackgroundError(true);
-    }
-  }, [dao.background]);
-
   return (
     <div
       onClick={onClick}
-      className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/40 hover:border-[#e1fd6a]/50 rounded-lg overflow-hidden cursor-pointer group animate-fade-in relative transition-colors w-full"
+      className="nb-card !bg-transparent border-white/5 hover:border-[#e1fd6a]/20 cursor-pointer group animate-fade-in flex flex-col gap-5"
     >
-      {/* Twitter-like banner */}
-      {dao.background && !backgroundError && (
-        <div
-          className={`absolute left-0 right-0 top-0 h-20 bg-cover bg-center pointer-events-none transition-opacity duration-300 ${
-            backgroundLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{ backgroundImage: `url(${dao.background})` }}
-        />
-      )}
-
-      {/* Loading background */}
-      {dao.background && !backgroundLoaded && !backgroundError && (
-        <div className="absolute left-0 right-0 top-0 h-20 bg-gradient-to-r from-purple-500/20 to-pink-500/20 pointer-events-none relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-pulse"></div>
-        </div>
-      )}
-
-      {/* Fallback gradient */}
-      {(!dao.background || backgroundError) && (
-        <div className="absolute left-0 right-0 top-0 h-20 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 pointer-events-none" />
-      )}
-
-      {/* Content */}
-      <div className="relative z-10 p-6">
-        <div className="flex items-start justify-between mb-4 mt-4">
-          <div className="relative">
-            {/* Loading placeholder */}
-            {dao.image && !imageLoaded && !imageError && (
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-600/70 to-gray-700/70 animate-pulse border-2 border-white/30 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-pulse"></div>
-              </div>
-            )}
-
-            {/* Show image if loaded */}
-            {dao.image && imageLoaded && !imageError && (
-              <img
-                src={dao.image}
-                alt={dao.name}
-                loading="eager"
-                decoding="async"
-                className="w-16 h-16 rounded-xl object-cover shadow-lg"
-              />
-            )}
-
-            {/* Fallback to initials */}
-            {(!dao.image || imageError) && (
-              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 shadow-lg flex items-center justify-center">
-                <span className="text-white text-xl font-bold">
-                  {dao.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-
-            {/* Subname Badge */}
-            {dao.subname && dao.subname.trim() && (
-              <div className="absolute -bottom-2 -right-2">
-                <span className="px-2 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white dark:text-black text-xs rounded-lg font-medium shadow-lg">
-                  {dao.subname}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {dao.category !== 'featured' && (
-            <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 bg-indigo-500/30 text-indigo-200 text-xs rounded-full border border-indigo-400/50 backdrop-blur-sm">
-                {dao.chain}
-              </span>
+      <div className="flex items-center gap-4">
+        <div className="relative shrink-0">
+          {(!dao.image || imageError) ? (
+            <div className="w-12 h-12 bg-[#e1fd6a] rounded-full flex items-center justify-center text-black font-semibold text-xl">
+              {dao.name.charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <img
+              src={dao.image}
+              alt={dao.name}
+              className={`w-12 h-12 rounded-full object-cover border border-white/10 ${!imageLoaded ? 'animate-pulse bg-white/5' : ''}`}
+            />
+          )}
+          {dao.subname && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#060607] rounded-full border border-white/10 flex items-center justify-center">
+              <span className="text-[8px] font-medium text-[#e1fd6a]">{dao.subname.charAt(0)}</span>
             </div>
           )}
         </div>
 
-        <div className="mb-4 mt-6">
-          <h3 className="text-white font-semibold text-lg mb-2">
-            {dao.name}
-          </h3>
-          <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">
-            {dao.description}
-          </p>
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h3 className="text-white font-semibold text-lg truncate group-hover:text-[#e1fd6a] transition-colors tracking-tighter">
+              {dao.name}
+            </h3>
+            {dao.category === 'featured' && (
+              <Star size={14} className="text-[#e1fd6a] fill-[#e1fd6a] shrink-0" />
+            )}
+          </div>
+          <p className="text-white/20 text-[9px] font-medium">{dao.chain || 'CEDRA'} / INFRASTRUCTURE</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {/* Outcome-style rows */}
+        <div className="flex items-center justify-between text-[11px] font-semibold px-1">
+          <div className="flex items-center gap-2 text-white/20">
+            <Users size={12} />
+            <span>Identity Flow</span>
+          </div>
+          <span className="text-white">{dao.members?.toLocaleString() ?? 0}</span>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-start justify-between pt-3 border-t border-gray-700/30">
-            <div>
-              <div className="text-white text-sm font-semibold">
-                {dao.members ?? 0}
-              </div>
-              <div className="text-gray-500 text-xs">
-                Members
-              </div>
-            </div>
-            <div>
-              <div className="text-white text-sm font-semibold">
-                {dao.proposals ?? 0}
-              </div>
-              <div className="text-gray-500 text-xs">
-                Proposals
-              </div>
-            </div>
+        <div className="flex items-center justify-between text-[11px] font-semibold px-1">
+          <div className="flex items-center gap-2 text-white/20">
+            <FileText size={12} />
+            <span>Governance</span>
           </div>
+          <span className="text-white">{dao.proposals?.toLocaleString() ?? 0}</span>
+        </div>
+      </div>
+
+      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between group/footer">
+        <div className="flex items-center gap-1.5 text-[10px] font-medium text-white/40 group-hover/footer:text-white transition-colors">
+          Show More <ChevronRight size={12} className="group-hover/footer:translate-x-0.5 transition-transform" />
         </div>
       </div>
     </div>

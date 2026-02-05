@@ -4,42 +4,54 @@ import mainLogo from '../assets/Logonew.png';
 
 interface SidebarProps {
   currentView: string;
-  onViewChange: (view: string) => void;
+  onViewChange: (_view: string) => void;
   isOpen?: boolean;
   onClose?: () => void;
-  onCollapseChange?: (isCollapsed: boolean) => void;
+  onCollapseChange?: (_isCollapsed: boolean) => void;
   daoTabs?: Array<{
     id: string;
     label: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType;
     color: string;
   }>;
   activeTab?: string;
-  onTabChange?: (tabId: string) => void;
+  onTabChange?: (_tabId: string) => void;
   mobileOnly?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = false, onClose, onCollapseChange, daoTabs, activeTab, onTabChange, mobileOnly = false }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  onViewChange,
+  isOpen = false,
+  onClose,
+  onCollapseChange,
+  daoTabs: _daoTabs,
+  activeTab: _activeTab,
+  onTabChange: _onTabChange,
+  mobileOnly = false
+}) => {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('sidebar_collapsed');
       if (saved !== null) return saved === 'true';
-    } catch {}
+    } catch (err) {
+      console.warn('Sidebar state load error:', err);
+    }
     return true; // Default collapsed on first load
   });
-  
+
   const handleToggle = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     onCollapseChange?.(newState);
-    try { localStorage.setItem('sidebar_collapsed', String(newState)); } catch {}
+    try { localStorage.setItem('sidebar_collapsed', String(newState)); } catch (err) { console.warn('Sidebar state save error:', err); }
   };
 
   // Notify parent on mount and when state changes to keep layout in sync
   useEffect(() => {
     onCollapseChange?.(isCollapsed);
   }, [isCollapsed, onCollapseChange]);
-  
+
   const menuItems = [
     {
       id: 'home',
@@ -59,13 +71,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = f
 
   // Desktop Sidebar (responsive)
   const desktopSidebar = (
-    <div className={`fixed top-12 left-0 backdrop-blur-md flex flex-col py-6 space-y-4 hidden md:flex h-[calc(100vh-3rem)] transition-all duration-300 z-40 ${
-      isCollapsed ? 'w-16' : 'w-48'
-    }`}
-         style={{
-           background: '#101010',
-           borderRight: '1px solid var(--border)'
-         }}>
+    <div className={`fixed top-12 left-0 backdrop-blur-md flex flex-col py-6 space-y-4 hidden md:flex h-[calc(100vh-3rem)] transition-all duration-300 z-40 ${isCollapsed ? 'w-16' : 'w-48'
+      }`}
+      style={{
+        background: '#0a0a0b',
+        borderRight: '1px solid rgba(255,255,255,0.05)'
+      }}>
       {/* Toggle Button */}
       <div className="flex justify-end px-4 mb-2">
         <button
@@ -95,14 +106,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = f
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
-              className="group relative transition-all duration-300 flex items-center space-x-3 px-3 py-2.5 rounded-lg"
+              className="group relative transition-all duration-300 flex items-center space-x-3 px-3 py-3 rounded-xl"
               style={{
-                background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: 'var(--text)'
+                background: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
+                color: '#FFFFFF'
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
                 }
               }}
               onMouseLeave={(e) => {
@@ -112,10 +123,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = f
               }}
               title={isCollapsed ? item.label : ''}
             >
-              <Icon className={`w-5 h-5 flex-shrink-0`} style={{ color: 'var(--text)' }} />
+              <Icon className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-[#e1fd6a]' : 'text-white/20'}`} />
               {!isCollapsed && (
                 <div className="flex flex-col items-start text-left">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{item.label}</span>
+                  <span className={`text-xs font-semibold transition-colors ${isActive ? 'text-white' : 'text-white/40 group-hover:text-white'}`}>{item.label}</span>
                 </div>
               )}
             </button>
@@ -125,19 +136,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = f
 
       {/* Spacer */}
       <div className="flex-1"></div>
-      
+
       {/* Trending Icon at Bottom */}
       <div className="px-2">
         <button
           onClick={() => onViewChange('trending')}
-          className="group relative transition-all duration-300 flex items-center space-x-3 px-3 py-2.5 rounded-lg w-full"
+          className="group relative transition-all duration-300 flex items-center space-x-3 px-3 py-3 rounded-xl w-full"
           style={{
-            background: currentView === 'trending' ? 'rgba(255,255,255,0.1)' : 'transparent',
-            color: 'var(--text)'
+            background: currentView === 'trending' ? 'rgba(255,255,255,0.05)' : 'transparent',
+            color: '#FFFFFF'
           }}
           onMouseEnter={(e) => {
             if (currentView !== 'trending') {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
             }
           }}
           onMouseLeave={(e) => {
@@ -147,10 +158,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = f
           }}
           title={isCollapsed ? 'Trending' : ''}
         >
-          <TrendingUp className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--text)' }} />
+          <TrendingUp className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110 ${currentView === 'trending' ? 'text-[#e1fd6a]' : 'text-white/20'}`} />
           {!isCollapsed && (
             <div className="flex flex-col items-start text-left">
-              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Trending</span>
+              <span className={`text-xs font-semibold transition-colors ${currentView === 'trending' ? 'text-white' : 'text-white/40 group-hover:text-white'}`}>Trending</span>
             </div>
           )}
         </button>
@@ -173,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = f
       >
         {/* Header with Logo and Close Button */}
         <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-          <img src={mainLogo} alt="MoveDAO" className="w-8 h-8 object-contain" />
+          <img src={mainLogo} alt="Anchor" className="w-8 h-8 object-contain" />
           <button
             className="rounded-full p-1.5 transition-colors"
             style={{ color: 'var(--text)' }}
@@ -198,13 +209,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isOpen = f
                   onViewChange(item.id);
                   onClose?.();
                 }}
-                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-200`}
-                style={{ color: 'var(--text)', background: 'transparent' }}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive ? 'bg-white/5' : ''}`}
+                style={{ color: 'var(--text)' }}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5`}
-                      style={{ color: 'var(--text)' }} />
+                <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isActive ? 'text-[#e1fd6a]' : ''}`}
+                  style={{ color: isActive ? 'undefined' : 'var(--text)' }} />
                 <div className="flex flex-col items-start text-left">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{item.label}</span>
+                  <span className={`text-sm font-semibold ${isActive ? 'text-[#e1fd6a]' : ''}`} style={{ color: isActive ? 'undefined' : 'var(--text)' }}>{item.label}</span>
                   <span className="text-xs" style={{ color: 'var(--text-dim)' }}>{item.subtext}</span>
                 </div>
               </button>

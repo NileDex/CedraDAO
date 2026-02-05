@@ -122,7 +122,7 @@ const MemberProfileCard: React.FC<MemberProfileCardProps> = ({
                   />
                 ) : null}
                 <div className={`w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-lg flex items-center justify-center text-white text-sm font-bold ${avatarUrl ? 'hidden' : ''}`}>
-                  {shortAddress.slice(2, 4).toUpperCase()}
+                  {shortAddress.slice(2, 4)}
                 </div>
               </div>
 

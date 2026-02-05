@@ -1,5 +1,5 @@
 // Main DAO factory - creates and manages DAOs with their core components (treasury, membership)
-module movedao_addrx::dao_core_file {
+module anchor_addrx::dao_core_file {
     use std::signer;
     use std::string;
     use std::error;
@@ -8,17 +8,19 @@ module movedao_addrx::dao_core_file {
     use cedra_framework::timestamp;
     #[test_only]
     use cedra_framework::account;
-    use movedao_addrx::admin;
-    use movedao_addrx::membership;
-    use movedao_addrx::proposal;
-    use movedao_addrx::staking;
-    use movedao_addrx::treasury;
-    use movedao_addrx::errors;
-    use movedao_addrx::input_validation;
-    use movedao_addrx::activity_tracker;
-    use movedao_addrx::treasury::Treasury;
+    use anchor_addrx::admin;
+    use anchor_addrx::membership;
+    use anchor_addrx::proposal;
+    use anchor_addrx::staking;
+    use anchor_addrx::treasury;
+    use anchor_addrx::errors;
+    use anchor_addrx::input_validation;
+    use anchor_addrx::activity_tracker;
+    use anchor_addrx::treasury::Treasury;
     use cedra_framework::object::Object;
     use cedra_std::simple_map::{Self, SimpleMap};
+    use cedra_framework::coin;
+    use cedra_framework::cedra_coin::CedraCoin;
 
     // Image data can be either a URL or binary data
     struct ImageData has copy, drop, store {
@@ -46,7 +48,7 @@ module movedao_addrx::dao_core_file {
 
     #[event]
     struct DAOCreated has drop, store {
-        movedao_addrxess: address,
+        anchor_addrxess: address,
         creator: address,
         name: string::String,
         subname: string::String,
@@ -59,7 +61,7 @@ module movedao_addrx::dao_core_file {
         proposal_id: u64,
         proposing_council: address,
         proposer: address,
-        target_movedao_addrxess: address,
+        target_anchor_addrxess: address,
         name: string::String,
         subname: string::String,
         description: string::String,
@@ -68,7 +70,7 @@ module movedao_addrx::dao_core_file {
 
     #[event]
     struct CouncilDAOCreated has drop, store {
-        movedao_addrxess: address,
+        anchor_addrxess: address,
         creating_council: address,
         proposal_id: u64,
         name: string::String,
@@ -88,7 +90,7 @@ module movedao_addrx::dao_core_file {
     struct DAOCreationProposalData has store {
         id: u64,
         proposer: address,
-        target_movedao_addrxess: address,
+        target_anchor_addrxess: address,
         name: string::String,
         subname: string::String,
         description: string::String,
@@ -133,6 +135,11 @@ module movedao_addrx::dao_core_file {
         total_subnames: u64
     }
 
+    struct PlatformConfig has key {
+        creation_fee: u64,      // Fee in Octas (e.g. 1 MOVE = 100,000,000)
+        fee_recipient: address  // Address to receive fees
+    }
+
     // Module initialization - automatically creates registry on deployment
     fun init_module(account: &signer) {
         // This function is called automatically when the module is first published
@@ -149,6 +156,12 @@ module movedao_addrx::dao_core_file {
             total_subnames: 0
         });
 
+        // Initialize platform config with default fee (100 MOVE)
+        move_to(account, PlatformConfig {
+            creation_fee: 10000000000, // 100 MOVE tokens
+            fee_recipient: signer::address_of(account)
+        });
+
         // Initialize global activity tracker
         activity_tracker::initialize(account);
     }
@@ -156,15 +169,15 @@ module movedao_addrx::dao_core_file {
     #[test_only]
     /// Initialize registry for test environment
     public fun init_registry_for_test() {
-        let dao_module_signer = account::create_signer_for_test(@movedao_addrx);
-        if (!exists<DAORegistry>(@movedao_addrx)) {
+        let dao_module_signer = account::create_signer_for_test(@anchor_addrx);
+        if (!exists<DAORegistry>(@anchor_addrx)) {
             move_to(&dao_module_signer, DAORegistry {
                 dao_addresses: vector::empty(),
                 total_daos: 0,
                 created_at: timestamp::now_seconds()
             });
         };
-        if (!exists<SubnameRegistry>(@movedao_addrx)) {
+        if (!exists<SubnameRegistry>(@anchor_addrx)) {
             move_to(&dao_module_signer, SubnameRegistry {
                 used_subnames: simple_map::create<string::String, address>(),
                 total_subnames: 0
@@ -213,9 +226,9 @@ module movedao_addrx::dao_core_file {
     // Validate and reserve subname - ensures global uniqueness
     fun validate_and_reserve_subname(subname: &string::String, dao_address: address) acquires SubnameRegistry {
         // Ensure subname registry exists
-        assert!(exists<SubnameRegistry>(@movedao_addrx), errors::registry_not_initialized());
+        assert!(exists<SubnameRegistry>(@anchor_addrx), errors::registry_not_initialized());
         
-        let registry = borrow_global_mut<SubnameRegistry>(@movedao_addrx);
+        let registry = borrow_global_mut<SubnameRegistry>(@anchor_addrx);
         
         // Check if subname is already taken
         assert!(!simple_map::contains_key(&registry.used_subnames, subname), errors::subname_already_exists());
@@ -227,10 +240,10 @@ module movedao_addrx::dao_core_file {
 
     // Check if subname is available (read-only)
     fun is_subname_available(subname: &string::String): bool acquires SubnameRegistry {
-        if (!exists<SubnameRegistry>(@movedao_addrx)) {
+        if (!exists<SubnameRegistry>(@anchor_addrx)) {
             return false
         };
-        let registry = borrow_global<SubnameRegistry>(@movedao_addrx);
+        let registry = borrow_global<SubnameRegistry>(@anchor_addrx);
         !simple_map::contains_key(&registry.used_subnames, subname)
     }
 
@@ -242,14 +255,42 @@ module movedao_addrx::dao_core_file {
         // Registry should already exist from module initialization
     }
 
+    // Update platform configuration (Admin only)
+    public entry fun set_platform_config(
+        admin: &signer,
+        new_fee: u64,
+        new_recipient: address
+    ) acquires PlatformConfig {
+        let addr = signer::address_of(admin);
+        assert!(addr == @anchor_addrx, error::permission_denied(1)); // Only module admin
+        assert!(exists<PlatformConfig>(@anchor_addrx), errors::not_found());
+
+        let config = borrow_global_mut<PlatformConfig>(@anchor_addrx);
+        config.creation_fee = new_fee;
+        config.fee_recipient = new_recipient;
+    }
+
+    // NEW: One-time manual initialization for contract upgrades
+    public entry fun initialize_fee_config(admin: &signer) {
+        let addr = signer::address_of(admin);
+        assert!(addr == @anchor_addrx, error::permission_denied(1)); // Only admin
+        
+        if (!exists<PlatformConfig>(addr)) {
+            move_to(admin, PlatformConfig {
+                creation_fee: 10000000000, // 100 MOVE
+                fee_recipient: addr
+            });
+        }
+    }
+
     // Function to manually add an existing DAO to the registry (for retroactive registration)
     public entry fun add_dao_to_registry(admin: &signer, dao_address: address) acquires DAORegistry {
         let addr = signer::address_of(admin);
-        assert!(addr == @movedao_addrx, error::permission_denied(1)); // Only module admin can add
+        assert!(addr == @anchor_addrx, error::permission_denied(1)); // Only module admin can add
         assert!(exists<DAOInfo>(dao_address), errors::not_found()); // DAO must exist
-        assert!(exists<DAORegistry>(@movedao_addrx), errors::registry_not_initialized()); // Registry must exist
+        assert!(exists<DAORegistry>(@anchor_addrx), errors::registry_not_initialized()); // Registry must exist
         
-        let registry = borrow_global_mut<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global_mut<DAORegistry>(@anchor_addrx);
         
         // Check if DAO is already in registry
         let i = 0;
@@ -269,7 +310,7 @@ module movedao_addrx::dao_core_file {
     fun ensure_registry_exists(_first_dao_creator: &signer) {
         // Registry is automatically initialized during module deployment via init_module
         // If it doesn't exist, something went wrong during deployment
-        assert!(exists<DAORegistry>(@movedao_addrx), errors::registry_not_initialized());
+        assert!(exists<DAORegistry>(@anchor_addrx), errors::registry_not_initialized());
     }
 
     // Public function to check and initialize registry if needed
@@ -277,7 +318,7 @@ module movedao_addrx::dao_core_file {
     public entry fun check_and_init_registry(admin: &signer) {
         let addr = signer::address_of(admin);
         // The registry should be stored at the module address for global access
-        assert!(addr == @movedao_addrx, error::permission_denied(1));
+        assert!(addr == @anchor_addrx, error::permission_denied(1));
         
         // Don't fail if registry already exists, just return silently
         if (exists<DAORegistry>(addr)) {
@@ -293,9 +334,9 @@ module movedao_addrx::dao_core_file {
 
     fun add_to_registry(dao_addr: address) acquires DAORegistry {
         // Registry should already exist from module initialization
-        assert!(exists<DAORegistry>(@movedao_addrx), errors::registry_not_initialized());
+        assert!(exists<DAORegistry>(@anchor_addrx), errors::registry_not_initialized());
         
-        let registry = borrow_global_mut<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global_mut<DAORegistry>(@anchor_addrx);
         
         // Check if already exists to avoid duplicates
         let i = 0;
@@ -339,15 +380,17 @@ module movedao_addrx::dao_core_file {
         logo: vector<u8>,
         background: vector<u8>,
         min_stake_to_join: u64,
+        staking_type: u8,              // NEW: 1 = MOVE tokens, 2 = Fungible Asset
+        fa_metadata_address: address,  // NEW: FA token address (only used if staking_type = 2)
         x_link: string::String,        // X (Twitter) URL (optional)
         discord_link: string::String,  // Discord URL (optional)
         telegram_link: string::String, // Telegram URL (optional)
         website: string::String,       // Website URL (optional)
         category: string::String       // DeFi, NFT, Infrastructure, Gaming, Social, etc.
-    ) acquires DAORegistry, SubnameRegistry {
+    ) acquires DAORegistry, SubnameRegistry, PlatformConfig {
         let logo_data = create_image_from_data(logo);
         let background_data = create_image_from_data(background);
-        create_dao_internal(account, name, subname, description, logo_data, background_data, min_stake_to_join, x_link, discord_link, telegram_link, website, category);
+        create_dao_internal(account, name, subname, description, logo_data, background_data, min_stake_to_join, staking_type, fa_metadata_address, x_link, discord_link, telegram_link, website, category);
     }
 
     // Create DAO with URL images
@@ -359,15 +402,17 @@ module movedao_addrx::dao_core_file {
         logo_url: string::String,
         background_url: string::String,
         min_stake_to_join: u64,
+        staking_type: u8,              // NEW: 1 = MOVE tokens, 2 = Fungible Asset
+        fa_metadata_address: address,  // NEW: FA token address (only used if staking_type = 2)
         x_link: string::String,
         discord_link: string::String,
         telegram_link: string::String,
         website: string::String,
         category: string::String
-    ) acquires DAORegistry, SubnameRegistry {
+    ) acquires DAORegistry, SubnameRegistry, PlatformConfig {
         let logo_data = create_image_from_url(logo_url);
         let background_data = create_image_from_url(background_url);
-        create_dao_internal(account, name, subname, description, logo_data, background_data, min_stake_to_join, x_link, discord_link, telegram_link, website, category);
+        create_dao_internal(account, name, subname, description, logo_data, background_data, min_stake_to_join, staking_type, fa_metadata_address, x_link, discord_link, telegram_link, website, category);
     }
 
     // Create DAO with mixed image types (URL + binary or vice versa)
@@ -383,12 +428,14 @@ module movedao_addrx::dao_core_file {
         background_url: string::String,
         background_data: vector<u8>,
         min_stake_to_join: u64,
+        staking_type: u8,              // NEW: 1 = MOVE tokens, 2 = Fungible Asset
+        fa_metadata_address: address,  // NEW: FA token address (only used if staking_type = 2)
         x_link: string::String,
         discord_link: string::String,
         telegram_link: string::String,
         website: string::String,
         category: string::String
-    ) acquires DAORegistry, SubnameRegistry {
+    ) acquires DAORegistry, SubnameRegistry, PlatformConfig {
         let logo_image = if (logo_is_url) {
             create_image_from_url(logo_url)
         } else {
@@ -401,7 +448,7 @@ module movedao_addrx::dao_core_file {
             create_image_from_data(background_data)
         };
 
-        create_dao_internal(account, name, subname, description, logo_image, background_image, min_stake_to_join, x_link, discord_link, telegram_link, website, category);
+        create_dao_internal(account, name, subname, description, logo_image, background_image, min_stake_to_join, staking_type, fa_metadata_address, x_link, discord_link, telegram_link, website, category);
     }
 
     // Internal function to create DAO (used by all public create functions)
@@ -413,13 +460,24 @@ module movedao_addrx::dao_core_file {
         logo: ImageData,
         background: ImageData,
         min_stake_to_join: u64,
+        staking_type: u8,
+        fa_metadata_address: address,
         x_link: string::String,
         discord_link: string::String,
         telegram_link: string::String,
         website: string::String,
         category: string::String
-    ) acquires DAORegistry, SubnameRegistry {
+    ) acquires DAORegistry, SubnameRegistry, PlatformConfig {
         let addr = signer::address_of(account);
+
+        // Process creation fee payment to deployer
+        if (exists<PlatformConfig>(@anchor_addrx)) {
+            let config = borrow_global<PlatformConfig>(@anchor_addrx);
+            if (config.creation_fee > 0) {
+                // Transfer fee from creator to fee recipient
+                coin::transfer<CedraCoin>(account, config.fee_recipient, config.creation_fee);
+            };
+        };
         // Allow multiple DAOs per address - comment out existence check
         // assert!(!exists<DAOInfo>(addr), error::already_exists(0));
 
@@ -472,17 +530,19 @@ module movedao_addrx::dao_core_file {
             admin::init_admin(account, 1);
         };
         
-        // Membership system
+        // Membership system - initialize with staking type
         if (!membership::is_membership_initialized(addr)) {
-            membership::initialize_with_min_stake(account, min_stake_to_join);
+            membership::initialize_with_staking_type(account, min_stake_to_join, 6000000, staking_type, fa_metadata_address);
         };
         
         // Proposal system
         if (!proposal::has_proposals(addr)) {
             proposal::initialize_proposals(account);
         };
-        
-        // Staking system
+
+        let _ = staking_type;
+        let _ = fa_metadata_address;
+
         if (!staking::is_staking_initialized(addr)) {
             staking::init_staking(account);
         };
@@ -501,7 +561,7 @@ module movedao_addrx::dao_core_file {
 
         // Emit DAO creation event
         event::emit(DAOCreated {
-            movedao_addrxess: addr,
+            anchor_addrxess: addr,
             creator: addr,
             name,
             subname,
@@ -532,8 +592,8 @@ module movedao_addrx::dao_core_file {
     // Council members can propose new DAO creation (with binary data)
     public entry fun propose_dao_creation(
         council_member: &signer,
-        council_movedao_addrx: address,
-        target_movedao_addrxess: address,
+        council_anchor_addrx: address,
+        target_anchor_addrxess: address,
         name: string::String,
         subname: string::String,
         description: string::String,
@@ -543,14 +603,14 @@ module movedao_addrx::dao_core_file {
     ) acquires CouncilDAOCreationRegistry {
         let logo_data = create_image_from_data(logo);
         let background_data = create_image_from_data(background);
-        propose_dao_creation_internal(council_member, council_movedao_addrx, target_movedao_addrxess, name, subname, description, logo_data, background_data, min_stake_to_join);
+        propose_dao_creation_internal(council_member, council_anchor_addrx, target_anchor_addrxess, name, subname, description, logo_data, background_data, min_stake_to_join);
     }
 
     // Council members can propose new DAO creation (with URLs)
     public entry fun propose_dao_creation_with_urls(
         council_member: &signer,
-        council_movedao_addrx: address,
-        target_movedao_addrxess: address,
+        council_anchor_addrx: address,
+        target_anchor_addrxess: address,
         name: string::String,
         subname: string::String,
         description: string::String,
@@ -560,14 +620,14 @@ module movedao_addrx::dao_core_file {
     ) acquires CouncilDAOCreationRegistry {
         let logo_data = create_image_from_url(logo_url);
         let background_data = create_image_from_url(background_url);
-        propose_dao_creation_internal(council_member, council_movedao_addrx, target_movedao_addrxess, name, subname, description, logo_data, background_data, min_stake_to_join);
+        propose_dao_creation_internal(council_member, council_anchor_addrx, target_anchor_addrxess, name, subname, description, logo_data, background_data, min_stake_to_join);
     }
 
     // Internal function for DAO creation proposals
     fun propose_dao_creation_internal(
         council_member: &signer,
-        council_movedao_addrx: address,
-        target_movedao_addrxess: address,
+        council_anchor_addrx: address,
+        target_anchor_addrxess: address,
         name: string::String,
         subname: string::String,
         description: string::String,
@@ -578,11 +638,11 @@ module movedao_addrx::dao_core_file {
         let proposer = signer::address_of(council_member);
 
         // Verify proposer is an admin of the proposing DAO
-        assert!(exists<DAOInfo>(council_movedao_addrx), errors::not_found());
-        errors::require_admin(admin::is_admin(council_movedao_addrx, proposer));
+        assert!(exists<DAOInfo>(council_anchor_addrx), errors::not_found());
+        errors::require_admin(admin::is_admin(council_anchor_addrx, proposer));
         
         // Verify target DAO address doesn't already exist
-        assert!(!exists<DAOInfo>(target_movedao_addrxess), error::already_exists(0));
+        assert!(!exists<DAOInfo>(target_anchor_addrxess), error::already_exists(0));
         
         // Comprehensive input validation
         input_validation::validate_dao_name(&name);
@@ -595,9 +655,9 @@ module movedao_addrx::dao_core_file {
         assert!(min_stake_to_join <= 10000000000, errors::invalid_amount()); // 10000 Move maximum
         
         // Registry must be initialized first
-        assert!(exists<CouncilDAOCreationRegistry>(council_movedao_addrx), errors::registry_not_initialized());
+        assert!(exists<CouncilDAOCreationRegistry>(council_anchor_addrx), errors::registry_not_initialized());
         
-        let registry = borrow_global_mut<CouncilDAOCreationRegistry>(council_movedao_addrx);
+        let registry = borrow_global_mut<CouncilDAOCreationRegistry>(council_anchor_addrx);
         let proposal_id = registry.next_proposal_id;
         registry.next_proposal_id = proposal_id + 1;
         
@@ -607,7 +667,7 @@ module movedao_addrx::dao_core_file {
         let proposal = DAOCreationProposalData {
             id: proposal_id,
             proposer,
-            target_movedao_addrxess,
+            target_anchor_addrxess,
             name,
             subname,
             description,
@@ -633,9 +693,9 @@ module movedao_addrx::dao_core_file {
         // Emit proposal event
         event::emit(DAOCreationProposal {
             proposal_id,
-            proposing_council: council_movedao_addrx,
+            proposing_council: council_anchor_addrx,
             proposer,
-            target_movedao_addrxess,
+            target_anchor_addrxess,
             name,
             subname,
             description,
@@ -646,17 +706,17 @@ module movedao_addrx::dao_core_file {
     // Council members vote on DAO creation proposals
     public entry fun vote_on_dao_creation(
         council_member: &signer,
-        council_movedao_addrx: address,
+        council_anchor_addrx: address,
         proposal_id: u64,
         approve: bool
     ) acquires CouncilDAOCreationRegistry {
         let voter = signer::address_of(council_member);
 
         // Verify voter is an admin
-        assert!(exists<DAOInfo>(council_movedao_addrx), errors::not_found());
-        errors::require_admin(admin::is_admin(council_movedao_addrx, voter));
+        assert!(exists<DAOInfo>(council_anchor_addrx), errors::not_found());
+        errors::require_admin(admin::is_admin(council_anchor_addrx, voter));
         
-        let registry = borrow_global_mut<CouncilDAOCreationRegistry>(council_movedao_addrx);
+        let registry = borrow_global_mut<CouncilDAOCreationRegistry>(council_anchor_addrx);
         assert!(proposal_id < vector::length(&registry.proposals), errors::proposal_not_found());
         
         let proposal = vector::borrow_mut(&mut registry.proposals, proposal_id);
@@ -688,16 +748,16 @@ module movedao_addrx::dao_core_file {
     // Execute DAO creation if proposal passes
     public entry fun execute_dao_creation(
         executor: &signer,
-        council_movedao_addrx: address,
+        council_anchor_addrx: address,
         proposal_id: u64
     ) acquires CouncilDAOCreationRegistry {
         let executor_addr = signer::address_of(executor);
 
         // Verify executor is an admin
-        assert!(exists<DAOInfo>(council_movedao_addrx), errors::not_found());
-        errors::require_admin(admin::is_admin(council_movedao_addrx, executor_addr));
+        assert!(exists<DAOInfo>(council_anchor_addrx), errors::not_found());
+        errors::require_admin(admin::is_admin(council_anchor_addrx, executor_addr));
         
-        let registry = borrow_global_mut<CouncilDAOCreationRegistry>(council_movedao_addrx);
+        let registry = borrow_global_mut<CouncilDAOCreationRegistry>(council_anchor_addrx);
         assert!(proposal_id < vector::length(&registry.proposals), errors::proposal_not_found());
         
         let proposal = vector::borrow_mut(&mut registry.proposals, proposal_id);
@@ -705,7 +765,7 @@ module movedao_addrx::dao_core_file {
         assert!(timestamp::now_seconds() > proposal.voting_deadline, errors::voting_period_active());
         
         // Check if proposal passes (simple majority based on admin count)
-        let total_admin_count = admin::get_admin_count(council_movedao_addrx);
+        let total_admin_count = admin::get_admin_count(council_anchor_addrx);
         let required_votes = (total_admin_count / 2) + 1; // Simple majority
         let passed = proposal.yes_votes >= required_votes;
         
@@ -715,15 +775,15 @@ module movedao_addrx::dao_core_file {
         if (passed) {
             // Create the target signer for the new DAO - this is a simplified approach
             // In production, you might want a more sophisticated DAO address generation mechanism
-            assert!(!exists<DAOInfo>(proposal.target_movedao_addrxess), error::already_exists(0));
+            assert!(!exists<DAOInfo>(proposal.target_anchor_addrxess), error::already_exists(0));
             
             // For now, we'll create a placeholder that needs to be properly initialized by the target address owner
             // This is a design limitation - the target address owner must call a separate initialization function
             // Alternative: Use object-based DAO creation for better address management
             
             event::emit(CouncilDAOCreated {
-                movedao_addrxess: proposal.target_movedao_addrxess,
-                creating_council: council_movedao_addrx,
+                anchor_addrxess: proposal.target_anchor_addrxess,
+                creating_council: council_anchor_addrx,
                 proposal_id,
                 name: proposal.name,
                 subname: proposal.subname,
@@ -738,16 +798,16 @@ module movedao_addrx::dao_core_file {
     // Helper function for approved DAO creation by target address owner
     public entry fun finalize_council_created_dao(
         target_account: &signer,
-        council_movedao_addrx: address,
+        council_anchor_addrx: address,
         proposal_id: u64
     ) acquires CouncilDAOCreationRegistry, DAORegistry {
         let addr = signer::address_of(target_account);
         
-        let registry = borrow_global<CouncilDAOCreationRegistry>(council_movedao_addrx);
+        let registry = borrow_global<CouncilDAOCreationRegistry>(council_anchor_addrx);
         assert!(proposal_id < vector::length(&registry.proposals), errors::proposal_not_found());
         
         let proposal = vector::borrow(&registry.proposals, proposal_id);
-        assert!(proposal.target_movedao_addrxess == addr, errors::unauthorized());
+        assert!(proposal.target_anchor_addrxess == addr, errors::unauthorized());
         assert!(proposal.executed, errors::proposal_not_executed());
         assert!(proposal.approved, errors::proposal_not_approved());
         assert!(!exists<DAOInfo>(addr), error::already_exists(0));
@@ -806,7 +866,7 @@ module movedao_addrx::dao_core_file {
 
         // Emit DAO creation event
         event::emit(DAOCreated {
-            movedao_addrxess: addr,
+            anchor_addrxess: addr,
             creator: addr,
             name: proposal.name,
             subname: proposal.subname,
@@ -818,18 +878,18 @@ module movedao_addrx::dao_core_file {
     // View functions for council DAO creation
     #[view]
     public fun get_dao_creation_proposal(
-        council_movedao_addrx: address,
+        council_anchor_addrx: address,
         proposal_id: u64
     ): (u64, address, address, string::String, string::String, u64, u64, u64, u64, bool, bool) acquires CouncilDAOCreationRegistry {
-        assert!(exists<CouncilDAOCreationRegistry>(council_movedao_addrx), errors::registry_not_initialized());
-        let registry = borrow_global<CouncilDAOCreationRegistry>(council_movedao_addrx);
+        assert!(exists<CouncilDAOCreationRegistry>(council_anchor_addrx), errors::registry_not_initialized());
+        let registry = borrow_global<CouncilDAOCreationRegistry>(council_anchor_addrx);
         assert!(proposal_id < vector::length(&registry.proposals), errors::proposal_not_found());
         
         let proposal = vector::borrow(&registry.proposals, proposal_id);
         (
             proposal.id,
             proposal.proposer,
-            proposal.target_movedao_addrxess,
+            proposal.target_anchor_addrxess,
             proposal.name,
             proposal.description,
             proposal.created_at,
@@ -842,20 +902,20 @@ module movedao_addrx::dao_core_file {
     }
 
     #[view]
-    public fun get_dao_creation_proposal_count(council_movedao_addrx: address): u64 acquires CouncilDAOCreationRegistry {
-        if (!exists<CouncilDAOCreationRegistry>(council_movedao_addrx)) return 0;
-        let registry = borrow_global<CouncilDAOCreationRegistry>(council_movedao_addrx);
+    public fun get_dao_creation_proposal_count(council_anchor_addrx: address): u64 acquires CouncilDAOCreationRegistry {
+        if (!exists<CouncilDAOCreationRegistry>(council_anchor_addrx)) return 0;
+        let registry = borrow_global<CouncilDAOCreationRegistry>(council_anchor_addrx);
         vector::length(&registry.proposals)
     }
 
     #[view]
     public fun has_voted_on_dao_creation(
-        council_movedao_addrx: address,
+        council_anchor_addrx: address,
         proposal_id: u64,
         voter: address
     ): bool acquires CouncilDAOCreationRegistry {
-        if (!exists<CouncilDAOCreationRegistry>(council_movedao_addrx)) return false;
-        let registry = borrow_global<CouncilDAOCreationRegistry>(council_movedao_addrx);
+        if (!exists<CouncilDAOCreationRegistry>(council_anchor_addrx)) return false;
+        let registry = borrow_global<CouncilDAOCreationRegistry>(council_anchor_addrx);
         if (proposal_id >= vector::length(&registry.proposals)) return false;
         
         let proposal = vector::borrow(&registry.proposals, proposal_id);
@@ -871,8 +931,8 @@ module movedao_addrx::dao_core_file {
     }
 
     #[view]
-    public fun is_dao_creation_registry_initialized(council_movedao_addrx: address): bool {
-        exists<CouncilDAOCreationRegistry>(council_movedao_addrx)
+    public fun is_dao_creation_registry_initialized(council_anchor_addrx: address): bool {
+        exists<CouncilDAOCreationRegistry>(council_anchor_addrx)
     }
 
     #[view]
@@ -929,14 +989,14 @@ module movedao_addrx::dao_core_file {
 
     // Helper function to get treasury object from DAOInfo
     #[view]
-    public fun get_treasury_object(movedao_addrx: address): Object<Treasury> acquires DAOInfo {
-        borrow_global<DAOInfo>(movedao_addrx).treasury
+    public fun get_treasury_object(anchor_addrx: address): Object<Treasury> acquires DAOInfo {
+        borrow_global<DAOInfo>(anchor_addrx).treasury
     }
 
     // Check if a DAO exists (has DAOInfo resource)
     #[view]
-    public fun dao_exists(movedao_addrx: address): bool {
-        exists<DAOInfo>(movedao_addrx)
+    public fun dao_exists(anchor_addrx: address): bool {
+        exists<DAOInfo>(anchor_addrx)
     }
 
 
@@ -944,18 +1004,18 @@ module movedao_addrx::dao_core_file {
     // Get all DAO addresses from registry
     #[view]
     public fun get_all_dao_addresses(): vector<address> acquires DAORegistry {
-        let registry = borrow_global<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global<DAORegistry>(@anchor_addrx);
         registry.dao_addresses
     }
 
     // Get all DAOs created by a specific address
     #[view]
     public fun get_daos_created_by(creator: address): vector<address> acquires DAORegistry {
-        if (!exists<DAORegistry>(@movedao_addrx)) {
+        if (!exists<DAORegistry>(@anchor_addrx)) {
             return vector::empty()
         };
         
-        let registry = borrow_global<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global<DAORegistry>(@anchor_addrx);
         let dao_addresses = &registry.dao_addresses;
         let result = vector::empty<address>();
         
@@ -977,11 +1037,11 @@ module movedao_addrx::dao_core_file {
     // Get all DAOs that a specific address has joined as a member
     #[view]
     public fun get_daos_joined_by(member: address): vector<address> acquires DAORegistry {
-        if (!exists<DAORegistry>(@movedao_addrx)) {
+        if (!exists<DAORegistry>(@anchor_addrx)) {
             return vector::empty()
         };
         
-        let registry = borrow_global<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global<DAORegistry>(@anchor_addrx);
         let dao_addresses = &registry.dao_addresses;
         let result = vector::empty<address>();
         
@@ -1010,30 +1070,30 @@ module movedao_addrx::dao_core_file {
     // Helper function to check if DAO registry is working
     #[view] 
     public fun is_registry_functional(): bool {
-        exists<DAORegistry>(@movedao_addrx)
+        exists<DAORegistry>(@anchor_addrx)
     }
 
     // Get total number of DAOs created
     #[view]
     public fun get_total_dao_count(): u64 acquires DAORegistry {
-        let registry = borrow_global<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global<DAORegistry>(@anchor_addrx);
         registry.total_daos
     }
 
     // Check if registry is available (informational)
     #[view]
     public fun is_registry_initialized(): bool {
-        exists<DAORegistry>(@movedao_addrx)
+        exists<DAORegistry>(@anchor_addrx)
     }
 
     // Get all DAOs with their basic info
     #[view]
     public fun get_all_daos(): vector<DAOSummary> acquires DAORegistry, DAOInfo {
-        if (!exists<DAORegistry>(@movedao_addrx)) {
+        if (!exists<DAORegistry>(@anchor_addrx)) {
             return vector::empty()
         };
         
-        let registry = borrow_global<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global<DAORegistry>(@anchor_addrx);
         let dao_addresses = &registry.dao_addresses;
         let result = vector::empty<DAOSummary>();
         
@@ -1057,6 +1117,22 @@ module movedao_addrx::dao_core_file {
         result
     }
 
+    public fun get_summary_address(summary: &DAOSummary): address {
+        summary.address
+    }
+
+    public fun get_summary_name(summary: &DAOSummary): string::String {
+        summary.name
+    }
+
+    public fun get_summary_description(summary: &DAOSummary): string::String {
+        summary.description
+    }
+
+    public fun get_summary_created_at(summary: &DAOSummary): u64 {
+        summary.created_at
+    }
+
     // Check if a subname is available for use
     #[view]
     public fun is_subname_taken(subname: string::String): bool acquires SubnameRegistry {
@@ -1066,8 +1142,8 @@ module movedao_addrx::dao_core_file {
     // Get the DAO address that owns a specific subname
     #[view]
     public fun get_subname_owner(subname: string::String): address acquires SubnameRegistry {
-        assert!(exists<SubnameRegistry>(@movedao_addrx), errors::registry_not_initialized());
-        let registry = borrow_global<SubnameRegistry>(@movedao_addrx);
+        assert!(exists<SubnameRegistry>(@anchor_addrx), errors::registry_not_initialized());
+        let registry = borrow_global<SubnameRegistry>(@anchor_addrx);
         assert!(simple_map::contains_key(&registry.used_subnames, &subname), errors::subname_not_found());
         *simple_map::borrow(&registry.used_subnames, &subname)
     }
@@ -1075,73 +1151,89 @@ module movedao_addrx::dao_core_file {
     // Get total number of registered subnames
     #[view]
     public fun get_total_subnames(): u64 acquires SubnameRegistry {
-        if (!exists<SubnameRegistry>(@movedao_addrx)) return 0;
-        let registry = borrow_global<SubnameRegistry>(@movedao_addrx);
+        if (!exists<SubnameRegistry>(@anchor_addrx)) return 0;
+        let registry = borrow_global<SubnameRegistry>(@anchor_addrx);
         registry.total_subnames
     }
 
     // Check if subname registry is initialized
     #[view]
     public fun is_subname_registry_initialized(): bool {
-        exists<SubnameRegistry>(@movedao_addrx)
+        exists<SubnameRegistry>(@anchor_addrx)
     }
 
     // Get DAO X (Twitter) link
     #[view]
-    public fun get_dao_x_link(movedao_addrx: address): string::String acquires DAOInfo {
-        assert!(exists<DAOInfo>(movedao_addrx), errors::not_found());
-        let dao_info = borrow_global<DAOInfo>(movedao_addrx);
+    public fun get_dao_x_link(anchor_addrx: address): string::String acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
         dao_info.x_link
     }
 
     // Get DAO Discord link
     #[view]
-    public fun get_dao_discord_link(movedao_addrx: address): string::String acquires DAOInfo {
-        assert!(exists<DAOInfo>(movedao_addrx), errors::not_found());
-        let dao_info = borrow_global<DAOInfo>(movedao_addrx);
+    public fun get_dao_discord_link(anchor_addrx: address): string::String acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
         dao_info.discord_link
     }
 
     // Get DAO Telegram link
     #[view]
-    public fun get_dao_telegram_link(movedao_addrx: address): string::String acquires DAOInfo {
-        assert!(exists<DAOInfo>(movedao_addrx), errors::not_found());
-        let dao_info = borrow_global<DAOInfo>(movedao_addrx);
+    public fun get_dao_telegram_link(anchor_addrx: address): string::String acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
         dao_info.telegram_link
     }
 
     // Get DAO website
     #[view]
-    public fun get_dao_website(movedao_addrx: address): string::String acquires DAOInfo {
-        assert!(exists<DAOInfo>(movedao_addrx), errors::not_found());
-        let dao_info = borrow_global<DAOInfo>(movedao_addrx);
+    public fun get_dao_website(anchor_addrx: address): string::String acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
         dao_info.website
+    }
+
+    // Get DAO logo
+    #[view]
+    public fun get_dao_logo(anchor_addrx: address): ImageData acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
+        dao_info.logo
+    }
+
+    // Get DAO background
+    #[view]
+    public fun get_dao_background(anchor_addrx: address): ImageData acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
+        dao_info.background
     }
 
     // Get all DAO links (X, Discord, Telegram, Website)
     #[view]
-    public fun get_dao_all_links(movedao_addrx: address): (string::String, string::String, string::String, string::String) acquires DAOInfo {
-        assert!(exists<DAOInfo>(movedao_addrx), errors::not_found());
-        let dao_info = borrow_global<DAOInfo>(movedao_addrx);
+    public fun get_dao_all_links(anchor_addrx: address): (string::String, string::String, string::String, string::String) acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
         (dao_info.x_link, dao_info.discord_link, dao_info.telegram_link, dao_info.website)
     }
 
     // Get DAO category
     #[view]
-    public fun get_dao_category(movedao_addrx: address): string::String acquires DAOInfo {
-        assert!(exists<DAOInfo>(movedao_addrx), errors::not_found());
-        let dao_info = borrow_global<DAOInfo>(movedao_addrx);
+    public fun get_dao_category(anchor_addrx: address): string::String acquires DAOInfo {
+        assert!(exists<DAOInfo>(anchor_addrx), errors::not_found());
+        let dao_info = borrow_global<DAOInfo>(anchor_addrx);
         dao_info.category
     }
 
     // Get paginated DAOs (for better performance with large lists)
     #[view]
     public fun get_daos_paginated(offset: u64, limit: u64): vector<DAOSummary> acquires DAORegistry, DAOInfo {
-        if (!exists<DAORegistry>(@movedao_addrx)) {
+        if (!exists<DAORegistry>(@anchor_addrx)) {
             return vector::empty()
         };
         
-        let registry = borrow_global<DAORegistry>(@movedao_addrx);
+        let registry = borrow_global<DAORegistry>(@anchor_addrx);
         let dao_addresses = &registry.dao_addresses;
         let total_daos = vector::length(dao_addresses);
         let result = vector::empty<DAOSummary>();

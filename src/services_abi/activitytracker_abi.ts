@@ -1,5 +1,5 @@
 export const ABI = {
-  "address": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8",
+  "address": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07",
   "name": "activity_tracker",
   "friends": [],
   "exposed_functions": [
@@ -13,6 +13,17 @@ export const ABI = {
         "&signer"
       ],
       "return": []
+    },
+    {
+      "name": "is_initialized",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [],
+      "return": [
+        "bool"
+      ]
     },
     {
       "name": "emit_activity",
@@ -146,7 +157,7 @@ export const ABI = {
         "u64"
       ],
       "return": [
-        "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::activity_tracker::ActivityRecord"
+        "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::activity_tracker::ActivityRecord"
       ]
     },
     {
@@ -312,7 +323,7 @@ export const ABI = {
       "fields": [
         {
           "name": "activities",
-          "type": "0x1::table::Table<u64, 0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::activity_tracker::ActivityRecord>"
+          "type": "0x1::table::Table<u64, 0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::activity_tracker::ActivityRecord>"
         },
         {
           "name": "dao_activities",
@@ -343,109 +354,13 @@ export const ABI = {
       "fields": [
         {
           "name": "tracker",
-          "type": "0x1::object::Object<0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::activity_tracker::ActivityStore>"
+          "type": "0x1::object::Object<0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::activity_tracker::ActivityStore>"
         }
       ]
     }
   ]
 }
-// ============================================================================
-// HELPER FUNCTIONS FOR ACTIVITY TRACKER
-// ============================================================================
 
-/**
- * Get the module address for activity tracker
- */
-export const getActivityTrackerAddress = () => ABI.address;
-
-/**
- * Get the full function name for a view function
- * @param functionName - The name of the function (e.g., "get_total_activities")
- *
- * @example
- * const functionPath = getViewFunction("get_total_activities");
- * // Returns: "0x9fc2...::activity_tracker::get_total_activities"
- */
-export const getViewFunction = (functionName: string): string => {
-  return `${ABI.address}::${ABI.name}::${functionName}`;
-};
-
-/**
- * Get the full resource type for activity tracker
- * @param structName - The name of the struct (e.g., "GlobalActivityTracker")
- *
- * @example
- * const resourceType = getResourceType("GlobalActivityTracker");
- * // Returns: "0x9fc2...::activity_tracker::GlobalActivityTracker"
- */
-export const getResourceType = (structName: string): string => {
-  return `${ABI.address}::${ABI.name}::${structName}`;
-};
-
-/**
- * Get the event type for ActivityEvent
- *
- * @example
- * const eventType = getActivityEventType();
- * // Use with Cedra GraphQL indexer
- */
-export const getActivityEventType = (): string => {
-  return `${ABI.address}::${ABI.name}::ActivityEvent`;
-};
-
-// ============================================================================
-// TYPE EXPORTS FOR TYPESCRIPT
-// ============================================================================
-
-/**
- * Activity type enum matching on-chain contract
- */
-export enum ActivityType {
-  DAO_CREATED = 1,
-  MEMBER_JOINED = 2,
-  MEMBER_LEFT = 3,
-  PROPOSAL_CREATED = 4,
-  PROPOSAL_VOTED = 5,
-  PROPOSAL_EXECUTED = 6,
-  STAKE = 7,
-  UNSTAKE = 8,
-  TREASURY_DEPOSIT = 9,
-  TREASURY_WITHDRAWAL = 10,
-  REWARD_CLAIMED = 11,
-  LAUNCHPAD_CREATED = 12,
-  LAUNCHPAD_INVESTMENT = 13,
-}
-
-/**
- * ActivityRecord struct matching on-chain definition
- */
-export interface ActivityRecord {
-  id: number;
-  dao_address: string;
-  activity_type: number;
-  user_address: string;
-  title: string;
-  description: string;
-  amount: number;
-  metadata: number[];
-  timestamp: number;
-  transaction_hash: number[];
-  block_number: number;
-}
-
-/**
- * ActivityEvent struct matching on-chain definition
- */
-export interface ActivityEvent {
-  activity_id: number;
-  dao_address: string;
-  activity_type: number;
-  user_address: string;
-  title: string;
-  description: string;
-  amount: number;
-  metadata: number[];
-  timestamp: number;
-  transaction_hash: number[];
-  block_number: number;
-}
+export const getViewFunction = (name: string) => `${ABI.address}::${ABI.name}::${name}`;
+export const getResourceType = (name: string) => `${ABI.address}::${ABI.name}::${name}`;
+export const getActivityEventType = () => `${ABI.address}::${ABI.name}::ActivityEvent`;

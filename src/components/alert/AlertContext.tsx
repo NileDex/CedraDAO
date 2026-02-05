@@ -1,47 +1,68 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext } from 'react';
+import Swal from 'sweetalert2';
+
 
 // --------------------
 // Global Alert Context
 // --------------------
-// Provides a global alert system for the app
+// Provides a global alert system for the app using SweetAlert2
 interface AlertContextType {
-  showAlert: (message: string, type?: 'success' | 'error' | 'info') => void;
+  showAlert: (_message: string, _type?: 'success' | 'error' | 'info') => void;
 }
-const AlertContext = createContext<AlertContextType>({ showAlert: () => {} });
+
+const AlertContext = createContext<AlertContextType>({ showAlert: () => { } });
 export const useAlert = () => useContext(AlertContext);
 
-// AlertProvider component to wrap your app (put in main.tsx or App.tsx)
+// Configures a SweetAlert2 Toast
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'bottom-end',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  background: '#0d0d0f',
+  color: '#ffffff',
+  didOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer);
+    toast.addEventListener('mouseleave', Swal.resumeTimer);
+  }
+});
+
 export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [alert, setAlert] = useState<{ message: string; type: string } | null>(null);
-  // Show alert for 2.5s
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setAlert({ message, type });
-    setTimeout(() => setAlert(null), 2500);
+    console.log(`[Alert] Calling showAlert: ${message} (${type})`);
+    if (type === 'error') {
+      // Full modal for errors for better visibility
+      Swal.fire({
+        icon: 'error',
+        title: 'Action Required',
+        text: message,
+        background: '#0d0d0f',
+        color: '#ffffff',
+        confirmButtonColor: '#e1fd6a',
+        confirmButtonText: '<span style="color: black; font-weight: bold;">OK</span>',
+        customClass: {
+          popup: 'rounded-2xl border border-white/10 shadow-2xl backdrop-blur-xl',
+          title: 'text-xl font-bold !text-white',
+          htmlContainer: 'text-sm text-white/70'
+        }
+      });
+    } else {
+      // Keep toasts for success/info to be less intrusive
+      Toast.fire({
+        icon: type,
+        title: message,
+        customClass: {
+          popup: 'rounded-xl border border-white/10 shadow-2xl backdrop-blur-xl',
+          title: 'text-sm font-semibold !text-white'
+        }
+      });
+    }
   };
+
   return (
     <AlertContext.Provider value={{ showAlert }}>
       {children}
-      {alert && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          background: '#252527',
-          color: '#ffffff',
-          padding: '10px 16px',
-          fontWeight: 600,
-          fontSize: 14,
-          zIndex: 2000,
-          borderRadius: 12,
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 10,
-          boxShadow: '0 6px 24px rgba(0,0,0,0.3)'
-        }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16 }}>
-            {alert.type === 'success' ? '✓' : alert.type === 'error' ? '⚠' : 'ℹ'}
-          </span>
-          <span>{alert.message}</span>
-        </div>
-      )}
     </AlertContext.Provider>
   );
-}; 
+};

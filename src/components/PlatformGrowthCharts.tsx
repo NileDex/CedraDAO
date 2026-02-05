@@ -1,10 +1,10 @@
 import React from 'react';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Users, Building2, Vote,  RefreshCw, AlertTriangle } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Users, Building2, Vote, RefreshCw, AlertTriangle } from 'lucide-react';
 import { usePlatformStats } from '../useServices/usePlatformStats';
 
 const PlatformGrowthCharts: React.FC = () => {
-  const { stats, isLoading, error, lastUpdated, refresh } = usePlatformStats();
+  const { stats, isLoading, error, lastUpdated: _lastUpdated, refresh: _refresh } = usePlatformStats();
   // Debug platform stats
   React.useEffect(() => {
     console.log(' Current platform stats:', stats);
@@ -39,14 +39,14 @@ const PlatformGrowthCharts: React.FC = () => {
           <AreaChart data={daoGrowthData}>
             <defs>
               <linearGradient id="daoGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08}/>
+                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08} />
               </linearGradient>
             </defs>
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#e1fd6a" 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#e1fd6a"
               fill="url(#daoGradient)"
               strokeWidth={2}
             />
@@ -66,14 +66,14 @@ const PlatformGrowthCharts: React.FC = () => {
           <AreaChart data={userGrowthData}>
             <defs>
               <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08}/>
+                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08} />
               </linearGradient>
             </defs>
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#e1fd6a" 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#e1fd6a"
               fill="url(#userGradient)"
               strokeWidth={2}
             />
@@ -93,14 +93,14 @@ const PlatformGrowthCharts: React.FC = () => {
           <AreaChart data={votingActivityData}>
             <defs>
               <linearGradient id="voteGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08}/>
+                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08} />
               </linearGradient>
             </defs>
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#e1fd6a" 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#e1fd6a"
               fill="url(#voteGradient)"
               strokeWidth={2}
             />
@@ -120,14 +120,14 @@ const PlatformGrowthCharts: React.FC = () => {
           <AreaChart data={proposalActivityData}>
             <defs>
               <linearGradient id="proposalGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08}/>
+                <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0.08} />
               </linearGradient>
             </defs>
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#e1fd6a" 
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="#e1fd6a"
               fill="url(#proposalGradient)"
               strokeWidth={2}
             />
@@ -157,32 +157,13 @@ const PlatformGrowthCharts: React.FC = () => {
               </span>
             ) : (
               <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
-                <span className="w-2 h-2 rounded-full animate-pulse" style={{backgroundColor: '#22c55e !important'}}></span>
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#22c55e !important' }}></span>
                 Live
               </span>
             )}
           </div>
-          
-          {lastUpdated && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </span>
-              <button 
-                onClick={refresh}
-                disabled={isLoading}
-                className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 flex items-center gap-1"
-              >
-                <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
-          )}
         </div>
-        <p className="text-gray-400 text-sm sm:text-base">
-          Real-time blockchain data tracking growth from contract deployment to present
-        </p>
-        
+
         {error && (
           <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-red-400 text-sm">{error}</p>

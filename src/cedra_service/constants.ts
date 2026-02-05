@@ -1,13 +1,13 @@
-export const MODULE_ADDRESS = "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8";
+export const MODULE_ADDRESS = "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07";
 
-export const CONTRACT_MODULE = "movedao_addrx";
+export const CONTRACT_MODULE = "anchor_addrx";
 
 // Cedra Network endpoints (testnet)
 export const NETWORK_CONFIG = {
   // Primary testnet endpoint with timeout settings
   fullnode: "https://testnet.cedra.dev/v1",
   // GraphQL indexer endpoint
-  indexer: "https://cloud.hasura.io/public/graphiql?endpoint=https://graphql.cedra.dev/v1/graphql",
+  indexer: "https://graphql.cedra.dev/v1/graphql",
   // Block explorer
   explorer: "https://cedrascan.com",
   // Network details

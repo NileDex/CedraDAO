@@ -20,7 +20,7 @@ export interface DAO {
   proposals: number;
   members: number;
   established: string;
-  category: 'featured' | 'chain' | 'community';
+  category: string;
   isFollowing?: boolean;
 }
 

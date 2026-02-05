@@ -1,15 +1,17 @@
 // Debug script to check stake requirements
-import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
+import { Cedra, CedraConfig} from "@cedra-labs/ts-sdk";
 
-const MODULE_ADDRESS = "0xca42c40b77b11054475a55e0c3ea5d2eeb722d6428ed8d7e45f3299dcfcadfca";
 
-const config = new AptosConfig({
+const MODULE_ADDRESS = "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8";
+
+const config = new CedraConfig({
   network: Network.CUSTOM,
-  fullnode: "https://testnet.movementnetwork.xyz/v1",
-  indexer: "https://hasura.testnet.movementnetwork.xyz/v1/graphql/v1/graphql"
+  fullnode: "https://testnet.cedra.dev/v1",
+  // GraphQL indexer endpoint
+  indexer: "https://cloud.hasura.io/public/graphiql?endpoint=https://graphql.cedra.dev/v1/graphql",
 });
 
-const aptos = new Aptos(config);
+const Cedra = new Cedra(config);
 
 async function checkStakeRequirements(daoAddress, userAddress) {
   console.log("=== DEBUGGING STAKE REQUIREMENTS ===");
@@ -20,7 +22,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
   try {
     // Check DAO basic info
     console.log("\n0. Checking DAO basic info...");
-    const daoInfo = await aptos.getAccountResource({
+    const daoInfo = await Cedra.getAccountResource({
       accountAddress: daoAddress,
       resourceType: `${MODULE_ADDRESS}::dao_core::DAOInfo`
     });
@@ -33,7 +35,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
   // Check what resources actually exist at this address
   console.log("\n0.1. Checking all resources at DAO address...");
   try {
-    const accountResources = await aptos.getAccountResources({
+    const accountResources = await Cedra.getAccountResources({
       accountAddress: daoAddress
     });
     console.log(" Found resources:");
@@ -53,7 +55,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     // Check if membership config exists
     console.log("\n1. Checking membership config exists...");
     try {
-      const membershipConfig = await aptos.getAccountResource({
+      const membershipConfig = await Cedra.getAccountResource({
         accountAddress: daoAddress,
         resourceType: `${MODULE_ADDRESS}::membership::MembershipConfig`
       });
@@ -72,7 +74,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     
     for (const [func, desc] of functions) {
       try {
-        const result = await aptos.view({
+        const result = await Cedra.view({
           payload: {
             function: `${MODULE_ADDRESS}::membership::${func}`,
             functionArguments: [daoAddress]
@@ -96,7 +98,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     
     for (const [func, desc] of stakingFunctions) {
       try {
-        const result = await aptos.view({
+        const result = await Cedra.view({
           payload: {
             function: `${MODULE_ADDRESS}::staking::${func}`,
             functionArguments: [daoAddress, userAddress]
@@ -111,7 +113,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     // Also test without DAO address for global functions
     console.log("\n3.1. Testing global staking functions...");
     try {
-      const globalStake = await aptos.view({
+      const globalStake = await Cedra.view({
         payload: {
           function: `${MODULE_ADDRESS}::staking::get_staked_balance`,
           functionArguments: [userAddress]
@@ -125,7 +127,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     // Check if user has a staker profile at all
     console.log("\n3.2. Checking if user has staker profile...");
     try {
-      const isStaker = await aptos.view({
+      const isStaker = await Cedra.view({
         payload: {
           function: `${MODULE_ADDRESS}::staking::is_staker`,
           functionArguments: [userAddress]
@@ -143,10 +145,10 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     // Check wallet balance
     console.log("\n3.3. Checking wallet MOVE balance...");
     try {
-      const balance = await aptos.view({
+      const balance = await Cedra.view({
         payload: {
           function: `0x1::coin::balance`,
-          typeArguments: ["0x1::aptos_coin::AptosCoin"],
+          typeArguments: ["0x1::Cedra_coin::CedraCoin"],
           functionArguments: [userAddress]
         }
       });
@@ -158,7 +160,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     // Test admin functions
     console.log("\n4. Testing admin functions...");
     try {
-      const isAdmin = await aptos.view({
+      const isAdmin = await Cedra.view({
         payload: {
           function: `${MODULE_ADDRESS}::admin::is_admin`,
           functionArguments: [daoAddress, userAddress]
@@ -178,7 +180,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     
     for (const [func, desc] of membershipFunctions) {
       try {
-        const result = await aptos.view({
+        const result = await Cedra.view({
           payload: {
             function: `${MODULE_ADDRESS}::membership::${func}`,
             functionArguments: [daoAddress, userAddress]
@@ -193,7 +195,7 @@ async function checkStakeRequirements(daoAddress, userAddress) {
     // Test proposal functions  
     console.log("\n6. Testing proposal functions...");
     try {
-      const canCreateProposals = await aptos.view({
+      const canCreateProposals = await Cedra.view({
         payload: {
           function: `${MODULE_ADDRESS}::proposal::can_user_create_proposals`,
           functionArguments: [daoAddress, userAddress]

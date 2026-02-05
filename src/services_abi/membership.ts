@@ -1,5 +1,5 @@
 export const ABI = {
-  "address": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8",
+  "address": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07",
   "name": "membership",
   "friends": [],
   "exposed_functions": [
@@ -56,6 +56,19 @@ export const ABI = {
       ]
     },
     {
+      "name": "get_all_member_addresses",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address"
+      ],
+      "return": [
+        "vector<address>"
+      ]
+    },
+    {
       "name": "get_min_proposal_stake",
       "visibility": "public",
       "is_entry": false,
@@ -80,44 +93,6 @@ export const ABI = {
       "return": [
         "u64"
       ]
-    },
-    {
-      "name": "get_proposal_stake_multiplier",
-      "visibility": "public",
-      "is_entry": false,
-      "is_view": true,
-      "generic_type_params": [],
-      "params": [
-        "address"
-      ],
-      "return": [
-        "u64"
-      ]
-    },
-    {
-      "name": "initialize_with_min_stake",
-      "visibility": "public",
-      "is_entry": false,
-      "is_view": false,
-      "generic_type_params": [],
-      "params": [
-        "&signer",
-        "u64"
-      ],
-      "return": []
-    },
-    {
-      "name": "initialize_with_stake_requirements",
-      "visibility": "public",
-      "is_entry": false,
-      "is_view": false,
-      "generic_type_params": [],
-      "params": [
-        "&signer",
-        "u64",
-        "u64"
-      ],
-      "return": []
     },
     {
       "name": "is_member",
@@ -184,19 +159,6 @@ export const ABI = {
       "return": []
     },
     {
-      "name": "set_proposal_stake_multiplier",
-      "visibility": "public",
-      "is_entry": true,
-      "is_view": false,
-      "generic_type_params": [],
-      "params": [
-        "&signer",
-        "address",
-        "u64"
-      ],
-      "return": []
-    },
-    {
       "name": "total_members",
       "visibility": "public",
       "is_entry": false,
@@ -236,6 +198,72 @@ export const ABI = {
       "return": []
     },
     {
+      "name": "get_proposal_stake_multiplier",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address"
+      ],
+      "return": [
+        "u64"
+      ]
+    },
+    {
+      "name": "initialize_with_min_stake",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "u64"
+      ],
+      "return": []
+    },
+    {
+      "name": "initialize_with_stake_requirements",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "u64",
+        "u64"
+      ],
+      "return": []
+    },
+    {
+      "name": "initialize_with_staking_type",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "u64",
+        "u64",
+        "u8",
+        "address"
+      ],
+      "return": []
+    },
+    {
+      "name": "set_proposal_stake_multiplier",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "address",
+        "u64"
+      ],
+      "return": []
+    },
+    {
       "name": "update_voting_power",
       "visibility": "public",
       "is_entry": true,
@@ -247,141 +275,5 @@ export const ABI = {
       "return": []
     }
   ],
-  "structs": [
-    {
-      "name": "Member",
-      "is_native": false,
-      "is_event": false,
-      "abilities": [
-        "copy",
-        "drop",
-        "store"
-      ],
-      "generic_type_params": [],
-      "fields": [
-        {
-          "name": "joined_at",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "MemberJoined",
-      "is_native": false,
-      "is_event": true,
-      "abilities": [
-        "drop",
-        "store"
-      ],
-      "generic_type_params": [],
-      "fields": [
-        {
-          "name": "member",
-          "type": "address"
-        }
-      ]
-    },
-    {
-      "name": "MemberLeft",
-      "is_native": false,
-      "is_event": true,
-      "abilities": [
-        "drop",
-        "store"
-      ],
-      "generic_type_params": [],
-      "fields": [
-        {
-          "name": "member",
-          "type": "address"
-        }
-      ]
-    },
-    {
-      "name": "MemberList",
-      "is_native": false,
-      "is_event": false,
-      "abilities": [
-        "key"
-      ],
-      "generic_type_params": [],
-      "fields": [
-        {
-          "name": "members",
-          "type": "0x1::simple_map::SimpleMap<address, 0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::membership::Member>"
-        },
-        {
-          "name": "total_members",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "MembershipConfig",
-      "is_native": false,
-      "is_event": false,
-      "abilities": [
-        "key"
-      ],
-      "generic_type_params": [],
-      "fields": [
-        {
-          "name": "min_stake_to_join",
-          "type": "u64"
-        },
-        {
-          "name": "min_stake_to_propose",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "MinProposalStakeUpdated",
-      "is_native": false,
-      "is_event": true,
-      "abilities": [
-        "drop",
-        "store"
-      ],
-      "generic_type_params": [],
-      "fields": [
-        {
-          "name": "old_min_proposal_stake",
-          "type": "u64"
-        },
-        {
-          "name": "new_min_proposal_stake",
-          "type": "u64"
-        },
-        {
-          "name": "updated_by",
-          "type": "address"
-        }
-      ]
-    },
-    {
-      "name": "MinStakeUpdated",
-      "is_native": false,
-      "is_event": true,
-      "abilities": [
-        "drop",
-        "store"
-      ],
-      "generic_type_params": [],
-      "fields": [
-        {
-          "name": "old_min_stake",
-          "type": "u64"
-        },
-        {
-          "name": "new_min_stake",
-          "type": "u64"
-        },
-        {
-          "name": "updated_by",
-          "type": "address"
-        }
-      ]
-    }
-  ]
+  "structs": []
 }

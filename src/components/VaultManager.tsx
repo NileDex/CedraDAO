@@ -7,6 +7,17 @@ interface VaultManagerProps {
   treasuryObject?: string;
 }
 
+interface VaultType {
+  address: string;
+  metadata: string;
+  tokenSymbol?: string;
+  tokenName?: string;
+  totalAssets?: number;
+  idleAssets?: number;
+  decimals?: number;
+  iconUrl?: string;
+}
+
 const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) => {
   const {
     vaults,
@@ -24,7 +35,7 @@ const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) =>
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [selectedVault, setSelectedVault] = useState<any>(null);
+  const [selectedVault, setSelectedVault] = useState<VaultType | null>(null);
   const [createTokenAddress, setCreateTokenAddress] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -43,8 +54,8 @@ const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) =>
       await createVault(createTokenAddress.trim());
       setShowCreateModal(false);
       setCreateTokenAddress('');
-    } catch (error: any) {
-      setModalError(error.message);
+    } catch (error: unknown) {
+      setModalError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setIsProcessing(false);
     }
@@ -60,12 +71,12 @@ const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) =>
       setIsProcessing(true);
       setModalError(null);
       const amount = parseFloat(depositAmount);
-      await depositToVault(selectedVault.address, amount, selectedVault.decimals);
+      await depositToVault(selectedVault.address, amount, selectedVault.decimals || 6);
       setShowDepositModal(false);
       setDepositAmount('');
       setSelectedVault(null);
-    } catch (error: any) {
-      setModalError(error.message);
+    } catch (error: unknown) {
+      setModalError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setIsProcessing(false);
     }
@@ -81,31 +92,31 @@ const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) =>
       setIsProcessing(true);
       setModalError(null);
       const amount = parseFloat(withdrawAmount);
-      await withdrawFromVault(selectedVault.address, amount, selectedVault.decimals);
+      await withdrawFromVault(selectedVault.address, amount, selectedVault.decimals || 6);
       setShowWithdrawModal(false);
       setWithdrawAmount('');
       setSelectedVault(null);
-    } catch (error: any) {
-      setModalError(error.message);
+    } catch (error: unknown) {
+      setModalError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const openDepositModal = (vault: any) => {
+  const openDepositModal = (vault: VaultType) => {
     setSelectedVault(vault);
     setShowDepositModal(true);
     setModalError(null);
   };
 
-  const openWithdrawModal = (vault: any) => {
+  const openWithdrawModal = (vault: VaultType) => {
     setSelectedVault(vault);
     setShowWithdrawModal(true);
     setModalError(null);
   };
 
-  const getKnownTokenInfo = (metadataAddress: string): any => {
-    return (KNOWN_TOKENS as any)[metadataAddress as any];
+  const getKnownTokenInfo = (metadataAddress: string): { symbol?: string; name?: string } | undefined => {
+    return (KNOWN_TOKENS as Record<string, { symbol: string; name: string }>)[metadataAddress];
   };
 
 
@@ -163,129 +174,129 @@ const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) =>
             </p>
           </div>
         ) : (
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <div className="min-w-full inline-block align-middle">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-gray-700/50">
-                  <th className="text-left py-3 px-3 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider w-1/2 sm:w-auto">Token</th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Vault</th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden xl:table-cell">FA Address</th>
-                  <th className="text-right py-3 px-3 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider w-16 sm:w-auto">Total</th>
-                  <th className="text-right py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Available</th>
-                  <th className="text-right py-3 px-3 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider w-12 sm:w-auto">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700/30">
-                {vaults.map((vault) => {
-                  const knownToken = getKnownTokenInfo(vault.metadata);
-                  const tokenSymbol = vault.tokenSymbol || knownToken?.symbol || 'UNKNOWN';
-                  const tokenName = vault.tokenName || knownToken?.name || 'Unknown Token';
-
-                  return (
-                    <tr key={vault.address} className="hover:bg-gray-800/30 transition-colors">
-                      <td className="py-3 px-3 sm:px-4 align-top">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold" style={{ backgroundColor: '#e1fd6a', color: '#0f172a' }}>
-                            {vault.iconUrl ? (
-                              <img
-                                src={vault.iconUrl}
-                                alt={`${tokenSymbol} icon`}
-                                className="w-full h-full object-cover"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                              />
-                            ) : null}
-                            {!vault.iconUrl && tokenSymbol.slice(0, 2)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-white font-medium text-sm truncate">{tokenSymbol}</div>
-                            <div className="text-gray-400 text-xs truncate">{tokenName}</div>
-                            {/* Strategy UI removed – not in treasury ABI */}
-                          </div>
-                        </div>
-                        {/* Mobile info */}
-                        <div className="mt-2 lg:hidden space-y-1">
-                          <div className="text-gray-500 text-xs font-mono">
-                            <div>Vault: {vault.address.slice(0, 8)}...{vault.address.slice(-6)}</div>
-                            <div className="xl:hidden">FA: {vault.metadata.slice(0, 8)}...{vault.metadata.slice(-6)}</div>
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-xs">
-                            <span className="text-green-400 md:hidden">Available: {vault.idleAssets.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 sm:px-4 hidden lg:table-cell">
-                        <div className="text-gray-300 font-mono text-xs">
-                          {vault.address.slice(0, 8)}...{vault.address.slice(-6)}
-                        </div>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(vault.address)}
-                          className="text-blue-400 text-xs hover:text-blue-300 transition-colors"
-                          title="Copy vault address"
-                        >
-                          Copy
-                        </button>
-                      </td>
-                      <td className="py-3 px-3 sm:px-4 hidden xl:table-cell">
-                        <div className="text-gray-300 font-mono text-xs">
-                          {vault.metadata.slice(0, 8)}...{vault.metadata.slice(-6)}
-                        </div>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(vault.metadata)}
-                          className="text-blue-400 text-xs hover:text-blue-300 transition-colors"
-                          title="Copy FA address"
-                        >
-                          Copy
-                        </button>
-                      </td>
-                      <td className="py-3 px-3 sm:px-4 text-right w-20 sm:w-auto">
-                        <div className="text-white font-medium text-sm">
-                          {vault.totalAssets.toLocaleString(undefined, {
-                            maximumFractionDigits: 2
-                          })}
-                        </div>
-                        {tokenSymbol !== 'UNKNOWN' && (
-                          <div className="text-gray-400 text-xs">{tokenSymbol}</div>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 sm:px-4 text-right hidden md:table-cell">
-                        <div className="text-green-400 font-medium text-sm">
-                          {vault.idleAssets.toLocaleString(undefined, {
-                            maximumFractionDigits: 2
-                          })}
-                        </div>
-                        {tokenSymbol !== 'UNKNOWN' && (
-                          <div className="text-gray-400 text-xs">{tokenSymbol}</div>
-                        )}
-                      </td>
-                      {/* Actions */}
-                      <td className="py-3 px-3 sm:px-4 w-12 sm:w-auto">
-                        <div className="flex justify-end space-x-1">
-                          <button
-                            onClick={() => openDepositModal(vault)}
-                            className="p-1.5 hover:bg-gray-700/50 rounded-lg transition-colors"
-                            title="Deposit"
-                          >
-                            <ArrowDownRight className="w-4 h-4 text-green-400" />
-                          </button>
-                          {isAdmin && (
-                            <button
-                              onClick={() => openWithdrawModal(vault)}
-                              className="p-1.5 hover:bg-gray-700/50 rounded-lg transition-colors"
-                              title="Withdraw"
-                            >
-                              <ArrowUpRight className="w-4 h-4 text-red-400" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="min-w-full inline-block align-middle">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-700/50">
+                    <th className="text-left py-3 px-3 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider w-1/2 sm:w-auto">Token</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden lg:table-cell">Vault</th>
+                    <th className="text-left py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden xl:table-cell">FA Address</th>
+                    <th className="text-right py-3 px-3 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider w-16 sm:w-auto">Total</th>
+                    <th className="text-right py-3 px-2 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider hidden md:table-cell">Available</th>
+                    <th className="text-right py-3 px-3 sm:px-4 text-gray-400 font-medium text-xs uppercase tracking-wider w-12 sm:w-auto">Actions</th>
                   </tr>
-                );
-              })}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-700/30">
+                  {vaults.map((vault) => {
+                    const knownToken = getKnownTokenInfo(vault.metadata);
+                    const tokenSymbol = vault.tokenSymbol || knownToken?.symbol || 'UNKNOWN';
+                    const tokenName = vault.tokenName || knownToken?.name || 'Unknown Token';
+
+                    return (
+                      <tr key={vault.address} className="hover:bg-gray-800/30 transition-colors">
+                        <td className="py-3 px-3 sm:px-4 align-top">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold" style={{ backgroundColor: '#e1fd6a', color: '#0f172a' }}>
+                              {vault.iconUrl ? (
+                                <img
+                                  src={vault.iconUrl}
+                                  alt={`${tokenSymbol} icon`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              ) : null}
+                              {!vault.iconUrl && tokenSymbol.slice(0, 2)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white font-medium text-sm truncate">{tokenSymbol}</div>
+                              <div className="text-gray-400 text-xs truncate">{tokenName}</div>
+                              {/* Strategy UI removed – not in treasury ABI */}
+                            </div>
+                          </div>
+                          {/* Mobile info */}
+                          <div className="mt-2 lg:hidden space-y-1">
+                            <div className="text-gray-500 text-xs font-mono">
+                              <div>Vault: {vault.address.slice(0, 8)}...{vault.address.slice(-6)}</div>
+                              <div className="xl:hidden">FA: {vault.metadata.slice(0, 8)}...{vault.metadata.slice(-6)}</div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs">
+                              <span className="text-green-400 md:hidden">Available: {vault.idleAssets?.toLocaleString(undefined, { maximumFractionDigits: 2 }) || '0.00'}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 sm:px-4 hidden lg:table-cell">
+                          <div className="text-gray-300 font-mono text-xs">
+                            {vault.address.slice(0, 8)}...{vault.address.slice(-6)}
+                          </div>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(vault.address)}
+                            className="text-blue-400 text-xs hover:text-blue-300 transition-colors"
+                            title="Copy vault address"
+                          >
+                            Copy
+                          </button>
+                        </td>
+                        <td className="py-3 px-3 sm:px-4 hidden xl:table-cell">
+                          <div className="text-gray-300 font-mono text-xs">
+                            {vault.metadata.slice(0, 8)}...{vault.metadata.slice(-6)}
+                          </div>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(vault.metadata)}
+                            className="text-blue-400 text-xs hover:text-blue-300 transition-colors"
+                            title="Copy FA address"
+                          >
+                            Copy
+                          </button>
+                        </td>
+                        <td className="py-3 px-3 sm:px-4 text-right w-20 sm:w-auto">
+                          <div className="text-white font-medium text-sm">
+                            {vault.totalAssets?.toLocaleString(undefined, {
+                              maximumFractionDigits: 2
+                            }) || '0.00'}
+                          </div>
+                          {tokenSymbol !== 'UNKNOWN' && (
+                            <div className="text-gray-400 text-xs">{tokenSymbol}</div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 sm:px-4 text-right hidden md:table-cell">
+                          <div className="text-green-400 font-medium text-sm">
+                            {vault.idleAssets?.toLocaleString(undefined, {
+                              maximumFractionDigits: 2
+                            }) || '0.00'}
+                          </div>
+                          {tokenSymbol !== 'UNKNOWN' && (
+                            <div className="text-gray-400 text-xs">{tokenSymbol}</div>
+                          )}
+                        </td>
+                        {/* Actions */}
+                        <td className="py-3 px-3 sm:px-4 w-12 sm:w-auto">
+                          <div className="flex justify-end space-x-1">
+                            <button
+                              onClick={() => openDepositModal(vault)}
+                              className="p-1.5 hover:bg-gray-700/50 rounded-lg transition-colors"
+                              title="Deposit"
+                            >
+                              <ArrowDownRight className="w-4 h-4 text-green-400" />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => openWithdrawModal(vault)}
+                                className="p-1.5 hover:bg-gray-700/50 rounded-lg transition-colors"
+                                title="Withdraw"
+                              >
+                                <ArrowUpRight className="w-4 h-4 text-red-400" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         )}
       </div>
 
@@ -420,7 +431,7 @@ const VaultManager: React.FC<VaultManagerProps> = ({ daoId, treasuryObject }) =>
                   className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500' : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400'}`}
                 />
                 <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                  Amount in {selectedVault.tokenSymbol} (max: {selectedVault.idleAssets.toLocaleString()})
+                  Amount in {selectedVault.tokenSymbol} (max: {selectedVault.idleAssets?.toLocaleString() || '0'})
                 </p>
               </div>
 

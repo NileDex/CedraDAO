@@ -111,13 +111,13 @@ export function useCreateDAO() {
       // Logo size validation (contract allows up to 1MB)
       const maxLogoSize = 1_048_576 // 1MB
       if (params.logo.length > maxLogoSize) {
-        throw new Error(`Logo must be ≤ ${Math.round(maxLogoSize/1024)}KB (contract limit). Current: ${Math.round(params.logo.length/1024)}KB`)
+        throw new Error(`Logo must be ≤ ${Math.round(maxLogoSize / 1024)}KB (contract limit). Current: ${Math.round(params.logo.length / 1024)}KB`)
       }
 
       // Background size validation (contract allows up to 5MB)
       const maxBgSize = 5_242_880 // 5MB
       if (params.background.length > maxBgSize) {
-        throw new Error(`Background must be ≤ ${Math.round(maxBgSize/1024)}KB (contract limit). Current: ${Math.round(params.background.length/1024)}KB`)
+        throw new Error(`Background must be ≤ ${Math.round(maxBgSize / 1024)}KB (contract limit). Current: ${Math.round(params.background.length / 1024)}KB`)
       }
 
       // Min stake validation (6,000,000-10,000,000,000 octas = 6-10,000 CEDRA)
@@ -143,6 +143,8 @@ export function useCreateDAO() {
           logoBytes,
           backgroundBytes,
           params.minStakeToJoin,
+          1, // staking_type: 1 for Native CEDRA
+          "0x1", // fa_metadata_address: default for Native
           params.xLink || "",
           params.discordLink || "",
           params.telegramLink || "",
@@ -218,9 +220,9 @@ export function useCreateDAO() {
           }
 
           const isRetryableError = retryError.message?.includes('network') ||
-                                  retryError.message?.includes('timeout') ||
-                                  retryError.message?.includes('429') ||
-                                  retryError.message?.includes('503');
+            retryError.message?.includes('timeout') ||
+            retryError.message?.includes('429') ||
+            retryError.message?.includes('503');
 
           if (!isRetryableError) {
             throw retryError;
@@ -274,7 +276,7 @@ export function useCreateDAO() {
       if (err.message?.includes('User rejected') || err.message?.includes('rejected')) {
         errorMessage = 'Transaction was rejected by the wallet. Please approve the transaction to create the DAO.'
       } else if (err.message?.includes('insufficient') || err.message?.includes('balance')) {
-        errorMessage = 'Insufficient balance to pay for transaction fees. Please ensure you have enough CEDRA tokens.'
+        errorMessage = 'Insufficient balance. DAO creation requires a 100 CEDRA deployment fee plus gas. Please check your wallet balance.'
       } else if (err.message?.includes('gas')) {
         errorMessage = 'Gas estimation failed. This might be a temporary network issue. Please try again.'
       } else if (err.message?.includes('network') || err.message?.includes('connection')) {
@@ -318,11 +320,13 @@ export function useCreateDAO() {
           params.logoUrl,
           params.backgroundUrl,
           params.minStakeToJoin,
-          params.xLink,
-          params.discordLink,
-          params.telegramLink,
-          params.website,
-          params.category
+          1, // staking_type: 1 for Native CEDRA
+          "0x1", // fa_metadata_address: default for Native
+          params.xLink || "",
+          params.discordLink || "",
+          params.telegramLink || "",
+          params.website || "",
+          params.category || ""
         ],
       }
 

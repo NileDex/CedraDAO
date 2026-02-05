@@ -1,5 +1,5 @@
 export const ABI = {
-  "address": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8",
+  "address": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07",
   "name": "dao_core_file",
   "friends": [],
   "exposed_functions": [
@@ -40,6 +40,8 @@ export const ABI = {
         "vector<u8>",
         "vector<u8>",
         "u64",
+        "u8",
+        "address",
         "0x1::string::String",
         "0x1::string::String",
         "0x1::string::String",
@@ -66,6 +68,8 @@ export const ABI = {
         "0x1::string::String",
         "vector<u8>",
         "u64",
+        "u8",
+        "address",
         "0x1::string::String",
         "0x1::string::String",
         "0x1::string::String",
@@ -88,6 +92,8 @@ export const ABI = {
         "0x1::string::String",
         "0x1::string::String",
         "u64",
+        "u8",
+        "address",
         "0x1::string::String",
         "0x1::string::String",
         "0x1::string::String",
@@ -106,7 +112,7 @@ export const ABI = {
         "vector<u8>"
       ],
       "return": [
-        "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::ImageData"
+        "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
       ]
     },
     {
@@ -119,7 +125,7 @@ export const ABI = {
         "0x1::string::String"
       ],
       "return": [
-        "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::ImageData"
+        "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
       ]
     },
     {
@@ -180,7 +186,7 @@ export const ABI = {
       "generic_type_params": [],
       "params": [],
       "return": [
-        "vector<0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::DAOSummary>"
+        "vector<0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::DAOSummary>"
       ]
     },
     {
@@ -197,6 +203,19 @@ export const ABI = {
         "0x1::string::String",
         "0x1::string::String",
         "0x1::string::String"
+      ]
+    },
+    {
+      "name": "get_dao_background",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address"
+      ],
+      "return": [
+        "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
       ]
     },
     {
@@ -323,6 +342,19 @@ export const ABI = {
       ]
     },
     {
+      "name": "get_dao_logo",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": true,
+      "generic_type_params": [],
+      "params": [
+        "address"
+      ],
+      "return": [
+        "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
+      ]
+    },
+    {
       "name": "get_dao_telegram_link",
       "visibility": "public",
       "is_entry": false,
@@ -398,7 +430,7 @@ export const ABI = {
         "u64"
       ],
       "return": [
-        "vector<0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::DAOSummary>"
+        "vector<0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::DAOSummary>"
       ]
     },
     {
@@ -412,6 +444,58 @@ export const ABI = {
       ],
       "return": [
         "address"
+      ]
+    },
+    {
+      "name": "get_summary_address",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::DAOSummary"
+      ],
+      "return": [
+        "address"
+      ]
+    },
+    {
+      "name": "get_summary_created_at",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::DAOSummary"
+      ],
+      "return": [
+        "u64"
+      ]
+    },
+    {
+      "name": "get_summary_description",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::DAOSummary"
+      ],
+      "return": [
+        "0x1::string::String"
+      ]
+    },
+    {
+      "name": "get_summary_name",
+      "visibility": "public",
+      "is_entry": false,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::DAOSummary"
+      ],
+      "return": [
+        "0x1::string::String"
       ]
     },
     {
@@ -446,7 +530,7 @@ export const ABI = {
         "address"
       ],
       "return": [
-        "0x1::object::Object<0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::treasury::Treasury>"
+        "0x1::object::Object<0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::treasury::Treasury>"
       ]
     },
     {
@@ -492,6 +576,17 @@ export const ABI = {
     },
     {
       "name": "init_dao_registry",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer"
+      ],
+      "return": []
+    },
+    {
+      "name": "initialize_fee_config",
       "visibility": "public",
       "is_entry": true,
       "is_view": false,
@@ -599,6 +694,19 @@ export const ABI = {
       "return": []
     },
     {
+      "name": "set_platform_config",
+      "visibility": "public",
+      "is_entry": true,
+      "is_view": false,
+      "generic_type_params": [],
+      "params": [
+        "&signer",
+        "u64",
+        "address"
+      ],
+      "return": []
+    },
+    {
       "name": "vote_on_dao_creation",
       "visibility": "public",
       "is_entry": true,
@@ -625,7 +733,7 @@ export const ABI = {
       "generic_type_params": [],
       "fields": [
         {
-          "name": "movedao_addrxess",
+          "name": "anchor_addrxess",
           "type": "address"
         },
         {
@@ -673,7 +781,7 @@ export const ABI = {
       "fields": [
         {
           "name": "proposals",
-          "type": "vector<0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::DAOCreationProposalData>"
+          "type": "vector<0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::DAOCreationProposalData>"
         },
         {
           "name": "next_proposal_id",
@@ -696,7 +804,7 @@ export const ABI = {
       "generic_type_params": [],
       "fields": [
         {
-          "name": "movedao_addrxess",
+          "name": "anchor_addrxess",
           "type": "address"
         },
         {
@@ -744,7 +852,7 @@ export const ABI = {
           "type": "address"
         },
         {
-          "name": "target_movedao_addrxess",
+          "name": "target_anchor_addrxess",
           "type": "address"
         },
         {
@@ -783,7 +891,7 @@ export const ABI = {
           "type": "address"
         },
         {
-          "name": "target_movedao_addrxess",
+          "name": "target_anchor_addrxess",
           "type": "address"
         },
         {
@@ -800,11 +908,11 @@ export const ABI = {
         },
         {
           "name": "logo",
-          "type": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::ImageData"
+          "type": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
         },
         {
           "name": "background",
-          "type": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::ImageData"
+          "type": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
         },
         {
           "name": "min_stake_to_join",
@@ -883,11 +991,11 @@ export const ABI = {
         },
         {
           "name": "logo",
-          "type": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::ImageData"
+          "type": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
         },
         {
           "name": "background",
-          "type": "0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::dao_core_file::ImageData"
+          "type": "0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::dao_core_file::ImageData"
         },
         {
           "name": "created_at",
@@ -895,7 +1003,7 @@ export const ABI = {
         },
         {
           "name": "treasury",
-          "type": "0x1::object::Object<0x9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::treasury::Treasury>"
+          "type": "0x1::object::Object<0xea7fb3f7cf8efcd569529520f6c7fe691c34658320b7cacc869b6a33551c6b07::treasury::Treasury>"
         },
         {
           "name": "x_link",
@@ -1017,6 +1125,25 @@ export const ABI = {
       ]
     },
     {
+      "name": "PlatformConfig",
+      "is_native": false,
+      "is_event": false,
+      "abilities": [
+        "key"
+      ],
+      "generic_type_params": [],
+      "fields": [
+        {
+          "name": "creation_fee",
+          "type": "u64"
+        },
+        {
+          "name": "fee_recipient",
+          "type": "address"
+        }
+      ]
+    },
+    {
       "name": "SubnameRegistry",
       "is_native": false,
       "is_event": false,
@@ -1038,71 +1165,17 @@ export const ABI = {
   ]
 }
 
-// ============================================================================
-// HELPER FUNCTIONS FOR CEDRA SDK
-// ============================================================================
-
-/**
- * Get the full function path for a view or entry function
- * @param functionName - The name of the function from the ABI
- * @returns Full function path in format: address::module::function
- *
- * @example
- * const func = getFunction('create_dao');
- * // Returns: "0x9fc...::dao_core_file::create_dao"
- */
-export const getFunction = (functionName: string): string => {
-  return `${ABI.address}::${ABI.name}::${functionName}`;
-};
-
-/**
- * Get the resource type path
- * @param structName - The name of the struct from the ABI
- * @returns Full resource type path
- *
- * @example
- * const resourceType = getResourceType('DAOInfo');
- * // Returns: "0x9fc...::dao_core_file::DAOInfo"
- */
-export const getResourceType = (structName: string): string => {
-  return `${ABI.address}::${ABI.name}::${structName}`;
-};
-
-/**
- * Get the event type for DAOCreated events
- * @returns Event type string for use with Cedra GraphQL indexer
- *
- * @example
- * const eventType = getDAOCreatedEventType();
- * // Use with GraphQL indexer
- */
-export const getDAOCreatedEventType = (): string => {
-  return `${ABI.address}::${ABI.name}::DAOCreated`;
-};
-
-// ============================================================================
-// CONVENIENCE EXPORTS
-// ============================================================================
-
+// Function name constants 
 export const DAO_FUNCTIONS = {
-  CREATE_DAO: getFunction('create_dao'),
-  CREATE_DAO_WITH_URLS: getFunction('create_dao_with_urls'),
-  CREATE_DAO_MIXED: getFunction('create_dao_mixed'),
-  GET_DAO_INFO: getFunction('get_dao_info_with_subname'),
-  GET_TOTAL_DAO_COUNT: getFunction('get_total_dao_count'),
-  GET_ALL_DAO_ADDRESSES: getFunction('get_all_dao_addresses'),
-  IS_SUBNAME_TAKEN: getFunction('is_subname_taken'),
-  GET_SUBNAME_OWNER: getFunction('get_subname_owner'),
-  DAO_EXISTS: getFunction('dao_exists'),
-  IS_REGISTRY_INITIALIZED: getFunction('is_registry_initialized'),
+  CREATE_DAO: `${ABI.address}::dao_core_file::create_dao`,
+  CREATE_DAO_WITH_URLS: `${ABI.address}::dao_core_file::create_dao_with_urls`,
+  GET_ALL_DAO_ADDRESSES: `${ABI.address}::dao_core_file::get_all_dao_addresses`,
+  GET_TOTAL_DAO_COUNT: `${ABI.address}::dao_core_file::get_total_dao_count`,
+  GET_DAO_INFO: `${ABI.address}::dao_core_file::get_dao_info`,
 } as const;
 
+// Resource type constants
 export const DAO_RESOURCES = {
-  DAO_INFO: getResourceType('DAOInfo'),
-  DAO_REGISTRY: getResourceType('DAORegistry'),
-  SUBNAME_REGISTRY: getResourceType('SubnameRegistry'),
-} as const;
-
-export const DAO_EVENTS = {
-  DAO_CREATED: getDAOCreatedEventType(),
+  DAO: `${ABI.address}::dao_core_file::DAO`,
+  DAO_INFO: `${ABI.address}::dao_core_file::DAOInfo`,
 } as const;

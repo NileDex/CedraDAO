@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
 import MainDashboard from './components/MainDashboard';
 import CreateDAO from './components/CreateDAO';
 import DAODetail from './components/DAODetail';
 import PlatformGrowthCharts from './components/PlatformGrowthCharts';
 import { UserProfile } from './components/profile';
-import Onboard from './components/Onboard';
-import Mosaic from './components/Onboard/Mosaic';
-import Transfer from './components/Onboard/Transfer';
+import BoostDashboard from './components/BoostDashboard';
 import { DAO } from './types/dao';
-import { Home, FileText, Wallet, Users, Coins, Shield, Zap } from 'lucide-react';
+import { Search as SearchIcon } from 'lucide-react';
+import { useFilter } from './contexts/FilterContext';
+import DAOCard from './components/DAOCard';
 
 function App() {
+  const { filteredDAOs, isFiltering } = useFilter();
   // Persist and restore app navigation state across refreshes
   const [currentView, setCurrentView] = useState<string>(() => {
     try {
@@ -30,14 +30,6 @@ function App() {
     } catch {
       return null;
     }
-  });
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('sidebar_collapsed');
-      if (saved !== null) return saved === 'true';
-    } catch {}
-    return true; // default collapsed
   });
   const [daoActiveTab, setDaoActiveTab] = useState<string>(() => {
     try {
@@ -78,7 +70,9 @@ function App() {
   useEffect(() => {
     try {
       localStorage.setItem('app_current_view', currentView);
-    } catch {}
+    } catch (err) {
+      console.warn('LocalStorage error (app_current_view):', err);
+    }
   }, [currentView]);
 
   useEffect(() => {
@@ -88,13 +82,17 @@ function App() {
       } else {
         localStorage.removeItem('app_selected_dao');
       }
-    } catch {}
+    } catch (err) {
+      console.warn('LocalStorage error (app_selected_dao):', err);
+    }
   }, [selectedDAO]);
 
   useEffect(() => {
     try {
       localStorage.setItem('app_dao_active_tab', daoActiveTab);
-    } catch {}
+    } catch (err) {
+      console.warn('LocalStorage error (app_dao_active_tab):', err);
+    }
   }, [daoActiveTab]);
 
   // Safety: If view is dao-detail but no DAO found, fallback to home
@@ -104,22 +102,12 @@ function App() {
     }
   }, [currentView, selectedDAO]);
 
-  // Define DAO tabs
-  const daoTabs = [
-    { id: 'home', label: 'Overview', icon: Home, color: 'text-blue-400' },
-    { id: 'proposals', label: 'Proposals', icon: FileText, color: 'text-green-400' },
-    { id: 'staking', label: 'Staking', icon: Coins, color: 'text-orange-400' },
-    { id: 'treasury', label: 'Treasury', icon: Wallet, color: 'text-yellow-400' },
-    { id: 'members', label: 'Members', icon: Users, color: 'text-pink-400' },
-    { id: 'admin', label: 'Admin', icon: Shield, color: 'text-purple-400' },
-    { id: 'apps', label: 'Apps', icon: Zap, color: 'text-cyan-400' },
-  ];
 
 
   const renderContent = () => {
     switch (currentView) {
       case 'home':
-        return <MainDashboard onDAOSelect={handleDAOSelect} onCreateDAO={() => setCurrentView('create')} sidebarCollapsed={sidebarCollapsed} />;
+        return <MainDashboard onDAOSelect={handleDAOSelect} onCreateDAO={() => setCurrentView('create')} />;
       case 'create':
         return <CreateDAO onBack={handleBackToHome} />;
       case 'create-new':
@@ -129,8 +117,6 @@ function App() {
           <DAODetail
             dao={selectedDAO}
             onBack={handleBackToHome}
-            sidebarCollapsed={sidebarCollapsed}
-            onSidebarOpen={() => setSidebarOpen(true)}
             onActiveTabChange={handleDaoTabChange}
             activeTab={daoActiveTab}
           />
@@ -139,15 +125,45 @@ function App() {
         );
       case 'search':
         return (
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            <div className="professional-card rounded-xl p-12 text-center">
-              <h1 className="text-3xl font-bold text-white mb-4">Explore DAOs</h1>
-              <p className="text-gray-400 mb-8">Advanced search and discovery features</p>
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl flex items-center justify-center mx-auto">
-                <span className="text-2xl">Search</span>
-              </div>
-              <p className="text-gray-500 mt-4">Coming soon...</p>
+          <div className="w-full">
+            <div className="flex flex-col gap-3 mb-12">
+              <h2 className="text-2xl font-semibold tracking-tight text-white flex items-center gap-3">
+                Discovery Results
+                <div className="px-2 py-0.5 bg-white/5 rounded text-[10px] font-medium text-white/40 uppercase tracking-widest">
+                  {filteredDAOs.length} Organizations
+                </div>
+              </h2>
+              <p className="text-xs text-white/40 font-medium uppercase tracking-widest">Found in the decentralized registry</p>
             </div>
+
+            {isFiltering ? (
+              <div className="flex items-center justify-center py-24">
+                <div className="w-10 h-10 border-2 border-[#e1fd6a]/20 border-t-[#e1fd6a] rounded-full animate-spin" />
+              </div>
+            ) : filteredDAOs.length === 0 ? (
+              <div className="text-center py-32 professional-card rounded-3xl border-dashed border-white/5">
+                <div className="w-20 h-20 mx-auto mb-8 bg-white/5 rounded-3xl flex items-center justify-center">
+                  <SearchIcon className="w-10 h-10 text-slate-700" />
+                </div>
+                <h3 className="text-2xl font-semibold text-white mb-3">No Matches Found</h3>
+                <p className="text-white/40 text-sm font-medium mb-10 max-w-sm mx-auto uppercase tracking-widest leading-relaxed">
+                  The registry yielded no results for your current criteria. Try adjusting your filters.
+                </p>
+                <button onClick={handleBackToHome} className="nb-button">
+                  Return to Ecosystem
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredDAOs.map((dao) => (
+                  <DAOCard
+                    key={dao.id}
+                    dao={dao}
+                    onClick={() => handleDAOSelect(dao)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         );
       case 'trending':
@@ -156,17 +172,19 @@ function App() {
         return (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="professional-card rounded-xl p-12 text-center">
-              <h1 className="text-3xl font-bold text-white mb-4">Community Hub</h1>
-              <p className="text-gray-400 mb-8">Connect with other DAO members and builders</p>
+              <h1 className="text-3xl font-semibold text-white mb-4">Community Hub</h1>
+              <p className="text-white/60 mb-8">Connect with other DAO members and builders</p>
               <div className="w-16 h-16 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-xl flex items-center justify-center mx-auto">
                 <span className="text-2xl">👥</span>
               </div>
-              <p className="text-gray-500 mt-4">Coming soon...</p>
+              <p className="text-white/30 mt-4">Coming soon...</p>
             </div>
           </div>
         );
       case 'profile':
         return <UserProfile />;
+      case 'boost':
+        return <BoostDashboard />;
       default:
         return <MainDashboard onDAOSelect={handleDAOSelect} />;
     }
@@ -174,41 +192,22 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/onboard" element={<Onboard />} />
-      <Route path="/mosaic" element={<Mosaic />} />
-      <Route path="/transfer" element={<Transfer />} />
       <Route path="*" element={
         <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg)' }}>
           {/* Header: always at the top */}
           <Header
             currentDAO={selectedDAO?.name}
-            // Pass a prop to trigger sidebar open on mobile
-            onMenuClick={() => setSidebarOpen(true)}
+            currentView={currentView}
+            onViewChange={setCurrentView}
             onProfileClick={() => setCurrentView('profile')}
+            activeTab={daoActiveTab}
+            onActiveTabChange={handleDaoTabChange}
           />
 
-          {/* Content area with sidebar below header */}
-          <div className="flex flex-1 min-h-0">
-            {/* Sidebar: below header on desktop, overlay on mobile */}
-            <Sidebar
-              currentView={currentView}
-              onViewChange={(view) => {
-                setCurrentView(view);
-                setSidebarOpen(false); // close on mobile after selection
-              }}
-              isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-              onCollapseChange={setSidebarCollapsed}
-              daoTabs={currentView === 'dao-detail' ? daoTabs : undefined}
-              activeTab={daoActiveTab}
-              onTabChange={setDaoActiveTab}
-            />
-            <main className={`flex-1 overflow-auto transition-all duration-300 ${
-              sidebarCollapsed ? 'md:ml-16' : 'md:ml-48'
-            }`}>
-              {renderContent()}
-            </main>
-          </div>
+          {/* Content area - Full width, sidebar removed */}
+          <main className="flex-1 overflow-x-hidden">
+            {renderContent()}
+          </main>
         </div>
       } />
     </Routes>

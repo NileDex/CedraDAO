@@ -8,8 +8,8 @@ interface PaginationProps {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
   limit: number;
-  onPageChange: (page: number) => void;
-  onLimitChange?: (limit: number) => void;
+  onPageChange: (_page: number) => void;
+  onLimitChange?: (_limit: number) => void;
   className?: string;
   showLimitSelector?: boolean;
   showItemsInfo?: boolean;
@@ -95,11 +95,10 @@ const Pagination: React.FC<PaginationProps> = ({
               ) : (
                 <button
                   onClick={() => onPageChange(Number(page))}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    currentPage === page
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${currentPage === page
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-300 bg-white/5 border border-white/10 hover:bg-white/10'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>

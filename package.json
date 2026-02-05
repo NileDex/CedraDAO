@@ -1,5 +1,5 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "Anchor",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,6 +13,7 @@
     "@cedra-labs/ts-sdk": "^2.2.7",
     "@cedra-labs/wallet-standard": "^0.5.1",
     "@mosaicag/swap-widget": "^1.1.11",
+    "boring-avatars": "^2.0.4",
     "buffer": "^6.0.3",
     "lucide-react": "^0.344.0",
     "pinata-web3": "^0.5.4",
@@ -21,7 +22,9 @@
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.4",
-    "recharts": "^3.1.2"
+    "recharts": "^3.1.2",
+    "sweetalert2": "^11.26.18",
+    "sweetalert2-react-content": "^5.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

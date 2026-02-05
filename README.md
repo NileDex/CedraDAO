@@ -1,5 +1,5 @@
-CedraDAO\contracts> cd MoveDAO_cedra
-PS C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\contracts\MoveDAO_cedra> cedra move compile
+CedraDAO\contracts> cd Anchor_cedra
+PS C:\Users\josep\Desktop\CEDRAMOVEMENT APPLICATION\New folder\CedraDAO\contracts\Anchor_cedra> cedra move compile
 Compiling, may take a little while to download git dependencies...
 
 UPDATING GIT DEPENDENCY https://github.com/cedra-labs/cedra-framework.git
@@ -7,7 +7,7 @@ INCLUDING DEPENDENCY CedraFramework
 INCLUDING DEPENDENCY CedraStdlib
 INCLUDING DEPENDENCY MoveStdlib
 
-BUILDING daooncedra
+BUILDING anchoroncedra
 {
   "Result": [
     "9fc26ce453f4f1e9a7486353830505a32a12c51a59f24734cf8502d94f28a6a8::errors",

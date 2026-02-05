@@ -1,8 +1,8 @@
 // Input validation - validates user inputs like strings, addresses, and parameters to prevent invalid data
-module movedao_addrx::input_validation {
+module anchor_addrx::input_validation {
     use std::string::{Self, String};
     use std::vector;
-    use movedao_addrx::errors;
+    use anchor_addrx::errors;
 
     // Validation constants
     const MIN_NAME_LENGTH: u64 = 2;
@@ -200,9 +200,9 @@ module movedao_addrx::input_validation {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4, location = movedao_addrx::input_validation)]
+    #[expected_failure(abort_code = 4, location = anchor_addrx::input_validation)]
     public fun test_validate_dao_name_too_short() {
-        let short_name = string::utf8(b"A"); // Single character - too short
+        let short_name = string::utf8(b"H");
         validate_dao_name(&short_name);
     }
 
@@ -216,7 +216,7 @@ module movedao_addrx::input_validation {
     }
 
     #[test]
-    #[expected_failure(abort_code = 4, location = movedao_addrx::input_validation)]
+    #[expected_failure(abort_code = 4, location = anchor_addrx::input_validation)]
     public fun test_validate_address_list_duplicates() {
         let addresses = vector::empty<address>();
         vector::push_back(&mut addresses, @0x1);

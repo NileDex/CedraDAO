@@ -1,5 +1,5 @@
 // Error definitions - centralized error codes and helper functions for all DAO modules
-module movedao_addrx::errors {
+module anchor_addrx::errors {
     use std::error;
 
     // =============================================================================

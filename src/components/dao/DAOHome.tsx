@@ -1,60 +1,45 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, DollarSign, Users, Info, Activity, TrendingUp, Shield, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Info } from 'lucide-react';
+import Avatar from 'boring-avatars';
+import { MODULE_ADDRESS } from '../../cedra_service/constants';
 import { DAO } from '../../types/dao';
 import { useDAOActivities } from '../../useServices/useOptimizedActivityTracker';
 import OptimizedActivityTable from '../OptimizedActivityTable';
 import { cedraClient } from '../../cedra_service/cedra-client';
-import { MODULE_ADDRESS } from '../../cedra_service/constants';
 import { safeView } from '../../utils/rpcUtils';
-import { ACTIVITY_CONFIG } from '../../constants/activityConstants';
 import { useGetProfile } from '../../useServices/useProfile';
 import { truncateAddress } from '../../utils/addressUtils';
 import { useSectionLoader } from '../../hooks/useSectionLoader';
-import SectionLoader from '../common/SectionLoader';
 import MemberProfileCard from '../MemberProfileCard';
 
-// Admin Display with Member-style avatar + lazy image + clickable profile card
-const AdminDisplay: React.FC<{ address: string; onClick: (ref: React.RefObject<HTMLDivElement>, shortAddress: string) => void }>
+// Admin Display with boring avatar
+const AdminDisplay: React.FC<{ address: string; onClick: (_ref: React.RefObject<HTMLDivElement>, _shortAddress: string) => void }>
   = ({ address, onClick }) => {
-  const { data: profileData } = useGetProfile(address || null);
-  const avatarRef = useRef<HTMLDivElement>(null);
-  const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+    const { data: profileData } = useGetProfile(address || null);
+    const avatarRef = useRef<HTMLDivElement>(null);
+    const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
 
-  const avatar = profileData?.avatarUrl ? (
-    <img
-      src={profileData.avatarUrl}
-      alt={profileData.displayName || shortAddress}
-      className="w-8 h-8 rounded-lg object-cover"
-      loading="lazy"
-      decoding="async"
-      onError={(e) => {
-        e.currentTarget.style.display = 'none';
-        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-        if (fallback) fallback.classList.remove('hidden');
-      }}
-    />
-  ) : (
-    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: '#e1fd6a', color: '#000000' }}>
-      {shortAddress.slice(2, 4).toUpperCase()}
-    </div>
-  );
-
-  return (
-    <div ref={avatarRef} className="flex items-center space-x-3 cursor-pointer" onClick={() => onClick(avatarRef, shortAddress)}>
-      {avatar}
-      {/* Hidden fallback holder to be revealed by onError above */}
-      <div className="hidden w-8 h-8 rounded-lg" style={{ background: '#e1fd6a', color: '#000000' }} />
-      <div className="flex flex-col">
-        <span className="text-sm font-semibold text-white">
-          {profileData?.displayName || shortAddress}
-        </span>
-        <span className="text-xs text-gray-400 font-mono">
-          {truncateAddress(address)}
-        </span>
+    return (
+      <div ref={avatarRef} className="flex items-center space-x-3 cursor-pointer" onClick={() => onClick(avatarRef, shortAddress)}>
+        <div style={{ borderRadius: '50%', overflow: 'hidden' }}>
+          <Avatar
+            name={address}
+            variant="beam"
+            size={32}
+            colors={["#e1fd6a", "#a3e635", "#84cc16", "#65a30d", "#4d7c0f"]}
+          />
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-medium text-white tracking-tight">
+            {profileData?.displayName || shortAddress}
+          </span>
+          <span className="text-[10px] text-white/40 font-mono">
+            {truncateAddress(address)}
+          </span>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 interface DAOHomeProps {
   dao: DAO;
@@ -80,10 +65,10 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
     setIsProfileCardOpen(true);
   };
 
-  const { 
-    activities, 
-    isLoading, 
-    error, 
+  const {
+    activities,
+    isLoading,
+    error,
     pagination,
     refetch
   } = useDAOActivities(dao.id, {
@@ -91,11 +76,20 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
     page
   });
 
+  // Professional cached approach
+  const cacheMap = useMemo(() => {
+    const win = window as unknown as { __overviewCache?: Map<string, { admin: string; treasuryBalance: string; timestamp: number }> };
+    if (!win.__overviewCache) {
+      win.__overviewCache = new Map();
+    }
+    return win.__overviewCache;
+  }, []);
+
   // Fetch treasury balance from contract - professional cached approach
-  const fetchTreasuryBalance = async () => {
+  const fetchTreasuryBalance = useCallback(async () => {
     try {
       let balance = 0;
-      let treasuryObject: any = null;
+      let treasuryObject: unknown = null;
 
       // Step 1: Try to get treasury object first (modern DAOs) - with caching
       try {
@@ -103,9 +97,9 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
           function: `${MODULE_ADDRESS}::dao_core_file::get_treasury_object`,
           functionArguments: [dao.id]
         }, `treasury_object_${dao.id}`);
-        treasuryObject = (objectResult as any)?.[0];
+        treasuryObject = (objectResult as unknown[])?.[0];
       } catch (error) {
-        // Silent fallback to legacy method
+        console.debug('Modern treasury query failed, falling back:', error);
       }
 
       // Step 2: If treasury object exists, get balance from it - with caching
@@ -121,7 +115,7 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
             if (Array.isArray(infoRes) && infoRes.length >= 1) {
               balance = Number(infoRes[0] || 0) / 1e8;
             }
-          } catch (infoError: any) {
+          } catch (_infoError) {
             // Fallback to direct object balance - with caching
             try {
               const balanceResult = await safeView({
@@ -129,11 +123,11 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
                 functionArguments: [treasuryObject]
               }, `treasury_balance_obj_${dao.id}`);
               balance = Number(balanceResult[0] || 0) / 1e8;
-            } catch (balError: any) {
+            } catch (_balError) {
               // Silent fallback to legacy
             }
           }
-        } catch (objError: any) {
+        } catch (_objError) {
           // Silent fallback to legacy
         }
       }
@@ -149,33 +143,31 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
           if (balanceResult && Array.isArray(balanceResult) && balanceResult.length > 0) {
             balance = Number(balanceResult[0] || 0) / 1e8;
           }
-        } catch (legacyError) {
-          // Silent - will show 0 balance
+        } catch (_legacyError) {
+          console.debug('Legacy treasury query failed');
         }
       }
 
       setTreasuryBalance(balance.toFixed(2));
       // Update session cache
-      const existing = (window as any).__overviewCache?.get?.(dao.id) || {};
-      // @ts-ignore
-      const cacheMap: Map<string, any> = (window as any).__overviewCache || ((window as any).__overviewCache = new Map());
+      // We use the cacheMap from the component scope
+      const existing = cacheMap.get(dao.id) || {};
       cacheMap.set(dao.id, {
-        admin: existing.admin || fullAdminAddress,
+        admin: (existing as { admin?: string }).admin || fullAdminAddress,
         treasuryBalance: balance.toFixed(2),
         timestamp: Date.now(),
       });
-    } catch (error: any) {
+    } catch (error) {
+      console.warn('Treasury balance calculation error:', error);
       setTreasuryBalance('0.00');
     }
-  };
+  }, [dao.id, fullAdminAddress, cacheMap]);
 
   // Fetch admin address based on contract behavior
   useEffect(() => {
     const SESSION_TTL_MS = 5 * 60 * 1000;
     const MAX_STALE_MS = 10 * 60 * 1000;
     // Try session cache for instant tab switches
-    // @ts-ignore
-    const cacheMap: Map<string, any> = (window as any).__overviewCache || ((window as any).__overviewCache = new Map());
     const cached = cacheMap.get(dao.id);
     const now = Date.now();
     if (cached && (now - cached.timestamp) < SESSION_TTL_MS) {
@@ -190,7 +182,9 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
       (async () => {
         try {
           await fetchTreasuryBalance();
-        } catch {}
+        } catch (err) {
+          console.warn('Silent treasury refresh failed:', err);
+        }
       })();
       return;
     }
@@ -204,31 +198,31 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
             function: `${MODULE_ADDRESS}::admin::exists_admin_list`,
             functionArguments: [dao.id]
           }, `admin_list_exists_${dao.id}`);
-          
+
           if (adminListExists && adminListExists[0]) {
             // Get admins from the AdminList - with caching
             const adminResult = await safeView({
               function: `${MODULE_ADDRESS}::admin::get_admins`,
               functionArguments: [dao.id]
             }, `admin_list_${dao.id}`);
-            
+
             // Parse admin list (vector<address>)
             const admins: string[] = (() => {
               if (Array.isArray(adminResult)) {
                 if (adminResult.length === 1 && Array.isArray(adminResult[0])) return adminResult[0] as string[];
-                if (adminResult.every((a: any) => typeof a === 'string')) return adminResult as string[];
+                if (adminResult.every((a: unknown) => typeof a === 'string')) return adminResult as string[];
               }
               return [];
             })();
 
             if (admins.length > 0) {
               // Show first admin (usually the creator/super admin)
-            setFullAdminAddress(admins[0]);
-            cacheMap.set(dao.id, {
-              admin: admins[0],
-              treasuryBalance: treasuryBalance,
-              timestamp: Date.now(),
-            });
+              setFullAdminAddress(admins[0]);
+              cacheMap.set(dao.id, {
+                admin: admins[0],
+                treasuryBalance: treasuryBalance,
+                timestamp: Date.now(),
+              });
               return;
             }
           }
@@ -243,8 +237,15 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
             options: { limit: 100 },
           });
 
-          const ev = (events as any[]).find(e => e?.data?.movedao_addrx === dao.id);
-          const creator = ev?.data?.creator as string | undefined;
+          interface DAOCreatedData {
+            anchor_addrx: string;
+            creator: string;
+          }
+          interface DAOCreatedEvent {
+            data: DAOCreatedData;
+          }
+          const ev = (events as unknown as DAOCreatedEvent[]).find((e) => e?.data?.anchor_addrx === dao.id);
+          const creator = ev?.data?.creator;
           if (creator) {
             setFullAdminAddress(creator);
             cacheMap.set(dao.id, {
@@ -265,7 +266,7 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
           treasuryBalance: treasuryBalance,
           timestamp: Date.now(),
         });
-        
+
         // Also fetch treasury balance
         await fetchTreasuryBalance();
 
@@ -278,13 +279,11 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
     };
 
     sectionLoader.executeWithLoader(fetchOverviewData);
-  }, [dao.id]);
+  }, [dao.id, fetchTreasuryBalance, sectionLoader, treasuryBalance, cacheMap]);
 
   // Silent refresh on window focus if cache is stale
   useEffect(() => {
     const onFocus = () => {
-      // @ts-ignore
-      const cacheMap: Map<string, any> = (window as any).__overviewCache || ((window as any).__overviewCache = new Map());
       const cached = cacheMap.get(dao.id);
       const now = Date.now();
       const SESSION_TTL_MS = 5 * 60 * 1000;
@@ -293,13 +292,15 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
         (async () => {
           try {
             await fetchTreasuryBalance();
-          } catch {}
+          } catch (err) {
+            console.warn('Flash refresh failed:', err);
+          }
         })();
       }
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
-  }, [dao.id]);
+  }, [dao.id, fetchTreasuryBalance, cacheMap]);
 
   const retryOverviewData = () => {
     sectionLoader.reset();
@@ -311,65 +312,66 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 space-y-8">
-      {/* About Section + Activity in one wrapper with border */}
-      <div className="border border-white/10 rounded-xl py-4 px-2 space-y-6" style={{ background: 'transparent' }}>
-        {/* About Section */}
-        <div className="border border-white/10 rounded-xl py-4 px-4 sm:py-6 sm:px-6 space-y-4 sm:space-y-6" style={{ background: 'transparent' }}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg sm:text-xl font-bold text-white">
-              About {dao.name}
+    <div className="w-full space-y-12 animate-fade-in">
+      {/* Overview Section */}
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold text-white tracking-tighter flex items-center gap-2">
+              <Info size={20} className="text-[#e1fd6a]" />
+              Overview
             </h2>
+            <p className="text-[11px] font-medium text-white/40 leading-none">DAO Governance & Activity</p>
+          </div>
 
-            {/* Top-right status */}
-            <div className="text-right">
-              {sectionLoader.error && (
-                <div className="text-xs text-red-300 cursor-pointer" onClick={retryOverviewData}>
-                  Error - Click to retry
-                </div>
+          <div className="flex items-center gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-sm group/admin hover:border-[#e1fd6a]/20 transition-all">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium text-white/30 mb-2">Administrator</span>
+              {fullAdminAddress ? (
+                <AdminDisplay address={fullAdminAddress} onClick={handleAvatarClick} />
+              ) : (
+                <span className="text-[10px] font-semibold text-[#e1fd6a] animate-pulse">Fetching admin...</span>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Key Stats (Admin only – Treasury removed) */}
-          <div className="grid grid-cols-1 gap-4 sm:gap-6">
-            <div className="text-left">
-              <div className="flex flex-col space-y-2">
-                <span className="text-xs sm:text-sm font-medium text-white">Admin</span>
-                {fullAdminAddress ? (
-                  <AdminDisplay address={fullAdminAddress} onClick={handleAvatarClick} />
-                ) : (
-                  <span className="text-xs sm:text-sm text-white">Loading...</span>
-                )}
-              </div>
-            </div>
+        {sectionLoader.error && (
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center justify-between">
+            <p className="text-xs font-medium text-red-500">{sectionLoader.error}</p>
+            <button
+              onClick={retryOverviewData}
+              className="text-[10px] font-semibold bg-red-500 text-white px-4 py-2 rounded-lg"
+            >
+              Retry
+            </button>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Recent Activity */}
-        <div className="space-y-4">
-          <OptimizedActivityTable
-            activities={activities}
-            isLoading={isLoading}
-            error={error}
-            onRefresh={refetch}
-            showUserColumn={true}
-            showAmountColumn={true}
-            showDAOColumn={false}
-            showActionColumn={false}
-            maxRows={undefined}
-            showingCountText={
-              pagination?.totalItems > 0
-                ? `Showing ${(page - 1) * PAGE_LIMIT + Math.min(PAGE_LIMIT, activities.length)} of ${pagination.totalItems} activities`
-                : undefined
-            }
-            hasNextPage={Boolean(pagination?.hasNextPage)}
-            hasPrevPage={Boolean(pagination?.hasPreviousPage)}
-            onNextPage={() => setPage(p => p + 1)}
-            onPrevPage={() => setPage(p => Math.max(1, p - 1))}
-            title="Activity"
-          />
-        </div>
+      {/* Recent Activity */}
+      <div className="animate-slide-up space-y-4" style={{ animationDelay: '0.1s' }}>
+        <OptimizedActivityTable
+          activities={activities}
+          isLoading={isLoading}
+          error={error}
+          onRefresh={refetch}
+          showUserColumn={true}
+          showAmountColumn={true}
+          showDAOColumn={false}
+          showActionColumn={false}
+          maxRows={undefined}
+          showingCountText={
+            pagination?.totalItems > 0
+              ? `Showing ${(page - 1) * PAGE_LIMIT + Math.min(PAGE_LIMIT, activities.length)} of ${pagination.totalItems} activities`
+              : undefined
+          }
+          hasNextPage={Boolean(pagination?.hasNextPage)}
+          hasPrevPage={Boolean(pagination?.hasPreviousPage)}
+          onNextPage={() => setPage(p => p + 1)}
+          onPrevPage={() => setPage(p => Math.max(1, p - 1))}
+          title="Recent Activity"
+        />
       </div>
 
       {/* Member Profile Card Popup (admin profile) */}
