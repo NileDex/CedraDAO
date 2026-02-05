@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Search, CornerDownLeft, Command, Hash, Loader2 } from 'lucide-react';
+import { X, CornerDownLeft, Command, Hash, Loader2 } from 'lucide-react';
 import { useFilter } from '../contexts/FilterContext';
 import { DAO } from '../types/dao';
 
@@ -94,27 +94,32 @@ const Filter: React.FC<FilterProps> = ({ isOpen, onClose, onSelect }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-300"
-                onClick={onClose}
-            />
-
             {/* Modal - Command Palette Style */}
             <div
                 ref={modalRef}
                 onKeyDown={handleKeyDown}
-                className="relative w-full max-w-xl bg-[#1c1d21]/95 border border-white/10 rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-200 backdrop-blur-xl"
+                className="relative w-full max-w-xl bg-[#1c1d21]/95 border border-white/10 rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-200"
             >
                 {/* Search Bar */}
                 <div className="flex items-center px-6 py-5 border-b border-white/5">
-                    <Search className="w-5 h-5 text-white/40 mr-4" />
                     <input
                         ref={inputRef}
                         type="text"
                         placeholder="Search DAOs..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                // If there are results, select the first one (or currently selected one)
+                                if (results.length > 0) {
+                                    handleSelectDAO(results[selectedIndex]);
+                                }
+                            } else {
+                                // Pass other keys to the parent handler
+                                handleKeyDown(e);
+                            }
+                        }}
                         className="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder:text-white/20 font-medium"
                     />
                     <button
