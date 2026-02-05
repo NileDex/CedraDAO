@@ -36,9 +36,9 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao }) => {
   const [userStakedDirect, setUserStakedDirect] = useState<number | null>(null);
   const { walletBalance } = useDAOPortfolio();
   const { balance: hookBalance } = useWalletBalance();
-  const { treasuryData: _treasuryData } = useTreasury(dao.id);
+  // const { treasuryData: _treasuryData } = useTreasury(dao.id); // Removed unused hook
 
-  const toCEDRA = (u64: number): number => BalanceService.octasToCedra(u64);
+  const toCEDRA = useCallback((u64: number): number => BalanceService.octasToCedra(u64), []);
 
   const fetchMinStakeIndependently = useCallback(async () => {
     if (minStakeFetchAttempted) return;
@@ -137,8 +137,6 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao }) => {
   const refreshOnChain = useCallback(async () => {
     if (!dao.id) return;
     try {
-      console.log('Starting refreshOnChain for DAO:', dao.id, 'Account:', account?.address);
-
       // 1. Get total staked in the DAO vault
       const totalStakedRes = await cedraClient.view({
         payload: {
@@ -148,7 +146,6 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao }) => {
       });
       const totalStaked = toCEDRA(Number(Array.isArray(totalStakedRes) ? totalStakedRes[0] : 0));
       setTotalStakedInDAO(totalStaked);
-      console.log('Total staked in DAO:', totalStaked, 'CEDRA');
 
       // 2. Get user's stake directly from contract
       if (account?.address) {
@@ -162,9 +159,7 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao }) => {
 
           const userStake = toCEDRA(Number(Array.isArray(userStakedRes) ? userStakedRes[0] : 0));
           setUserStakedDirect(userStake);
-          console.log('✅ User stake fetched successfully:', userStake, 'CEDRA');
         } catch (err) {
-          console.error('❌ Failed to fetch user stake:', err);
           setUserStakedDirect(0);
         }
       }
@@ -172,21 +167,23 @@ const DAOStaking: React.FC<DAOStakingProps> = ({ dao }) => {
       // 3. Refresh membership data in background
       refreshMembership();
     } catch (e) {
-      console.error('On-chain refresh failed:', e);
+      // silent fail
     }
   }, [dao.id, account?.address, refreshMembership, toCEDRA]);
 
   useEffect(() => {
-    console.log('DAOStaking useEffect triggered - dao.id:', dao.id, 'account:', account?.address);
     refreshOnChain();
     fetchMinStakeIndependently();
-  }, [dao.id, account?.address, refreshOnChain, fetchMinStakeIndependently]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dao.id, account?.address]);
 
   // Debug logging for state changes
+  /*
   useEffect(() => {
     console.log('State update - userStakedDirect:', userStakedDirect, 'membershipData:', membershipData);
     console.log('Computed userVotingPower:', daoStakingData.userVotingPower);
   }, [userStakedDirect, membershipData]);
+  */
 
   return (
     <div className="w-full animate-fade-in py-12 px-4">

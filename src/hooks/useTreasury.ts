@@ -82,8 +82,8 @@ export const useTreasury = (daoId: string) => {
   });
 
   // Convert OCTAS to CEDRA - using 1e8 (100,000,000) as per Cedra blockchain standard
-  const toCEDRA = (octas: number): number => octas / 1e8;
-  const fromCEDRA = (cedra: number): number => Math.floor(cedra * 1e8);
+  const toCEDRA = useCallback((octas: number): number => octas / 1e8, []);
+  const fromCEDRA = useCallback((cedra: number): number => Math.floor(cedra * 1e8), []);
 
   // Fetch user CEDRA balance - exact same approach as DAOStaking
   const fetchUserBalance = useCallback(async () => {
@@ -714,6 +714,8 @@ export const useTreasury = (daoId: string) => {
     }
   }, [treasuryData.treasuryObject]);
 
+  const refreshData = useCallback(() => Promise.all([fetchTreasuryData(), fetchUserBalance(), checkAdminStatus(), fetchTreasuryTransactions()]), [fetchTreasuryData, fetchUserBalance, checkAdminStatus, fetchTreasuryTransactions]);
+
   return {
     treasuryData,
     transactions,
@@ -724,7 +726,7 @@ export const useTreasury = (daoId: string) => {
     togglePublicDeposits,
     depositToDAOVault,
     getDAOVaults,
-    refreshData: () => Promise.all([fetchTreasuryData(), fetchUserBalance(), checkAdminStatus(), fetchTreasuryTransactions()]),
+    refreshData,
     toCEDRA,
     fromCEDRA
   };

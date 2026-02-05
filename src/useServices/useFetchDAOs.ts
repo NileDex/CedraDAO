@@ -528,7 +528,22 @@ export function useFetchCreatedDAOs() {
       }
 
       return dao
-    } catch (error) {
+    } catch (error: any) {
+      // Check if this is a MISSING_DATA error (DAO doesn't exist on-chain)
+      // This happens when addresses from events don't have actual DAO resources
+      const errorMessage = error?.message || String(error || '')
+      const isMissingDataError = 
+        errorMessage.includes('MISSING_DATA') ||
+        errorMessage.includes('Failed to borrow global resource') ||
+        (error?.error_code === 'invalid_input' && errorMessage.includes('MISSING_DATA'))
+
+      if (isMissingDataError) {
+        // Silently skip - this DAO doesn't exist on-chain (likely deleted or never created)
+        // Don't log as it's expected for stale event addresses
+        return null
+      }
+
+      // Only log unexpected errors
       console.warn('Failed to process DAO address:', address, error)
       return null
     }
@@ -593,8 +608,18 @@ export function useFetchCreatedDAOs() {
 
 
       return { members: memberCount, proposals: proposalCount }
-    } catch (error) {
-      console.warn(`Failed to fetch stats for DAO ${daoAddress}:`, error)
+    } catch (error: any) {
+      // Check if this is a MISSING_DATA error (DAO doesn't exist on-chain)
+      const errorMessage = error?.message || String(error || '')
+      const isMissingDataError = 
+        errorMessage.includes('MISSING_DATA') ||
+        errorMessage.includes('Failed to borrow global resource') ||
+        (error?.error_code === 'invalid_input' && errorMessage.includes('MISSING_DATA'))
+
+      if (!isMissingDataError) {
+        // Only log unexpected errors
+        console.warn(`Failed to fetch stats for DAO ${daoAddress}:`, error)
+      }
       return { members: 0, proposals: 0 }
     }
   }

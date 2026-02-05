@@ -305,11 +305,13 @@ const DAOMembers: React.FC<DAOMembersProps> = ({ dao }) => {
     if (!cachedMembers || !cachedSummary ||
       (cachedMembers && now - cachedMembers.timestamp >= MAX_STALE_MS) ||
       (cachedSummary && now - cachedSummary.timestamp >= MAX_STALE_MS)) {
-      sectionLoader.executeWithLoader(async () => {
+
+      const { executeWithLoader } = sectionLoader;
+      executeWithLoader(async () => {
         await Promise.all([fetchMembershipData(), fetchActualMembers()]);
       });
     }
-  }, [dao.id, fetchActualMembers, fetchMembershipData, membersCache, sectionLoader, summaryCache, MAX_STALE_MS, SESSION_TTL_MS]); // Fetch on DAO change only; cache keeps view instant between tabs
+  }, [dao.id, fetchActualMembers, fetchMembershipData, membersCache, sectionLoader.executeWithLoader, summaryCache, MAX_STALE_MS, SESSION_TTL_MS]); // Fetch on DAO change only; cache keeps view instant between tabs
 
   // Silent refresh on window focus if cache is stale
   useEffect(() => {

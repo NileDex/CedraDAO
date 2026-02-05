@@ -6,7 +6,7 @@ import Avatar from 'boring-avatars';
 import { useWallet } from '../../contexts/CedraWalletProvider';
 import { cedraClient } from '../../cedra_service/cedra-client';
 import { MODULE_ADDRESS } from '../../cedra_service/constants';
-import { safeView } from '../../utils/rpcUtils';
+import { safeView, batchSafeView } from '../../utils/rpcUtils';
 import { useAlert } from '../alert/AlertContext';
 import { truncateAddress } from '../../utils/addressUtils';
 
@@ -150,27 +150,33 @@ const DAOAdmin: React.FC<AdminProps> = ({ dao }) => {
       const addrs: string[] = Array.isArray(addrRes?.[0]) ? addrRes[0] : [];
       const collected: Admin[] = [];
 
-      for (const addr of addrs) {
-        try {
-          const roleRes = await safeView({
-            function: `${MODULE_ADDRESS}::admin::get_admin_role`,
-            functionArguments: [dao.id, addr]
-          });
-          const roleNum = Number(roleRes?.[0] || ROLE_STANDARD);
+      // OPTIMIZATION: Batch fetch all admin roles in parallel
+      if (addrs.length > 0) {
+        const rolePayloads = addrs.map(addr => ({
+          function: `${MODULE_ADDRESS}::admin::get_admin_role`,
+          functionArguments: [dao.id, addr]
+        }));
+
+        // Execute batch call
+        const roleResults = await batchSafeView(rolePayloads, { cachePrefix: `admin_roles_${dao.id}` });
+
+        // Process results
+        addrs.forEach((addr, idx) => {
+          let role: 'super' | 'standard' | 'temporary' = 'standard';
+
+          if (roleResults[idx].status === 'fulfilled' && roleResults[idx].value) {
+            const result = roleResults[idx].value;
+            const roleNum = Number((result && result[0]) || ROLE_STANDARD);
+            role = mapRole(roleNum);
+          }
+
           collected.push({
             address: addr,
-            role: mapRole(roleNum),
+            role: role,
             addedAt: 'Active Member',
             status: 'active'
           });
-        } catch (e) {
-          collected.push({
-            address: addr,
-            role: 'standard',
-            addedAt: 'Active Member',
-            status: 'active'
-          });
-        }
+        });
       }
 
       setAdmins(collected);
@@ -186,7 +192,7 @@ const DAOAdmin: React.FC<AdminProps> = ({ dao }) => {
     } finally {
       if (showSpinner) setIsRefreshingAdmins(false);
     }
-  }, [dao.id, account?.address, isAdmin, currentRole, adminSessionCache]);
+  }, [dao.id, account?.address, adminSessionCache]);
 
   useEffect(() => {
     const cached = adminSessionCache.get(dao.id);

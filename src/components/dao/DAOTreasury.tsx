@@ -92,7 +92,8 @@ const DAOTreasury: React.FC<DAOTreasuryProps> = ({ dao }) => {
     };
 
     sectionLoader.executeWithLoader(loadTreasuryData);
-  }, [dao.id, account?.address, refreshData, sectionLoader, treasurySessionCache]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dao.id, account?.address, refreshData, sectionLoader.executeWithLoader, treasurySessionCache]);
 
   useEffect(() => {
     const fetchTotalStaked = async () => {
@@ -249,8 +250,8 @@ const DAOTreasury: React.FC<DAOTreasuryProps> = ({ dao }) => {
           </div>
         </div>
 
-        <div className="w-full h-[320px] animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="flex items-center justify-between mb-6 px-2">
+        <div className="w-full h-[320px] animate-in fade-in slide-in-from-bottom-4 duration-700 flex flex-col">
+          <div className="flex items-center justify-between mb-6 px-2 shrink-0">
             <div>
               <h3 className="text-md font-semibold text-white">Asset growth</h3>
               <p className="text-[10px] text-white/30 tracking-wide font-medium">Aggregate value of all treasury deployments</p>
@@ -260,40 +261,42 @@ const DAOTreasury: React.FC<DAOTreasuryProps> = ({ dao }) => {
               <p className="text-[10px] text-white/20 font-medium">Live TVL</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={treasuryHistory} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="treasuryGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="name" hide={true} />
-              <YAxis hide={true} domain={['dataMin - 10', 'auto']} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(12, 12, 12, 0.9)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  fontSize: '11px',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-                }}
-                itemStyle={{ color: '#e1fd6a', fontWeight: 'bold' }}
-                cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="#e1fd6a"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#treasuryGradient)"
-                animationDuration={1500}
-                activeDot={{ r: 6, fill: '#e1fd6a', stroke: '#0c0c0c', strokeWidth: 2 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="flex-1 min-h-0 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={treasuryHistory} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="treasuryGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#e1fd6a" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#e1fd6a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" hide={true} />
+                <YAxis hide={true} domain={['dataMin - 10', 'auto']} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(12, 12, 12, 0.9)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                  }}
+                  itemStyle={{ color: '#e1fd6a', fontWeight: 'bold' }}
+                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#e1fd6a"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#treasuryGradient)"
+                  animationDuration={1500}
+                  activeDot={{ r: 6, fill: '#e1fd6a', stroke: '#0c0c0c', strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 

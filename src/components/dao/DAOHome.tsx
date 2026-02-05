@@ -191,84 +191,84 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
 
     const fetchOverviewData = async () => {
       try {
-        // Primary: Get admins from AdminList (contract initializes this during DAO creation)
-        try {
-          // First check if admin system exists - with caching
-          const adminListExists = await safeView({
-            function: `${MODULE_ADDRESS}::admin::exists_admin_list`,
-            functionArguments: [dao.id]
-          }, `admin_list_exists_${dao.id}`);
-
-          if (adminListExists && adminListExists[0]) {
-            // Get admins from the AdminList - with caching
-            const adminResult = await safeView({
-              function: `${MODULE_ADDRESS}::admin::get_admins`,
+        // Run admin fetch and treasury fetch in parallel
+        const adminPromise = (async () => {
+          // Primary: Get admins from AdminList (contract initializes this during DAO creation)
+          try {
+            // First check if admin system exists - with caching
+            const adminListExists = await safeView({
+              function: `${MODULE_ADDRESS}::admin::exists_admin_list`,
               functionArguments: [dao.id]
-            }, `admin_list_${dao.id}`);
+            }, `admin_list_exists_${dao.id}`);
 
-            // Parse admin list (vector<address>)
-            const admins: string[] = (() => {
-              if (Array.isArray(adminResult)) {
-                if (adminResult.length === 1 && Array.isArray(adminResult[0])) return adminResult[0] as string[];
-                if (adminResult.every((a: unknown) => typeof a === 'string')) return adminResult as string[];
+            if (adminListExists && adminListExists[0]) {
+              // Get admins from the AdminList - with caching
+              const adminResult = await safeView({
+                function: `${MODULE_ADDRESS}::admin::get_admins`,
+                functionArguments: [dao.id]
+              }, `admin_list_${dao.id}`);
+
+              // Parse admin list (vector<address>)
+              const admins: string[] = (() => {
+                if (Array.isArray(adminResult)) {
+                  if (adminResult.length === 1 && Array.isArray(adminResult[0])) return adminResult[0] as string[];
+                  if (adminResult.every((a: unknown) => typeof a === 'string')) return adminResult as string[];
+                }
+                return [];
+              })();
+
+              if (admins.length > 0) {
+                return admins[0];
               }
-              return [];
-            })();
-
-            if (admins.length > 0) {
-              // Show first admin (usually the creator/super admin)
-              setFullAdminAddress(admins[0]);
-              cacheMap.set(dao.id, {
-                admin: admins[0],
-                treasuryBalance: treasuryBalance,
-                timestamp: Date.now(),
-              });
-              return;
             }
+          } catch (adminError) {
+            console.warn('Admin system query failed:', adminError);
           }
-        } catch (adminError) {
-          console.warn('Admin system query failed:', adminError);
-        }
 
-        // Fallback: Get creator from DAOCreated event
-        try {
-          const events = await cedraClient.getModuleEventsByEventType({
-            eventType: `${MODULE_ADDRESS}::dao_core_file::DAOCreated`,
-            options: { limit: 100 },
-          });
-
-          interface DAOCreatedData {
-            anchor_addrx: string;
-            creator: string;
-          }
-          interface DAOCreatedEvent {
-            data: DAOCreatedData;
-          }
-          const ev = (events as unknown as DAOCreatedEvent[]).find((e) => e?.data?.anchor_addrx === dao.id);
-          const creator = ev?.data?.creator;
-          if (creator) {
-            setFullAdminAddress(creator);
-            cacheMap.set(dao.id, {
-              admin: creator,
-              treasuryBalance: treasuryBalance,
-              timestamp: Date.now(),
+          // Fallback: Get creator from DAOCreated event (with timeout)
+          try {
+            // Create a promise for the event fetch
+            const eventsPromise = cedraClient.getModuleEventsByEventType({
+              eventType: `${MODULE_ADDRESS}::dao_core_file::DAOCreated`,
+              options: { limit: 100 },
             });
-            return;
-          }
-        } catch (eventError) {
-          console.warn('Error fetching creator from events:', eventError);
-        }
 
-        // Final fallback: DAO creator is the admin (contract guarantees this)
-        setFullAdminAddress(dao.id);
+            // Race against a 3s timeout
+            const timeoutPromise = new Promise<any>((_, reject) =>
+              setTimeout(() => reject(new Error('Event fetch timeout')), 3000)
+            );
+
+            const events = await Promise.race([eventsPromise, timeoutPromise]);
+
+            interface DAOCreatedData {
+              anchor_addrx: string;
+              creator: string;
+            }
+            interface DAOCreatedEvent {
+              data: DAOCreatedData;
+            }
+            const ev = (events as unknown as DAOCreatedEvent[]).find((e) => e?.data?.anchor_addrx === dao.id);
+            return ev?.data?.creator || null;
+          } catch (eventError) {
+            console.warn('Error fetching creator from events:', eventError);
+            return null;
+          }
+        })();
+
+        // Execute parallel requests
+        const [adminAddr, _] = await Promise.all([
+          adminPromise,
+          fetchTreasuryBalance()
+        ]);
+
+        const finalAdmin = adminAddr || dao.id; // Contract guarantees DAO creator is admin, so use DAO address as fallback
+
+        setFullAdminAddress(finalAdmin);
         cacheMap.set(dao.id, {
-          admin: dao.id,
+          admin: finalAdmin,
           treasuryBalance: treasuryBalance,
           timestamp: Date.now(),
         });
-
-        // Also fetch treasury balance
-        await fetchTreasuryBalance();
 
       } catch (error: any) {
         console.warn('Error fetching overview data:', error);
@@ -279,7 +279,8 @@ const DAOHome: React.FC<DAOHomeProps> = ({ dao }) => {
     };
 
     sectionLoader.executeWithLoader(fetchOverviewData);
-  }, [dao.id, fetchTreasuryBalance, sectionLoader, treasuryBalance, cacheMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dao.id, fetchTreasuryBalance, sectionLoader.executeWithLoader, treasuryBalance, cacheMap]);
 
   // Silent refresh on window focus if cache is stale
   useEffect(() => {

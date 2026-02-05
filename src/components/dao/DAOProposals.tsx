@@ -162,44 +162,6 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao }) => {
     }));
   }, [isMember, isStaker]);
 
-  // Lightweight role re-check using a single ABI view; never downgrade on transient failures
-  useEffect(() => {
-    let cancelled = false;
-    const recheck = async () => {
-      try {
-        if (!dao.id || !account?.address) return;
-        const [statusRes, canCreateRes] = await Promise.allSettled([
-          cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::proposal::get_user_status_code`, functionArguments: [dao.id, account.address] } }),
-          cedraClient.view({ payload: { function: `${MODULE_ADDRESS}::proposal::can_user_create_proposals`, functionArguments: [dao.id, account.address] } }),
-        ]);
-        if (cancelled) return;
-
-        // Persistently set roles; if call fails, keep previous values
-        setUserStatus(prev => {
-          if (statusRes.status === 'fulfilled' && Array.isArray(statusRes.value)) {
-            const code = Number(statusRes.value?.[0] || 0);
-            return {
-              ...prev,
-              isAdmin: code === 3,
-              // Treat admin as member for UI purposes
-              isMember: code === 1 || code === 3 || prev.isMember,
-            };
-          }
-          return prev;
-        });
-
-        const adminIs = statusRes.status === 'fulfilled' && Array.isArray(statusRes.value)
-          ? Number(statusRes.value?.[0] || 0) === 3
-          : userStatus.isAdmin;
-        const canCreateNow = canCreateRes.status === 'fulfilled' && Array.isArray(canCreateRes.value)
-          ? Boolean(canCreateRes.value?.[0])
-          : null;
-        setCanCreateProposal(prev => adminIs || (canCreateNow === null ? prev : canCreateNow));
-      } catch (_err) { /* ignore recheck failures */ }
-    };
-    recheck();
-    return () => { cancelled = true; };
-  }, [dao.id, account?.address, userStatus.isAdmin]);
 
 
   const checkProposalEligibility = useCallback(async () => {
@@ -387,23 +349,6 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao }) => {
 
   const fetchProposals = useCallback(async (forceRefresh = false) => {
     try {
-      // Persist roles before any list refresh to avoid UI flicker/down-grading
-      try {
-        if (dao.id && account?.address) {
-          const status = await cedraClient.view({
-            payload: { function: `${MODULE_ADDRESS}::proposal::get_user_status_code`, functionArguments: [dao.id, account.address] }
-          }).catch(() => null);
-          if (status && Array.isArray(status)) {
-            const code = Number(status[0] || 0);
-            setUserStatus(prev => ({
-              ...prev,
-              isAdmin: code === 3 || prev.isAdmin,
-              isMember: code === 1 || code === 3 || prev.isMember,
-            }));
-          }
-        }
-      } catch (_err) { /* ignore initial role check errors */ }
-
       // For connected users, prefer fresh data for voting status.
       // For guests, use cache.
       const cacheKey = `proposals_${dao.id}`;
@@ -471,6 +416,62 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao }) => {
       }
       const validProposals: ProposalData[] = [];
 
+      // Optimize user voting status checks by batching them
+      let userVotingMap = new Map<string, { voted: boolean; voteType: number | null }>();
+
+      if (account?.address && proposalResults.length > 0) {
+        // 1. Prepare payloads for all validity check in parallel
+        const voteCheckPayloads = proposalResults.map((_, idx) => ({
+          function: `${MODULE_ADDRESS}::proposal::has_user_voted_on_proposal`,
+          functionArguments: [dao.id, idx, account.address]
+        }));
+
+        // 2. Execute all checks in parallel
+        const voteCheckResults = await batchSafeView(voteCheckPayloads, { cachePrefix: `vote_check_${dao.id}` });
+
+        // 3. For those who voted, fetch their vote type
+        const voteTypePayloads: any[] = [];
+        const voteTypeIndices: number[] = [];
+
+        voteCheckResults.forEach((res, idx) => {
+          if (res.status === 'fulfilled' && res.value && res.value[0]) {
+            voteTypePayloads.push({
+              function: `${MODULE_ADDRESS}::proposal::get_user_vote_on_proposal`,
+              functionArguments: [dao.id, idx, account.address]
+            });
+            voteTypeIndices.push(idx);
+          }
+        });
+
+        let voteTypeResults: any[] = [];
+        if (voteTypePayloads.length > 0) {
+          voteTypeResults = await batchSafeView(voteTypePayloads, { cachePrefix: `vote_type_${dao.id}` });
+        }
+
+        // 4. Map results back
+        proposalResults.forEach((_, idx) => {
+          let voted = false;
+          let voteType = null;
+
+          // Check if index was a 'yes' in voteCheckResults
+          if (voteCheckResults[idx].status === 'fulfilled' &&
+            voteCheckResults[idx].value &&
+            voteCheckResults[idx].value[0]) {
+            voted = true;
+
+            // Find the corresponding vote type result
+            const typeResultIdx = voteTypeIndices.indexOf(idx);
+            if (typeResultIdx !== -1 &&
+              voteTypeResults[typeResultIdx].status === 'fulfilled' &&
+              voteTypeResults[typeResultIdx].value) {
+              voteType = Number(voteTypeResults[typeResultIdx].value[1] || 0);
+            }
+          }
+
+          userVotingMap.set(idx.toString(), { voted, voteType });
+        });
+      }
+
       for (let i = 0; i < proposalResults.length; i++) {
         const result = proposalResults[i];
         if (!result || !result[0]) continue;
@@ -483,42 +484,25 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao }) => {
         let userVoteType = null;
 
         if (account?.address) {
-          // Use the dedicated ABI function to check if user has voted
-          try {
-            const hasVotedResult = await safeView({
-              function: `${MODULE_ADDRESS}::proposal::has_user_voted_on_proposal`,
-              functionArguments: [dao.id, i, account.address]
-            });
-            userVoted = Boolean(hasVotedResult[0]);
+          // Use pre-fetched batch data
+          const votingData = userVotingMap.get(i.toString());
 
-            if (userVoted) {
-              // Get the vote details if they voted
-              try {
-                const voteDetails = await safeView({
-                  function: `${MODULE_ADDRESS}::proposal::get_user_vote_on_proposal`,
-                  functionArguments: [dao.id, i, account.address]
-                });
-                if (voteDetails && voteDetails[0]) {
-                  userVoteType = Number(voteDetails[1] || 0);
-                  userCanVote = true;
-                }
-              } catch (err) {
-                console.warn(`Could not get vote details for proposal ${i}`, err);
-              }
-            } else {
-              // Use persistent membership state
-              userCanVote = isMember && isStaker;
-            }
-          } catch (error) {
-            console.warn(`Error checking if user voted on proposal ${i}:`, error);
-            // Fallback to old method
+          if (votingData && votingData.voted) {
+            userVoted = true;
+            userVoteType = votingData.voteType;
+            userCanVote = true;
+          } else {
+            // Fallback to internal votes vector check if batch call failed or returned false
+            // This covers cases where RPC might fail but data exists in the struct
             const votes = proposalData.votes || [];
-            const userVote = votes.find((vote) => vote.voter === account.address);
+            const userVote = votes.find((vote) => vote.voter === account?.address);
+
             if (userVote) {
               userVoted = true;
               userVoteType = typeof userVote.vote_type === 'object' ? userVote.vote_type.value : userVote.vote_type;
               userCanVote = true;
             } else {
+              // Use persistent membership state
               userCanVote = isMember && isStaker;
             }
           }
@@ -611,9 +595,12 @@ const DAOProposals: React.FC<DAOProposalsProps> = ({ dao }) => {
 
   // Load proposals once per DAO; avoid reloading on tab switches
   // Eligibility still updates with account changes
+  // Load proposals once per DAO; avoid reloading on tab switches
+  // Eligibility still updates with account changes
+  const { executeWithLoader } = sectionLoader;
   useEffect(() => {
-    sectionLoader.executeWithLoader(fetchProposals);
-  }, [dao.id, fetchProposals, sectionLoader]);
+    executeWithLoader(fetchProposals);
+  }, [dao.id, fetchProposals, executeWithLoader]);
 
   // Light, real‑time refresh triggers without over-modifying logic
   useEffect(() => {

@@ -27,15 +27,15 @@ class APIRequestManager {
   private lastFailureTime = 0;
   private requestCount = 0;
   private windowStart = Date.now();
-  
-  // Configuration - More lenient settings for blockchain RPC calls
-  private readonly MAX_CONCURRENT_REQUESTS = 2; // Reduced to be more conservative
-  private readonly REQUESTS_PER_SECOND = 1; // Reduced to 1 request per second
-  private readonly CIRCUIT_BREAKER_THRESHOLD = 15; // Increased from 5 to 15 failures
-  private readonly CIRCUIT_BREAKER_TIMEOUT = 15000; // Reduced to 15 seconds for faster recovery
-  private readonly DEFAULT_CACHE_TTL = 30000; // Increased to 30 seconds for better caching
-  private readonly MAX_RETRIES = 5; // Increased retries
-  private readonly BASE_DELAY = 2000; // Increased base delay to 2 seconds
+
+  // Configuration - Optimized for high-performance UI data fetching
+  private readonly MAX_CONCURRENT_REQUESTS = 30; // Increased significantly for batch operations
+  private readonly REQUESTS_PER_SECOND = 50; // Increased to allow rapid UI loading
+  private readonly CIRCUIT_BREAKER_THRESHOLD = 50; // Increased tolerance for failures
+  private readonly CIRCUIT_BREAKER_TIMEOUT = 5000; // Reduced timeout for faster recovery
+  private readonly DEFAULT_CACHE_TTL = 30000;
+  private readonly MAX_RETRIES = 3; // Reduced retries to fail fast and retry at UI level
+  private readonly BASE_DELAY = 500; // Faster retry loop
 
   private activeRequests = 0;
 
@@ -73,21 +73,21 @@ class APIRequestManager {
 
     return new Promise<T>((resolve, reject) => {
       const requestId = `req_${Date.now()}_${Math.random()}`;
-      
+
       const queuedRequest: QueuedRequest = {
         id: requestId,
         execute: async () => {
           try {
             const result = await requestFn();
-            
+
             // Cache the result if cache key provided
             if (cacheKey) {
               this.setCache(cacheKey, result, cacheTtl);
             }
-            
+
             // Reset circuit breaker on success
             this.resetCircuitBreaker();
-            
+
             return result;
           } catch (error: any) {
             this.handleRequestFailure(error);
@@ -113,7 +113,7 @@ class APIRequestManager {
 
   private async processQueue(): Promise<void> {
     if (this.isProcessing || this.queue.length === 0) return;
-    
+
     this.isProcessing = true;
 
     while (this.queue.length > 0) {
@@ -148,7 +148,7 @@ class APIRequestManager {
       if (this.shouldRetry(error, request)) {
         request.retryCount++;
         const delay = this.calculateBackoffDelay(request.retryCount);
-        
+
         setTimeout(() => {
           this.queue.unshift(request); // Add back to front of queue
           if (!this.isProcessing) {
@@ -188,8 +188,8 @@ class APIRequestManager {
     if (request.retryCount >= this.MAX_RETRIES) return false;
 
     // Retry on rate limit errors
-    if (error.status === 429 || error.code === 'ERR_NETWORK' || 
-        error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+    if (error.status === 429 || error.code === 'ERR_NETWORK' ||
+      error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
       return true;
     }
 
@@ -213,12 +213,12 @@ class APIRequestManager {
     this.lastFailureTime = Date.now();
 
     // Only count certain errors as failures (not all errors should trigger circuit breaker)
-    const isCircuitBreakerError = error.status === 429 || 
-                                 error.code === 'ERR_NETWORK' || 
-                                 error.message?.includes('429') || 
-                                 error.message?.includes('Too Many Requests') ||
-                                 error.message?.includes('timeout') ||
-                                 error.message?.includes('CORS');
+    const isCircuitBreakerError = error.status === 429 ||
+      error.code === 'ERR_NETWORK' ||
+      error.message?.includes('429') ||
+      error.message?.includes('Too Many Requests') ||
+      error.message?.includes('timeout') ||
+      error.message?.includes('CORS');
 
     if (isCircuitBreakerError && this.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD) {
       this.circuitBreakerState = 'OPEN';
